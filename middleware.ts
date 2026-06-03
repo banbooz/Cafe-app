@@ -10,8 +10,8 @@ function unauthorized() {
 }
 
 export function middleware(request: NextRequest) {
-  const username = process.env.KITCHEN_USERNAME;
-  const password = process.env.KITCHEN_PASSWORD;
+  const username = process.env.KITCHEN_USERNAME?.trim();
+  const password = process.env.KITCHEN_PASSWORD?.trim();
 
   if (!username || !password) {
     return new NextResponse("Kitchen access is not configured", { status: 503 });
@@ -23,15 +23,26 @@ export function middleware(request: NextRequest) {
     return unauthorized();
   }
 
-  const encoded = authHeader.split(" ")[1];
-  const decoded = atob(encoded);
-  const [givenUsername, givenPassword] = decoded.split(":");
+  try {
+    const encoded = authHeader.slice(6);
+    const decoded = atob(encoded);
+    const separatorIndex = decoded.indexOf(":");
 
-  if (givenUsername !== username || givenPassword !== password) {
+    if (separatorIndex === -1) {
+      return unauthorized();
+    }
+
+    const givenUsername = decoded.slice(0, separatorIndex).trim();
+    const givenPassword = decoded.slice(separatorIndex + 1).trim();
+
+    if (givenUsername !== username || givenPassword !== password) {
+      return unauthorized();
+    }
+
+    return NextResponse.next();
+  } catch {
     return unauthorized();
   }
-
-  return NextResponse.next();
 }
 
 export const config = {
