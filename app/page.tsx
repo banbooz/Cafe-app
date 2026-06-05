@@ -2,8 +2,9 @@
 
 import { useMemo, useState } from "react";
 
-type Category = "Recommended" | "Drinks" | "Food" | "Bakery";
-type Screen = "menu" | "checkout" | "confirmed" | "allergens";
+type Category = "Cake" | "Coffee" | "Food" | "Cold";
+type Screen = "menu" | "tables" | "cart" | "allergens" | "confirmed";
+type Area = "Indoor" | "Outdoor" | "Window" | "Quiet";
 
 type MenuItem = {
   id: number;
@@ -13,124 +14,146 @@ type MenuItem = {
   category: Category;
   image: string;
   allergens: string[];
-  recommended?: boolean;
+  popular?: boolean;
+};
+
+type TableItem = {
+  id: number;
+  area: Area;
+  seats: number;
+  col: number;
+  row: number;
+  w: number;
+  h: number;
+  shape: "round" | "rect";
+  busy?: boolean;
 };
 
 const menuItems: MenuItem[] = [
   {
     id: 1,
-    name: "Flat White",
-    description: "Double espresso, steamed milk, smooth microfoam.",
-    price: 3.2,
-    category: "Drinks",
+    name: "Dark Chocolate Cake",
+    description: "Rich chocolate sponge with ganache.",
+    price: 4.8,
+    category: "Cake",
     image:
-      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Milk"],
-    recommended: true,
+      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Gluten", "Milk", "Egg"],
+    popular: true,
   },
   {
     id: 2,
-    name: "Iced Latte",
-    description: "Chilled espresso over milk and ice.",
-    price: 3.8,
-    category: "Drinks",
+    name: "Oreo Cheesecake",
+    description: "Creamy cheesecake with biscuit crumb.",
+    price: 5.2,
+    category: "Cake",
     image:
-      "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Milk"],
-    recommended: true,
+      "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Gluten", "Milk", "Egg"],
+    popular: true,
   },
   {
     id: 3,
-    name: "Chicken Sandwich",
-    description: "Fresh bread, roast chicken, leaves, house dressing.",
-    price: 5.5,
-    category: "Food",
+    name: "Victoria Sponge",
+    description: "Jam, cream, soft sponge and icing sugar.",
+    price: 3.9,
+    category: "Cake",
     image:
-      "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Gluten", "Egg", "Mustard"],
+      "https://images.unsplash.com/photo-1464349095431-e9a21285b5f3?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Gluten", "Milk", "Egg"],
   },
   {
     id: 4,
-    name: "Butter Croissant",
-    description: "Flaky pastry baked fresh every morning.",
-    price: 2.9,
-    category: "Bakery",
+    name: "Flat White",
+    description: "Double espresso and silky steamed milk.",
+    price: 3.2,
+    category: "Coffee",
     image:
-      "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Gluten", "Milk", "Egg"],
-    recommended: true,
+      "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Milk"],
+    popular: true,
   },
   {
     id: 5,
-    name: "Breakfast Bowl",
-    description: "Granola, yoghurt, berries, honey, seeds.",
-    price: 6.4,
-    category: "Food",
+    name: "Iced Latte",
+    description: "Cold milk, espresso and ice.",
+    price: 3.8,
+    category: "Cold",
     image:
-      "https://images.unsplash.com/photo-1494597564530-871f2b93ac55?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Milk", "Nuts"],
+      "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Milk"],
+    popular: true,
   },
   {
     id: 6,
-    name: "Victoria Sponge",
-    description: "Soft sponge cake, jam, cream, icing sugar.",
-    price: 3.6,
-    category: "Bakery",
+    name: "Chicken Sandwich",
+    description: "Roast chicken, leaves and house dressing.",
+    price: 5.5,
+    category: "Food",
     image:
-      "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Gluten", "Milk", "Egg"],
-    recommended: true,
+      "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Gluten", "Egg", "Mustard"],
   },
   {
     id: 7,
     name: "Avocado Toast",
-    description: "Sourdough toast, avocado, chilli, lemon.",
+    description: "Sourdough, avocado, lemon and chilli.",
     price: 5.9,
     category: "Food",
     image:
-      "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=500&q=80",
+      "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=600&q=80",
     allergens: ["Gluten"],
   },
   {
     id: 8,
-    name: "Hot Chocolate",
-    description: "Rich cocoa, steamed milk, chocolate dusting.",
-    price: 3.4,
-    category: "Drinks",
+    name: "Butter Croissant",
+    description: "Flaky pastry baked fresh this morning.",
+    price: 2.9,
+    category: "Food",
     image:
-      "https://images.unsplash.com/photo-1517578239113-b03992dcdd25?auto=format&fit=crop&w=500&q=80",
-    allergens: ["Milk"],
+      "https://images.unsplash.com/photo-1555507036-ab1f4038808a?auto=format&fit=crop&w=600&q=80",
+    allergens: ["Gluten", "Milk", "Egg"],
   },
 ];
 
-const categories: { label: Category; short: string }[] = [
-  { label: "Recommended", short: "Top" },
-  { label: "Drinks", short: "Drink" },
-  { label: "Food", short: "Food" },
-  { label: "Bakery", short: "Bake" },
+const categories: { label: Category; icon: string }[] = [
+  { label: "Cake", icon: "🍰" },
+  { label: "Coffee", icon: "☕" },
+  { label: "Food", icon: "🥪" },
+  { label: "Cold", icon: "🥤" },
 ];
 
-const commonAllergens = [
-  "Milk",
-  "Gluten",
-  "Egg",
-  "Nuts",
-  "Mustard",
-  "Soya",
-  "Sesame",
+const tables: TableItem[] = [
+  { id: 1, area: "Indoor", seats: 2, col: 1, row: 1, w: 1, h: 2, shape: "rect" },
+  { id: 2, area: "Indoor", seats: 2, col: 1, row: 4, w: 1, h: 2, shape: "rect" },
+  { id: 3, area: "Indoor", seats: 2, col: 1, row: 7, w: 1, h: 2, shape: "rect" },
+  { id: 4, area: "Indoor", seats: 2, col: 1, row: 10, w: 1, h: 2, shape: "rect" },
+  { id: 5, area: "Indoor", seats: 6, col: 4, row: 1, w: 2, h: 4, shape: "rect", busy: true },
+  { id: 6, area: "Indoor", seats: 6, col: 4, row: 6, w: 2, h: 3, shape: "rect" },
+  { id: 7, area: "Indoor", seats: 6, col: 4, row: 10, w: 2, h: 3, shape: "rect" },
+  { id: 8, area: "Indoor", seats: 2, col: 8, row: 1, w: 1, h: 2, shape: "rect" },
+  { id: 9, area: "Indoor", seats: 2, col: 8, row: 4, w: 1, h: 2, shape: "rect" },
+  { id: 10, area: "Indoor", seats: 2, col: 8, row: 7, w: 1, h: 2, shape: "rect" },
+  { id: 11, area: "Indoor", seats: 2, col: 8, row: 10, w: 1, h: 2, shape: "rect" },
+  { id: 12, area: "Outdoor", seats: 4, col: 2, row: 2, w: 2, h: 2, shape: "round" },
+  { id: 13, area: "Outdoor", seats: 4, col: 6, row: 2, w: 2, h: 2, shape: "round" },
+  { id: 14, area: "Window", seats: 2, col: 2, row: 5, w: 1, h: 2, shape: "rect" },
+  { id: 15, area: "Window", seats: 2, col: 7, row: 5, w: 1, h: 2, shape: "rect" },
+  { id: 16, area: "Quiet", seats: 4, col: 4, row: 5, w: 2, h: 2, shape: "round" },
 ];
+
+const areaTabs: Area[] = ["Indoor", "Outdoor", "Window", "Quiet"];
+const taxRate = 0.2;
 
 export default function Home() {
-  const [selectedCategory, setSelectedCategory] = useState<Category>("Recommended");
-  const [basket, setBasket] = useState<Record<number, number>>({});
   const [screen, setScreen] = useState<Screen>("menu");
-
-  const filteredItems = useMemo(() => {
-    if (selectedCategory === "Recommended") {
-      return menuItems.filter((item) => item.recommended);
-    }
-    return menuItems.filter((item) => item.category === selectedCategory);
-  }, [selectedCategory]);
+  const [selectedCategory, setSelectedCategory] = useState<Category>("Cake");
+  const [selectedArea, setSelectedArea] = useState<Area>("Indoor");
+  const [selectedTable, setSelectedTable] = useState(6);
+  const [basket, setBasket] = useState<Record<number, number>>({});
+  const [search, setSearch] = useState("");
+  const [note, setNote] = useState("");
+  const [waiterCalled, setWaiterCalled] = useState(false);
 
   const basketItems = menuItems
     .map((item) => ({ ...item, quantity: basket[item.id] || 0 }))
@@ -141,8 +164,22 @@ export default function Home() {
     (sum, item) => sum + item.price * item.quantity,
     0,
   );
-  const serviceFee = itemCount > 0 ? 0.3 : 0;
-  const total = subtotal + serviceFee;
+  const tax = subtotal * taxRate;
+  const total = subtotal + tax;
+
+  const filteredItems = useMemo(() => {
+    return menuItems.filter((item) => {
+      const matchesCategory = item.category === selectedCategory;
+      const q = search.trim().toLowerCase();
+      const matchesSearch =
+        q.length === 0 ||
+        item.name.toLowerCase().includes(q) ||
+        item.description.toLowerCase().includes(q);
+      return matchesCategory && matchesSearch;
+    });
+  }, [selectedCategory, search]);
+
+  const visibleTables = tables.filter((table) => table.area === selectedArea);
 
   function addItem(id: number) {
     setBasket((current) => ({ ...current, [id]: (current[id] || 0) + 1 }));
@@ -165,362 +202,334 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
-  function goToCheckout() {
-    if (itemCount === 0) return;
-    openScreen("checkout");
-  }
-
-  function payOrder() {
+  function placeOrder() {
     if (itemCount === 0) return;
     setBasket({});
+    setNote("");
     openScreen("confirmed");
   }
 
-  if (screen === "confirmed") {
+  if (screen === "tables") {
     return (
-      <main className="min-h-screen bg-[#efebe4] text-[#1d1712]">
-        <div className="mx-auto flex min-h-screen w-full max-w-md flex-col bg-[#faf8f4] px-5 py-6 shadow-2xl shadow-stone-950/10 sm:my-6 sm:min-h-[820px] sm:rounded-[2rem]">
-          <Header title="Order confirmed" table="12" onAllergens={() => openScreen("allergens")} />
-          <section className="flex flex-1 flex-col items-center justify-center text-center">
-            <div className="grid h-24 w-24 place-items-center rounded-full bg-[#133c2f] text-5xl text-white">
-              ✓
+      <PhoneShell>
+        <TopBar title="Tables" onBack={() => openScreen("menu")} onMore={() => openScreen("allergens")} />
+
+        <section className="px-4 py-3">
+          <div className="flex gap-2 overflow-x-auto pb-2">
+            {areaTabs.map((area) => (
+              <button
+                key={area}
+                onClick={() => setSelectedArea(area)}
+                className={`min-h-10 shrink-0 rounded-full px-4 text-xs font-black ${
+                  selectedArea === area
+                    ? "bg-[#203242] text-white"
+                    : "bg-white text-[#5a6268] ring-1 ring-[#dfe4e7]"
+                }`}
+              >
+                {area}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="px-5 pb-28 pt-1">
+          <div className="relative min-h-[560px] rounded-[2rem] bg-[#f6f8f8] p-4 shadow-inner ring-1 ring-[#e3e7e8]">
+            <div className="absolute left-1/2 top-4 h-5 w-24 -translate-x-1/2 rounded-full bg-[#e4e8ea]" />
+            <div className="grid h-[520px] grid-cols-8 grid-rows-12 gap-2 pt-8">
+              {visibleTables.map((table) => (
+                <button
+                  key={table.id}
+                  disabled={table.busy}
+                  onClick={() => setSelectedTable(table.id)}
+                  style={{
+                    gridColumn: `${table.col} / span ${table.w}`,
+                    gridRow: `${table.row} / span ${table.h}`,
+                  }}
+                  className={`relative grid place-items-center transition active:scale-95 ${
+                    table.shape === "round" ? "rounded-full" : "rounded-2xl"
+                  } ${
+                    selectedTable === table.id
+                      ? "bg-[#203242] text-white shadow-xl shadow-slate-900/20"
+                      : table.busy
+                        ? "bg-[#d9dee1] text-[#7b858b]"
+                        : "bg-[#e9eef0] text-[#203242]"
+                  }`}
+                >
+                  <span className="grid h-7 w-7 place-items-center rounded-full bg-white/90 text-xs font-black text-[#203242]">
+                    {table.id}
+                  </span>
+                  <span className="absolute -bottom-5 left-1/2 -translate-x-1/2 whitespace-nowrap text-[10px] font-black text-[#80898e]">
+                    {table.busy ? "Busy" : `${table.seats} seats`}
+                  </span>
+                </button>
+              ))}
             </div>
-            <h1 className="mt-6 text-3xl font-black">Payment received</h1>
-            <p className="mt-3 max-w-xs text-sm leading-6 text-stone-600">
-              Your order has been sent to the kitchen. Please stay at table 12.
-            </p>
-            <button
-              onClick={() => openScreen("menu")}
-              className="mt-8 min-h-12 w-full rounded-2xl bg-[#1d1712] px-5 py-4 text-sm font-black text-white"
-            >
-              Start another order
-            </button>
-          </section>
-        </div>
-      </main>
+          </div>
+        </section>
+
+        <section className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-[#f7f8f8]/95 p-4 backdrop-blur sm:bottom-6 sm:rounded-b-[2.25rem]">
+          <button
+            onClick={() => openScreen("menu")}
+            className="min-h-14 w-full rounded-full bg-[#203242] text-sm font-black text-white shadow-xl shadow-slate-900/20"
+          >
+            Select table {selectedTable}
+          </button>
+        </section>
+      </PhoneShell>
+    );
+  }
+
+  if (screen === "cart") {
+    return (
+      <PhoneShell>
+        <TopBar title="Cart" onBack={() => openScreen("menu")} onMore={() => openScreen("allergens")} />
+
+        <section className="px-4 pb-36 pt-3">
+          <button
+            onClick={() => openScreen("tables")}
+            className="mb-4 flex min-h-12 w-full items-center justify-between rounded-2xl bg-white px-4 text-left text-sm font-black text-[#203242] ring-1 ring-[#dfe4e7]"
+          >
+            <span>Indoor, table {selectedTable}</span>
+            <span>⌄</span>
+          </button>
+
+          <div className="space-y-3">
+            {basketItems.length === 0 ? (
+              <div className="rounded-[1.6rem] bg-white p-8 text-center ring-1 ring-[#dfe4e7]">
+                <h2 className="text-xl font-black text-[#203242]">Cart is empty</h2>
+                <p className="mt-2 text-sm font-semibold text-[#7a858c]">Add something from the menu first.</p>
+              </div>
+            ) : (
+              basketItems.map((item) => (
+                <article key={item.id} className="flex gap-3 rounded-[1.35rem] bg-white p-3 ring-1 ring-[#dfe4e7]">
+                  <div
+                    className="h-20 w-20 shrink-0 rounded-[1rem] bg-cover bg-center"
+                    style={{ backgroundImage: `url(${item.image})` }}
+                  />
+                  <div className="min-w-0 flex-1">
+                    <div className="flex justify-between gap-3">
+                      <div>
+                        <h2 className="text-sm font-black text-[#203242]">{item.name}</h2>
+                        <p className="mt-1 text-base font-black text-[#203242]">£{item.price.toFixed(2)}</p>
+                      </div>
+                      <div className="flex h-8 items-center gap-2 rounded-full bg-[#eef2f3] px-2">
+                        <button onClick={() => removeItem(item.id)} className="grid h-6 w-6 place-items-center rounded-full bg-[#203242] text-xs font-black text-white">−</button>
+                        <span className="min-w-4 text-center text-xs font-black">{item.quantity}</span>
+                        <button onClick={() => addItem(item.id)} className="grid h-6 w-6 place-items-center rounded-full bg-[#203242] text-xs font-black text-white">+</button>
+                      </div>
+                    </div>
+                  </div>
+                </article>
+              ))
+            )}
+          </div>
+
+          <label className="mt-4 block">
+            <span className="text-xs font-black uppercase tracking-[0.16em] text-[#7a858c]">Note</span>
+            <textarea
+              value={note}
+              onChange={(event) => setNote(event.target.value)}
+              className="mt-2 min-h-20 w-full resize-none rounded-[1.25rem] border border-[#dfe4e7] bg-white px-4 py-3 text-sm font-semibold text-[#203242] outline-none focus:border-[#203242]"
+              placeholder="e.g. no tomato, bring with forks"
+            />
+          </label>
+        </section>
+
+        <section className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-[#f7f8f8]/95 p-4 backdrop-blur sm:bottom-6 sm:rounded-b-[2.25rem]">
+          <div className="mb-3 rounded-[1.35rem] bg-white p-4 text-sm font-bold text-[#4f5b62] ring-1 ring-[#dfe4e7]">
+            <div className="flex justify-between"><span>Sub Total</span><span>£{subtotal.toFixed(2)}</span></div>
+            <div className="mt-2 flex justify-between"><span>Tax (20%)</span><span>£{tax.toFixed(2)}</span></div>
+            <div className="mt-3 border-t border-dashed border-[#dfe4e7] pt-3 text-base font-black text-[#203242]"><div className="flex justify-between"><span>Total</span><span>£{total.toFixed(2)}</span></div></div>
+          </div>
+          <button
+            onClick={placeOrder}
+            disabled={itemCount === 0}
+            className="min-h-14 w-full rounded-full bg-[#203242] text-sm font-black text-white shadow-xl shadow-slate-900/20 disabled:bg-[#c7ced2]"
+          >
+            Order Now
+          </button>
+        </section>
+      </PhoneShell>
     );
   }
 
   if (screen === "allergens") {
     return (
-      <main className="min-h-screen bg-[#efebe4] text-[#1d1712]">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#faf8f4] shadow-2xl shadow-stone-950/10 sm:my-6 sm:rounded-[2rem]">
-          <section className="sticky top-0 z-30 border-b border-stone-200 bg-[#faf8f4]/95 px-5 py-4 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <button
-                onClick={() => openScreen("menu")}
-                className="min-h-12 rounded-2xl bg-white px-4 py-3 text-sm font-black shadow-sm ring-1 ring-stone-200"
-              >
-                Back
-              </button>
-              <div className="text-right">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">
-                  Food safety
-                </p>
-                <h1 className="text-xl font-black">Allergens</h1>
+      <PhoneShell>
+        <TopBar title="Allergens" onBack={() => openScreen("menu")} onMore={() => openScreen("cart")} />
+        <section className="space-y-3 px-4 py-4 pb-24">
+          <div className="rounded-[1.6rem] bg-[#203242] p-5 text-white">
+            <h1 className="text-xl font-black">Check before ordering</h1>
+            <p className="mt-2 text-sm leading-6 text-white/80">Speak to staff if you have a serious allergy. Cross-contact can happen in the kitchen.</p>
+          </div>
+          {menuItems.map((item) => (
+            <article key={item.id} className="rounded-[1.4rem] bg-white p-4 ring-1 ring-[#dfe4e7]">
+              <div className="flex justify-between gap-3">
+                <div>
+                  <p className="text-xs font-black uppercase tracking-[0.14em] text-[#7a858c]">{item.category}</p>
+                  <h2 className="mt-1 text-base font-black text-[#203242]">{item.name}</h2>
+                </div>
+                <p className="text-sm font-black text-[#203242]">£{item.price.toFixed(2)}</p>
               </div>
-            </div>
-          </section>
-
-          <section className="space-y-4 px-5 py-5 pb-28">
-            <div className="rounded-[1.5rem] bg-[#1d1712] p-5 text-white">
-              <h2 className="text-xl font-black">Before ordering</h2>
-              <p className="mt-2 text-sm leading-6 text-stone-200">
-                Speak to staff if you have a serious allergy. Kitchen cross-contact can happen.
-              </p>
-            </div>
-
-            <div className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-stone-200">
-              <h2 className="font-black">Common allergens</h2>
               <div className="mt-3 flex flex-wrap gap-2">
-                {commonAllergens.map((allergen) => (
-                  <span
-                    key={allergen}
-                    className="rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-700"
-                  >
-                    {allergen}
-                  </span>
+                {item.allergens.map((allergen) => (
+                  <span key={allergen} className="rounded-full bg-[#eef2f3] px-3 py-2 text-xs font-black text-[#4f5b62]">{allergen}</span>
                 ))}
               </div>
-            </div>
-
-            <div className="space-y-3">
-              {menuItems.map((item) => (
-                <article
-                  key={item.id}
-                  className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-stone-200"
-                >
-                  <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="text-xs font-black uppercase tracking-[0.14em] text-stone-500">
-                        {item.category}
-                      </p>
-                      <h3 className="mt-1 text-lg font-black">{item.name}</h3>
-                    </div>
-                    <p className="text-sm font-black">£{item.price.toFixed(2)}</p>
-                  </div>
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {item.allergens.map((allergen) => (
-                      <span
-                        key={allergen}
-                        className="rounded-full bg-[#f4eee6] px-3 py-2 text-xs font-black text-[#5c4633]"
-                      >
-                        {allergen}
-                      </span>
-                    ))}
-                  </div>
-                </article>
-              ))}
-            </div>
-          </section>
-
-          <BottomBar
-            itemCount={itemCount}
-            total={total}
-            onMenu={() => openScreen("menu")}
-            onAllergens={() => openScreen("allergens")}
-            onCheckout={goToCheckout}
-          />
-        </div>
-      </main>
+            </article>
+          ))}
+        </section>
+      </PhoneShell>
     );
   }
 
-  if (screen === "checkout") {
+  if (screen === "confirmed") {
     return (
-      <main className="min-h-screen bg-[#efebe4] text-[#1d1712]">
-        <div className="mx-auto min-h-screen w-full max-w-md bg-[#faf8f4] shadow-2xl shadow-stone-950/10 sm:my-6 sm:rounded-[2rem]">
-          <section className="sticky top-0 z-30 border-b border-stone-200 bg-[#faf8f4]/95 px-5 py-4 backdrop-blur">
-            <div className="flex items-center justify-between gap-3">
-              <button
-                onClick={() => openScreen("menu")}
-                className="min-h-12 rounded-2xl bg-white px-4 py-3 text-sm font-black shadow-sm ring-1 ring-stone-200"
-              >
-                Back
-              </button>
-              <div className="text-right">
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">
-                  Table 12
-                </p>
-                <h1 className="text-xl font-black">Checkout</h1>
-              </div>
-            </div>
-          </section>
-
-          <section className="space-y-4 px-5 py-5 pb-40">
-            <div className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-stone-200">
-              <h2 className="text-lg font-black">Order summary</h2>
-              <div className="mt-4 space-y-3">
-                {basketItems.map((item) => (
-                  <div key={item.id} className="flex items-center gap-3">
-                    <div
-                      className="h-14 w-14 rounded-2xl bg-cover bg-center"
-                      style={{ backgroundImage: `url(${item.image})` }}
-                      aria-label={item.name}
-                    />
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-sm font-black">{item.name}</p>
-                      <p className="text-xs font-semibold text-stone-500">Qty {item.quantity}</p>
-                    </div>
-                    <p className="text-sm font-black">£{(item.price * item.quantity).toFixed(2)}</p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-stone-200">
-              <h2 className="text-lg font-black">Payment</h2>
-              <p className="mt-1 text-sm font-semibold text-stone-500">
-                Secure card payment will connect to Stripe later.
-              </p>
-              <div className="mt-4 space-y-3">
-                <input className="min-h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold outline-none focus:border-[#1d1712]" placeholder="Name on card" />
-                <input className="min-h-12 w-full rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold outline-none focus:border-[#1d1712]" placeholder="4242 4242 4242 4242" inputMode="numeric" />
-                <div className="grid grid-cols-2 gap-3">
-                  <input className="min-h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold outline-none focus:border-[#1d1712]" placeholder="MM/YY" inputMode="numeric" />
-                  <input className="min-h-12 rounded-2xl border border-stone-200 bg-stone-50 px-4 text-sm font-bold outline-none focus:border-[#1d1712]" placeholder="CVC" inputMode="numeric" />
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-stone-200 bg-[#faf8f4]/95 p-4 shadow-2xl backdrop-blur sm:bottom-6 sm:rounded-b-[2rem]">
-            <div className="mb-3 space-y-1 text-sm font-bold text-stone-600">
-              <div className="flex justify-between"><span>Subtotal</span><span>£{subtotal.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span>Service fee</span><span>£{serviceFee.toFixed(2)}</span></div>
-            </div>
-            <button onClick={payOrder} className="min-h-12 w-full rounded-2xl bg-[#1d1712] px-5 py-4 text-sm font-black text-white shadow-lg shadow-stone-950/20">
-              Pay £{total.toFixed(2)}
-            </button>
-          </section>
-        </div>
-      </main>
+      <PhoneShell>
+        <section className="flex min-h-screen flex-col items-center justify-center px-8 text-center sm:min-h-[820px]">
+          <div className="grid h-24 w-24 place-items-center rounded-full bg-[#203242] text-5xl text-white">✓</div>
+          <h1 className="mt-6 text-3xl font-black text-[#203242]">Order sent</h1>
+          <p className="mt-3 text-sm leading-6 text-[#6b777e]">Your order has gone to the kitchen for table {selectedTable}. Staff will bring it over when it is ready.</p>
+          <button onClick={() => openScreen("menu")} className="mt-8 min-h-14 w-full rounded-full bg-[#203242] text-sm font-black text-white">Order again</button>
+        </section>
+      </PhoneShell>
     );
   }
 
   return (
-    <main className="min-h-screen bg-[#efebe4] text-[#1d1712]">
-      <div className="mx-auto min-h-screen w-full max-w-md bg-[#faf8f4] shadow-2xl shadow-stone-950/10 sm:my-6 sm:rounded-[2rem]">
-        <Header title="Cafe App" table="12" onAllergens={() => openScreen("allergens")} />
-
-        <section className="px-4 py-3">
-          <div className="rounded-[1.25rem] bg-white px-4 py-3 shadow-sm ring-1 ring-stone-200">
-            <div className="flex items-center justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">Today</p>
-                <p className="text-sm font-black">Open · approx 8–12 min</p>
-              </div>
-              <button
-                onClick={() => openScreen("allergens")}
-                className="min-h-11 rounded-2xl bg-[#f4eee6] px-4 text-sm font-black text-[#5c4633]"
-              >
-                Allergens
-              </button>
-            </div>
+    <PhoneShell>
+      <section className="relative bg-[#aab3b8] px-4 pb-7 pt-5 text-white">
+        <div className="flex items-center justify-between">
+          <button className="grid h-10 w-10 place-items-center rounded-full bg-white/20 text-xl backdrop-blur">≡</button>
+          <div className="flex gap-2">
+            <button onClick={() => openScreen("cart")} className="relative grid h-10 w-10 place-items-center rounded-full bg-white/20 backdrop-blur">
+              🛒
+              {itemCount > 0 && <span className="absolute -right-1 -top-1 grid h-5 w-5 place-items-center rounded-full bg-[#203242] text-[10px] font-black">{itemCount}</span>}
+            </button>
+            <button onClick={() => openScreen("allergens")} className="grid h-10 w-10 place-items-center rounded-full bg-white/20 backdrop-blur">ⓘ</button>
           </div>
-        </section>
-
-        <div className="grid grid-cols-[78px_1fr] gap-0">
-          <aside className="sticky top-[69px] h-[calc(100vh-69px)] border-r border-stone-200 bg-[#faf8f4] px-2 py-4">
-            <div className="flex flex-col gap-2">
-              {categories.map((category) => (
-                <button
-                  key={category.label}
-                  onClick={() => setSelectedCategory(category.label)}
-                  className={`min-h-12 rounded-2xl px-2 py-3 text-xs font-black transition active:scale-95 ${
-                    selectedCategory === category.label
-                      ? "bg-[#1d1712] text-white shadow-lg shadow-stone-950/15"
-                      : "bg-white text-stone-600 ring-1 ring-stone-200"
-                  }`}
-                >
-                  {category.short}
-                </button>
-              ))}
-            </div>
-          </aside>
-
-          <section className="min-w-0 px-3 py-4 pb-44">
-            <div className="mb-4 flex items-end justify-between gap-3">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">Menu</p>
-                <h1 className="text-2xl font-black">{selectedCategory}</h1>
-              </div>
-              <p className="text-xs font-black text-stone-500">{filteredItems.length} items</p>
-            </div>
-
-            <div className="space-y-3">
-              {filteredItems.map((item) => {
-                const quantity = basket[item.id] || 0;
-                return (
-                  <article key={item.id} className="overflow-hidden rounded-[1.35rem] bg-white shadow-sm ring-1 ring-stone-200">
-                    <div
-                      className="h-32 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${item.image})` }}
-                      aria-label={item.name}
-                    />
-                    <div className="p-3">
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="min-w-0">
-                          <h2 className="text-base font-black leading-tight">{item.name}</h2>
-                          <p className="mt-1 text-sm leading-5 text-stone-600">{item.description}</p>
-                        </div>
-                        <p className="shrink-0 text-base font-black">£{item.price.toFixed(2)}</p>
-                      </div>
-
-                      <button
-                        onClick={() => openScreen("allergens")}
-                        className="mt-3 rounded-full bg-[#f4eee6] px-3 py-2 text-xs font-black text-[#5c4633]"
-                      >
-                        Allergen info
-                      </button>
-
-                      {quantity === 0 ? (
-                        <button
-                          onClick={() => addItem(item.id)}
-                          className="mt-3 min-h-12 w-full rounded-2xl bg-[#1d1712] px-4 py-3 text-sm font-black text-white active:scale-[0.98]"
-                        >
-                          Add to order
-                        </button>
-                      ) : (
-                        <div className="mt-3 flex items-center justify-between rounded-2xl bg-stone-100 p-1">
-                          <button onClick={() => removeItem(item.id)} className="grid h-11 w-11 place-items-center rounded-xl bg-white text-xl font-black shadow-sm active:scale-95" aria-label={`Remove ${item.name}`}>−</button>
-                          <span className="text-sm font-black">{quantity}</span>
-                          <button onClick={() => addItem(item.id)} className="grid h-11 w-11 place-items-center rounded-xl bg-[#1d1712] text-xl font-black text-white active:scale-95" aria-label={`Add ${item.name}`}>+</button>
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
         </div>
 
-        <BottomBar
-          itemCount={itemCount}
-          total={total}
-          onMenu={() => openScreen("menu")}
-          onAllergens={() => openScreen("allergens")}
-          onCheckout={goToCheckout}
-        />
+        <div className="relative mt-7 h-32">
+          <div className="absolute left-4 right-4 top-0 rotate-[-3deg] rounded-[1.3rem] bg-white/60 p-4 shadow-xl" />
+          <div className="absolute left-2 right-2 top-4 rotate-[2deg] rounded-[1.3rem] bg-white/80 p-4 shadow-xl" />
+          <div className="absolute inset-x-0 top-8 rounded-[1.3rem] bg-white p-4 text-[#203242] shadow-2xl">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.16em] text-[#89939a]">Current table</p>
+                <h1 className="mt-1 text-lg font-black">Indoor, table {selectedTable}</h1>
+                <p className="mt-1 text-xs font-bold text-[#7a858c]">{itemCount} items selected</p>
+              </div>
+              <button onClick={() => openScreen("tables")} className="rounded-full bg-[#eef2f3] px-3 py-2 text-xs font-black">Change</button>
+            </div>
+            <button
+              onClick={() => {
+                setWaiterCalled(true);
+                setTimeout(() => setWaiterCalled(false), 2500);
+              }}
+              className="mt-3 min-h-11 w-full rounded-full bg-[#203242] text-sm font-black text-white"
+            >
+              {waiterCalled ? "Waiter called" : "Call Waiter"}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-t-[2rem] bg-[#f7f8f8] px-4 pb-32 pt-5">
+        <h2 className="text-lg font-black text-white/0">.</h2>
+        <h1 className="text-xl font-black text-[#203242]">Make your order</h1>
+
+        <label className="mt-4 flex min-h-12 items-center gap-3 rounded-2xl bg-white px-4 ring-1 ring-[#dfe4e7]">
+          <span className="text-[#89939a]">⌕</span>
+          <input
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search"
+            className="min-w-0 flex-1 bg-transparent text-sm font-semibold text-[#203242] outline-none placeholder:text-[#9aa3a8]"
+          />
+        </label>
+
+        <div className="mt-4 flex gap-2 overflow-x-auto pb-2">
+          {categories.map((category) => (
+            <button
+              key={category.label}
+              onClick={() => setSelectedCategory(category.label)}
+              className={`flex min-h-10 shrink-0 items-center gap-2 rounded-full px-4 text-xs font-black ${
+                selectedCategory === category.label
+                  ? "bg-[#203242] text-white"
+                  : "bg-white text-[#5a6268] ring-1 ring-[#dfe4e7]"
+              }`}
+            >
+              <span>{category.icon}</span>
+              {category.label}
+            </button>
+          ))}
+        </div>
+
+        <div className="mt-3 grid grid-cols-2 gap-3">
+          {filteredItems.map((item) => {
+            const quantity = basket[item.id] || 0;
+            return (
+              <article key={item.id} className="overflow-hidden rounded-[1.35rem] bg-white shadow-sm ring-1 ring-[#dfe4e7]">
+                <div className="h-32 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+                <div className="p-3">
+                  <h2 className="min-h-10 text-sm font-black leading-5 text-[#203242]">{item.name}</h2>
+                  <p className="mt-2 text-base font-black text-[#203242]">£{item.price.toFixed(2)}</p>
+                  <div className="mt-2 flex items-center justify-between">
+                    <button onClick={() => openScreen("allergens")} className="text-[11px] font-black text-[#7a858c] underline">Allergens</button>
+                    {quantity === 0 ? (
+                      <button onClick={() => addItem(item.id)} className="grid h-8 w-8 place-items-center rounded-full bg-[#203242] text-lg font-black text-white">+</button>
+                    ) : (
+                      <div className="flex items-center gap-1 rounded-full bg-[#eef2f3] p-1">
+                        <button onClick={() => removeItem(item.id)} className="grid h-6 w-6 place-items-center rounded-full bg-[#203242] text-xs font-black text-white">−</button>
+                        <span className="min-w-4 text-center text-xs font-black text-[#203242]">{quantity}</span>
+                        <button onClick={() => addItem(item.id)} className="grid h-6 w-6 place-items-center rounded-full bg-[#203242] text-xs font-black text-white">+</button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md bg-[#f7f8f8]/95 p-4 backdrop-blur sm:bottom-6 sm:rounded-b-[2.25rem]">
+        <button
+          onClick={() => openScreen(itemCount > 0 ? "cart" : "tables")}
+          className="min-h-14 w-full rounded-full bg-[#203242] text-sm font-black text-white shadow-xl shadow-slate-900/20"
+        >
+          {itemCount > 0 ? `View cart · ${itemCount} items · £${total.toFixed(2)}` : `Select table ${selectedTable}`}
+        </button>
+      </section>
+    </PhoneShell>
+  );
+}
+
+function PhoneShell({ children }: { children: React.ReactNode }) {
+  return (
+    <main className="min-h-screen bg-[#dfe4e7] text-[#203242]">
+      <div className="mx-auto min-h-screen w-full max-w-md overflow-hidden bg-[#f7f8f8] shadow-2xl shadow-slate-950/15 sm:my-6 sm:min-h-[820px] sm:rounded-[2.25rem]">
+        {children}
       </div>
     </main>
   );
 }
 
-function Header({
+function TopBar({
   title,
-  table,
-  onAllergens,
+  onBack,
+  onMore,
 }: {
   title: string;
-  table: string;
-  onAllergens: () => void;
+  onBack: () => void;
+  onMore: () => void;
 }) {
   return (
-    <header className="sticky top-0 z-30 border-b border-stone-200 bg-[#faf8f4]/95 px-4 py-3 backdrop-blur">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.16em] text-stone-500">Table {table}</p>
-          <h1 className="text-xl font-black">{title}</h1>
-        </div>
-        <button
-          onClick={onAllergens}
-          className="min-h-11 rounded-2xl bg-white px-4 text-sm font-black text-[#1d1712] shadow-sm ring-1 ring-stone-200"
-        >
-          Allergens
-        </button>
-      </div>
+    <header className="sticky top-0 z-30 flex min-h-16 items-center justify-between border-b border-[#dfe4e7] bg-[#f7f8f8]/95 px-4 backdrop-blur">
+      <button onClick={onBack} className="grid h-10 w-10 place-items-center rounded-full bg-white text-lg font-black ring-1 ring-[#dfe4e7]">‹</button>
+      <h1 className="text-base font-black text-[#203242]">{title}</h1>
+      <button onClick={onMore} className="grid h-10 w-10 place-items-center rounded-full bg-white text-lg font-black ring-1 ring-[#dfe4e7]">⋯</button>
     </header>
-  );
-}
-
-function BottomBar({
-  itemCount,
-  total,
-  onMenu,
-  onAllergens,
-  onCheckout,
-}: {
-  itemCount: number;
-  total: number;
-  onMenu: () => void;
-  onAllergens: () => void;
-  onCheckout: () => void;
-}) {
-  return (
-    <section className="fixed inset-x-0 bottom-0 z-40 mx-auto max-w-md border-t border-stone-200 bg-[#faf8f4]/95 p-3 shadow-2xl backdrop-blur sm:bottom-6 sm:rounded-b-[2rem]">
-      <div className="grid grid-cols-[1fr_1fr_2fr] gap-2">
-        <button onClick={onMenu} className="min-h-12 rounded-2xl bg-white text-xs font-black text-stone-700 shadow-sm ring-1 ring-stone-200">Menu</button>
-        <button onClick={onAllergens} className="min-h-12 rounded-2xl bg-white text-xs font-black text-stone-700 shadow-sm ring-1 ring-stone-200">Allergens</button>
-        <button
-          onClick={onCheckout}
-          disabled={itemCount === 0}
-          className="min-h-12 rounded-2xl bg-[#1d1712] px-3 text-sm font-black text-white shadow-lg shadow-stone-950/20 disabled:bg-stone-300 disabled:text-stone-500 disabled:shadow-none"
-        >
-          {itemCount === 0 ? "Basket empty" : `Checkout · £${total.toFixed(2)}`}
-        </button>
-      </div>
-    </section>
   );
 }
