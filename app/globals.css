@@ -19,9 +19,13 @@
 html {
   background: var(--background);
   overflow-x: hidden;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }
 
 body {
+  margin: 0;
+  min-width: 320px;
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
@@ -37,6 +41,7 @@ textarea {
 
 button {
   cursor: pointer;
+  touch-action: manipulation;
 }
 
 button:disabled {
@@ -45,24 +50,24 @@ button:disabled {
 
 @layer components {
   .primary {
-    min-height: 3.5rem;
+    min-height: 54px;
     width: 100%;
-    border-radius: 1rem;
+    border-radius: 16px;
     background: #ea7a22;
-    padding: 0 1.25rem;
-    font-size: 0.875rem;
+    padding: 0 18px;
+    font-size: 14px;
     font-weight: 900;
     color: white;
     box-shadow: 0 18px 35px rgb(154 64 12 / 0.18);
   }
 
   .secondary {
-    min-height: 3.5rem;
+    min-height: 54px;
     width: 100%;
-    border-radius: 1rem;
+    border-radius: 16px;
     background: white;
-    padding: 0 1rem;
-    font-size: 0.875rem;
+    padding: 0 16px;
+    font-size: 14px;
     font-weight: 900;
     color: #172432;
     box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
@@ -78,14 +83,15 @@ button:disabled {
   .toggle,
   .toggle-on {
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 12px;
     font-weight: 900;
+    line-height: 1;
   }
 
   .pill,
   .pill-on {
-    min-height: 2.75rem;
-    padding: 0 1rem;
+    min-height: 42px;
+    padding: 0 16px;
   }
 
   .pill,
@@ -108,33 +114,33 @@ button:disabled {
 
   .small,
   .small-on {
-    min-height: 2.375rem;
-    padding: 0 0.75rem;
+    min-height: 38px;
+    padding: 0 12px;
     white-space: nowrap;
   }
 
   .cat,
   .cat-on {
-    min-height: 3.25rem;
+    min-height: 48px;
     flex-shrink: 0;
-    padding: 0 1rem;
-    text-align: left;
+    padding: 0 16px;
+    text-align: center;
   }
 
   .toggle,
   .toggle-on {
-    min-height: 2.75rem;
+    min-height: 42px;
   }
 
   .heart,
   .heart-on {
     display: grid;
-    height: 3rem;
-    width: 3rem;
+    height: 46px;
+    width: 46px;
     flex-shrink: 0;
     place-items: center;
     border-radius: 999px;
-    font-size: 0.6875rem;
+    font-size: 11px;
     font-weight: 900;
     border: 1px solid #e2e8f0;
   }
@@ -161,8 +167,8 @@ button:disabled {
 
   .qty,
   .qty-accent {
-    height: 2.5rem;
-    width: 2.5rem;
+    height: 38px;
+    width: 38px;
   }
 
   .qty {
@@ -176,29 +182,50 @@ button:disabled {
   }
 
   .add {
-    height: 2.25rem;
-    width: 2.25rem;
+    height: 36px;
+    width: 36px;
     box-shadow: 0 12px 22px rgb(154 64 12 / 0.16);
   }
 
-  header.bg-slate-900 > div:first-child {
-    display: block;
-    min-width: 0;
+  .table,
+  .table-on {
+    min-height: 54px;
+    border-radius: 16px;
+    font-size: 14px;
+    font-weight: 900;
   }
 
-  header.bg-slate-900 > div:first-child > div:last-child {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 0.5rem;
-    margin-top: 0.75rem;
-    width: 100%;
+  .table {
+    background: white;
+    color: #172432;
+    border: 1px solid #e2e8f0;
   }
 
-  header.bg-slate-900 .small,
-  header.bg-slate-900 .small-on {
-    width: 100%;
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-    text-align: center;
+  .table-on {
+    background: #172432;
+    color: white;
+    border: 1px solid #172432;
+  }
+
+  @media (max-width: 379px) {
+    .small,
+    .small-on {
+      min-height: 36px;
+      padding: 0 10px;
+      font-size: 11px;
+    }
+
+    .cat,
+    .cat-on {
+      min-height: 46px;
+      padding: 0 14px;
+      font-size: 12px;
+    }
+
+    .primary,
+    .secondary {
+      min-height: 52px;
+      font-size: 13px;
+    }
   }
 }
