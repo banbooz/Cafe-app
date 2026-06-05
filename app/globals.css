@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #f3f5f6;
+  --foreground: #172432;
 }
 
 @theme inline {
@@ -12,15 +12,168 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: var(--background);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+button,
+input,
+textarea {
+  font: inherit;
+}
+
+button {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+@layer components {
+  .primary {
+    min-height: 3.5rem;
+    width: 100%;
+    border-radius: 1rem;
+    background: #ea7a22;
+    padding: 0 1.25rem;
+    font-size: 0.875rem;
+    font-weight: 900;
+    color: white;
+    box-shadow: 0 18px 35px rgb(154 64 12 / 0.18);
+  }
+
+  .secondary {
+    min-height: 3.5rem;
+    width: 100%;
+    border-radius: 1rem;
+    background: white;
+    padding: 0 1rem;
+    font-size: 0.875rem;
+    font-weight: 900;
+    color: #172432;
+    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
+    border: 1px solid #e2e8f0;
+  }
+
+  .pill,
+  .pill-on,
+  .small,
+  .small-on,
+  .cat,
+  .cat-on,
+  .toggle,
+  .toggle-on {
+    border-radius: 999px;
+    font-size: 0.75rem;
+    font-weight: 900;
+  }
+
+  .pill,
+  .pill-on {
+    min-height: 2.75rem;
+    padding: 0 1rem;
+  }
+
+  .pill,
+  .small,
+  .cat,
+  .toggle {
+    background: white;
+    color: #475569;
+    border: 1px solid #e2e8f0;
+  }
+
+  .pill-on,
+  .small-on,
+  .cat-on,
+  .toggle-on {
+    background: #172432;
+    color: white;
+    border: 1px solid #172432;
+  }
+
+  .small,
+  .small-on {
+    min-height: 2.5rem;
+    padding: 0 0.875rem;
+  }
+
+  .cat,
+  .cat-on {
+    min-height: 3.25rem;
+    flex-shrink: 0;
+    padding: 0 1rem;
+    text-align: left;
+  }
+
+  .toggle,
+  .toggle-on {
+    min-height: 2.75rem;
+  }
+
+  .heart,
+  .heart-on {
+    display: grid;
+    height: 3rem;
+    width: 3rem;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 999px;
+    font-size: 0.6875rem;
+    font-weight: 900;
+    border: 1px solid #e2e8f0;
+  }
+
+  .heart {
+    background: white;
+    color: #172432;
+  }
+
+  .heart-on {
+    background: #fff1e7;
+    color: #c85b12;
+    border-color: #fed7aa;
+  }
+
+  .qty,
+  .qty-accent,
+  .add {
+    display: grid;
+    place-items: center;
+    border-radius: 999px;
+    font-weight: 900;
+  }
+
+  .qty,
+  .qty-accent {
+    height: 2.5rem;
+    width: 2.5rem;
+  }
+
+  .qty {
+    background: rgb(255 255 255 / 0.14);
+  }
+
+  .qty-accent,
+  .add {
+    background: #ea7a22;
+    color: white;
+  }
+
+  .add {
+    height: 2.25rem;
+    width: 2.25rem;
+    box-shadow: 0 12px 22px rgb(154 64 12 / 0.16);
+  }
 }
