@@ -49,7 +49,7 @@ button:disabled {
 }
 
 [style*="photo-1573140247632-f8fd74997d5c"] {
-  background-image: url("https://multihorno.com/cdn/shop/articles/garlicdoughballs-resized.jpg") !important;
+  background-image: url("/garlic-dough-balls.svg") !important;
 }
 
 @layer components {
