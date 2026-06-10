@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const APP_VERSION = "v0.2.1";
+const APP_VERSION = "v0.2.2";
 
 export const metadata: Metadata = {
   title: "Cafe Table Ordering",
