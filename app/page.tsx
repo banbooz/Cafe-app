@@ -1,12 +1,13 @@
 "use client";
 
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 type Screen = "menu" | "detail" | "cart" | "allergens" | "tables" | "confirmed";
 type Category = "All" | "Starters" | "Breakfast" | "Lunch" | "Desserts" | "Coffee" | "Cold";
 type UpsellCategory = "Starters" | "Desserts";
 type OrderType = "Dine in" | "Takeaway" | "Delivery";
 type UpsellMode = "basket" | "order" | null;
+type NavState = { screen: Screen; selectedId?: number };
 
 type Item = {
   id: number;
@@ -58,6 +59,27 @@ export default function Home() {
   const [upsellMode, setUpsellMode] = useState<UpsellMode>(null);
   const [upsellCategory, setUpsellCategory] = useState<UpsellCategory>("Desserts");
 
+  useEffect(() => {
+    if (!window.history.state?.screen) {
+      window.history.replaceState({ screen: "menu", selectedId: items[0].id }, "", window.location.href);
+    }
+
+    function onPopState(event: PopStateEvent) {
+      const state = event.state as NavState | null;
+      const nextScreen = state?.screen || "menu";
+      const nextItem = items.find((item) => item.id === state?.selectedId);
+
+      if (nextItem) setSelected(nextItem);
+      setUpsellOpen(false);
+      setUpsellMode(null);
+      setScreen(nextScreen);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
+  }, []);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return items.filter((item) => {
@@ -74,9 +96,15 @@ export default function Home() {
   const total = subtotal + service;
   const upsellItems = items.filter((item) => item.category === "Starters" || item.category === "Desserts");
 
-  function go(next: Screen) {
+  function go(next: Screen, selectedId = selected.id) {
     setScreen(next);
+    window.history.pushState({ screen: next, selectedId }, "", `#${next}${next === "detail" ? `-${selectedId}` : ""}`);
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function goBack() {
+    if (window.history.length > 1) window.history.back();
+    else go("menu");
   }
 
   function add(id: number) {
@@ -95,7 +123,7 @@ export default function Home() {
 
   function openItem(item: Item) {
     setSelected(item);
-    go("detail");
+    go("detail", item.id);
   }
 
   function callWaiter() {
@@ -134,7 +162,7 @@ export default function Home() {
     const fav = favs[selected.id];
     return (
       <Shell>
-        <Top title={selected.name} back={() => go("menu")} right="Allergens" onRight={() => go("allergens")} />
+        <Top title={selected.name} back={goBack} right="Allergens" onRight={() => go("allergens")} />
         <main className="px-3 pb-28 pt-4 min-[380px]:px-4">
           <div className="h-56 rounded-[26px] bg-cover bg-center shadow-sm ring-1 ring-slate-200 min-[380px]:h-72" style={{ backgroundImage: `url(${selected.image})` }} />
           <div className="mt-5 flex items-start justify-between gap-3">
@@ -157,7 +185,7 @@ export default function Home() {
   if (screen === "cart") {
     return (
       <Shell>
-        <Top title="Basket" back={() => go("menu")} right="Allergens" onRight={() => go("allergens")} />
+        <Top title="Basket" back={goBack} right="Allergens" onRight={() => go("allergens")} />
         <main className="space-y-4 px-3 pb-40 pt-4 min-[380px]:px-4">
           <div className="grid grid-cols-3 gap-1 rounded-3xl bg-white p-1 shadow-sm ring-1 ring-slate-200 min-[380px]:gap-2">{orderTypes.map((type) => <button key={type} onClick={() => setOrderType(type)} className={orderType === type ? "toggle-on" : "toggle"}>{type}</button>)}</div>
           <button onClick={() => go("tables")} className="secondary flex items-center justify-between gap-3"><span className="truncate">{orderType} · Table {table}</span><span className="shrink-0 text-orange-600">Change</span></button>
@@ -174,14 +202,14 @@ export default function Home() {
   if (screen === "tables") {
     return (
       <Shell>
-        <Top title="Change table" back={() => go("cart")} right="Menu" onRight={() => go("menu")} />
+        <Top title="Change table" back={goBack} right="Menu" onRight={() => go("menu")} />
         <main className="px-3 pb-28 pt-4 min-[380px]:px-4"><Panel><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Backup option</p><h1 className="mt-1 text-xl font-black min-[380px]:text-2xl">Only change this if you scanned the wrong QR code.</h1><div className="mt-5 grid grid-cols-3 gap-2 min-[380px]:grid-cols-4 min-[380px]:gap-3">{tables.map((id) => <button key={id} onClick={() => setTable(id)} className={table === id ? "table-on" : "table"}>{id}</button>)}</div><button onClick={() => go("cart")} className="primary mt-5">Use table {table}</button></Panel></main>
       </Shell>
     );
   }
 
   if (screen === "allergens") {
-    return <Shell><Top title="Allergens" back={() => go("menu")} right={count ? "Basket" : "Menu"} onRight={() => count ? askForExtras("basket") : go("menu")} /><main className="px-3 pb-28 pt-4 min-[380px]:px-4"><div className="rounded-[28px] bg-slate-900 p-5 text-white"><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Food safety</p><h1 className="mt-2 text-2xl font-black">Allergen information</h1><p className="mt-3 text-sm leading-6 text-white/75">Our kitchen handles common allergens. Speak to staff before ordering if you have a serious allergy.</p></div><div className="mt-4 space-y-3">{items.map((item) => <article key={item.id} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><button onClick={() => openItem(item)} className="text-left"><p className="text-xs font-black uppercase tracking-[0.14em] text-orange-600">{item.category}</p><h2 className="mt-1 font-black text-slate-950">{item.name}</h2></button><div className="mt-3 flex flex-wrap gap-2">{item.allergens.map((allergen) => <span key={allergen} className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{allergen}</span>)}</div></article>)}</div></main>{upsell}</Shell>;
+    return <Shell><Top title="Allergens" back={goBack} right={count ? "Basket" : "Menu"} onRight={() => count ? askForExtras("basket") : go("menu")} /><main className="px-3 pb-28 pt-4 min-[380px]:px-4"><div className="rounded-[28px] bg-slate-900 p-5 text-white"><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Food safety</p><h1 className="mt-2 text-2xl font-black">Allergen information</h1><p className="mt-3 text-sm leading-6 text-white/75">Our kitchen handles common allergens. Speak to staff before ordering if you have a serious allergy.</p></div><div className="mt-4 space-y-3">{items.map((item) => <article key={item.id} className="rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><button onClick={() => openItem(item)} className="text-left"><p className="text-xs font-black uppercase tracking-[0.14em] text-orange-600">{item.category}</p><h2 className="mt-1 font-black text-slate-950">{item.name}</h2></button><div className="mt-3 flex flex-wrap gap-2">{item.allergens.map((allergen) => <span key={allergen} className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{allergen}</span>)}</div></article>)}</div></main>{upsell}</Shell>;
   }
 
   if (screen === "confirmed") {
