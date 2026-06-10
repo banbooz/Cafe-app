@@ -48,6 +48,10 @@ button:disabled {
   cursor: not-allowed;
 }
 
+[style*="photo-1573140247632-f8fd74997d5c"] {
+  background-image: url("https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/2_Pieces_of_Garlic_Breads.JPG/960px-2_Pieces_of_Garlic_Breads.JPG") !important;
+}
+
 @layer components {
   .primary {
     min-height: 54px;
