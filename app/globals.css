@@ -48,10 +48,6 @@ button:disabled {
   cursor: not-allowed;
 }
 
-[style*="photo-1573140247632-f8fd74997d5c"] {
-  background-image: url("https://www.bbcgoodfoodme.com/assets/legacy/recipe/recipe-image/2019/02/dough%2Dballs-with-garlic-butter.jpg") !important;
-}
-
 @layer components {
   .primary {
     min-height: 54px;
