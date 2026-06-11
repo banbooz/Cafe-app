@@ -1,6 +1,7 @@
 "use client";
 
 import { money, type MenuItem } from "../lib/menu";
+import VegetarianBadge from "./VegetarianBadge";
 
 type CartItem = MenuItem & { qty: number };
 
@@ -28,7 +29,9 @@ export default function CartSheet({ items, total, close, add, remove, send }: { 
 function CartRow({ item, add, remove }: { item: CartItem; add: (id: number) => void; remove: (id: number) => void }) {
   return (
     <article className="flex items-center gap-3 rounded-3xl bg-white p-3 ring-1 ring-slate-200">
-      <div className="h-16 w-16 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+      <div className="relative h-16 w-16 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+        {item.vegetarian && <VegetarianBadge className="absolute left-1 top-1 h-5 w-5 text-[10px]" />}
+      </div>
       <div className="min-w-0 flex-1">
         <h3 className="truncate font-black text-slate-950">{item.name}</h3>
         <p className="text-xs font-bold text-slate-500">{money(item.price)}</p>
