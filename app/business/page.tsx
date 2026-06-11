@@ -1,52 +1,19 @@
-const orders = [
-  {
-    id: 5128,
-    table: 4,
-    type: "Dine in",
-    total: 18.3,
-    time: "09:18",
-    items: [
-      { name: "Flat White", qty: 2, category: "Coffee" },
-      { name: "Smashed Avocado Toast", qty: 1, category: "Breakfast" },
-      { name: "Almond Croissant", qty: 1, category: "Desserts" },
-    ],
-  },
-  {
-    id: 5190,
-    table: 2,
-    type: "Takeaway",
-    total: 10.4,
-    time: "10:02",
-    items: [
-      { name: "Iced Latte", qty: 1, category: "Cold" },
-      { name: "Biscoff Cheesecake", qty: 1, category: "Desserts" },
-    ],
-  },
-  {
-    id: 5234,
-    table: 7,
-    type: "Dine in",
-    total: 26.94,
-    time: "12:41",
-    items: [
-      { name: "Roast Chicken Ciabatta", qty: 2, category: "Lunch" },
-      { name: "Garlic Dough Bites", qty: 1, category: "Starters" },
-      { name: "Flat White", qty: 1, category: "Coffee" },
-    ],
-  },
-  {
-    id: 5269,
-    table: 9,
-    type: "Dine in",
-    total: 21.64,
-    time: "13:08",
-    items: [
-      { name: "Tomato Basil Spaghetti", qty: 1, category: "Lunch" },
-      { name: "Halloumi Fries", qty: 1, category: "Starters" },
-      { name: "Fresh Lemonade", qty: 2, category: "Cold" },
-    ],
-  },
-];
+type OrderItem = {
+  name: string;
+  qty: number;
+  category: string;
+};
+
+type Order = {
+  id: number;
+  table: number;
+  type: string;
+  total: number;
+  time: string;
+  items: OrderItem[];
+};
+
+const orders: Order[] = [];
 
 function money(value: number) {
   return `£${value.toFixed(2)}`;
@@ -81,7 +48,7 @@ function getAnalytics() {
     revenue,
     averageOrder: orders.length ? revenue / orders.length : 0,
     topItem: itemsRanked[0] || { name: "No orders yet", qty: 0 },
-    topCategory: categoriesRanked[0] || { name: "No data", qty: 0 },
+    topCategory: categoriesRanked[0] || { name: "No data yet", qty: 0 },
     itemsRanked,
     categoriesRanked,
   };
@@ -99,7 +66,7 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The Corner Cafe</h1>
               <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">
-                Simple analytics for orders made through the app. This page is open for now, ready for a passcode lock later.
+                Real app analytics will appear here once live order storage is connected. This page is open for now, ready for a passcode lock later.
               </p>
             </div>
             <a href="/" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">
@@ -125,38 +92,46 @@ export default function BusinessDashboard() {
               <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Today</span>
             </div>
 
-            <div className="mt-5 space-y-3">
-              {analytics.itemsRanked.slice(0, 6).map((item, index) => (
-                <div key={item.name} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs font-black text-slate-400">#{index + 1}</p>
-                      <h3 className="truncate font-black">{item.name}</h3>
+            {analytics.itemsRanked.length ? (
+              <div className="mt-5 space-y-3">
+                {analytics.itemsRanked.slice(0, 6).map((item, index) => (
+                  <div key={item.name} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0">
+                        <p className="text-xs font-black text-slate-400">#{index + 1}</p>
+                        <h3 className="truncate font-black">{item.name}</h3>
+                      </div>
+                      <p className="shrink-0 text-sm font-black">{item.qty} sold</p>
                     </div>
-                    <p className="shrink-0 text-sm font-black">{item.qty} sold</p>
+                    <div className="mt-3 h-2 rounded-full bg-white">
+                      <div
+                        className="h-2 rounded-full bg-slate-900"
+                        style={{ width: `${Math.max(12, (item.qty / Math.max(1, analytics.topItem.qty)) * 100)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="mt-3 h-2 rounded-full bg-white">
-                    <div
-                      className="h-2 rounded-full bg-slate-900"
-                      style={{ width: `${Math.max(12, (item.qty / Math.max(1, analytics.topItem.qty)) * 100)}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No item data yet" text="When customers place real orders, the most ordered items will show here." />
+            )}
           </section>
 
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Order split</p>
             <h2 className="mt-1 text-xl font-black">Categories</h2>
-            <div className="mt-5 space-y-3">
-              {analytics.categoriesRanked.map((category) => (
-                <div key={category.name} className="flex items-center justify-between rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
-                  <span className="font-black">{category.name}</span>
-                  <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{category.qty} items</span>
-                </div>
-              ))}
-            </div>
+            {analytics.categoriesRanked.length ? (
+              <div className="mt-5 space-y-3">
+                {analytics.categoriesRanked.map((category) => (
+                  <div key={category.name} className="flex items-center justify-between rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200">
+                    <span className="font-black">{category.name}</span>
+                    <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{category.qty} items</span>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="No category data yet" text="Category analytics will appear once real orders are stored." />
+            )}
           </section>
         </div>
 
@@ -166,29 +141,33 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live orders</p>
               <h2 className="mt-1 text-xl font-black">Recent app orders</h2>
             </div>
-            <span className="rounded-full bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">Active</span>
+            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Waiting for orders</span>
           </div>
 
-          <div className="mt-5 grid gap-3 lg:grid-cols-4">
-            {orders.map((order) => (
-              <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-                <div className="flex items-start justify-between gap-3">
-                  <div>
-                    <p className="text-xs font-black text-slate-400">Order #{order.id}</p>
-                    <h3 className="mt-1 font-black">Table {order.table}</h3>
+          {orders.length ? (
+            <div className="mt-5 grid gap-3 lg:grid-cols-4">
+              {orders.map((order) => (
+                <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-black text-slate-400">Order #{order.id}</p>
+                      <h3 className="mt-1 font-black">Table {order.table}</h3>
+                    </div>
+                    <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.type}</span>
                   </div>
-                  <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.type}</span>
-                </div>
-                <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
-                  {order.items.map((item) => `${item.qty}x ${item.name}`).join(", ")}
-                </p>
-                <div className="mt-4 flex items-center justify-between">
-                  <span className="text-xs font-black text-slate-400">{order.time}</span>
-                  <span className="font-black">{money(order.total)}</span>
-                </div>
-              </article>
-            ))}
-          </div>
+                  <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
+                    {order.items.map((item) => `${item.qty}x ${item.name}`).join(", ")}
+                  </p>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-xs font-black text-slate-400">{order.time}</span>
+                    <span className="font-black">{money(order.total)}</span>
+                  </div>
+                </article>
+              ))}
+            </div>
+          ) : (
+            <EmptyState title="No real orders yet" text="This dashboard is now clean. It will stay at £0 until we connect real order storage." />
+          )}
         </section>
       </section>
     </main>
@@ -202,5 +181,14 @@ function Metric({ label, value, detail }: { label: string; value: string; detail
       <h2 className="mt-3 truncate text-2xl font-black text-slate-950">{value}</h2>
       <p className="mt-2 text-sm font-bold text-slate-500">{detail}</p>
     </article>
+  );
+}
+
+function EmptyState({ title, text }: { title: string; text: string }) {
+  return (
+    <div className="mt-5 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center">
+      <h3 className="font-black text-slate-950">{title}</h3>
+      <p className="mt-2 text-sm font-bold leading-6 text-slate-500">{text}</p>
+    </div>
   );
 }
