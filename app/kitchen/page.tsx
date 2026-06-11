@@ -177,10 +177,10 @@ export default function KitchenScreen() {
                   const expanded = openItem === itemKey;
 
                   return (
-                    <button
+                    <div
                       key={itemKey}
                       onClick={() => setOpenItem(expanded ? null : itemKey)}
-                      className="block w-full rounded-2xl bg-stone-50 p-3 text-left ring-1 ring-stone-100 transition active:scale-[0.99]"
+                      className="block w-full cursor-pointer rounded-2xl bg-stone-50 p-3 text-left ring-1 ring-stone-100 transition active:scale-[0.99]"
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0">
@@ -230,7 +230,7 @@ export default function KitchenScreen() {
                           </div>
                         </div>
                       )}
-                    </button>
+                    </div>
                   );
                 })}
               </div>
