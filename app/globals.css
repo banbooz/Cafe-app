@@ -1,8 +1,8 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f3f5f6;
-  --foreground: #172432;
+  --background: #f4f1ea;
+  --foreground: #1f2d2a;
 }
 
 @theme inline {
@@ -48,30 +48,90 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* Calm professional palette overrides */
+.bg-slate-900 {
+  background-color: #243631 !important;
+}
+
+.bg-orange-500 {
+  background-color: #9a7658 !important;
+}
+
+.text-orange-600 {
+  color: #8d684c !important;
+}
+
+.text-orange-300 {
+  color: #d8c2a8 !important;
+}
+
+.focus\:border-orange-500:focus {
+  border-color: #9a7658 !important;
+}
+
+.bg-\[\#dfe4e7\] {
+  background-color: #e6e1d8 !important;
+}
+
+.bg-\[\#f3f5f6\],
+.bg-\[\#f8fafb\] {
+  background-color: #f4f1ea !important;
+}
+
+.text-slate-950,
+.text-slate-900 {
+  color: #1f2d2a !important;
+}
+
+.text-slate-600,
+.text-slate-500 {
+  color: #66736d !important;
+}
+
+.ring-slate-200,
+.border-slate-200 {
+  --tw-ring-color: #ddd6ca !important;
+  border-color: #ddd6ca !important;
+}
+
+.bg-white {
+  background-color: #fffdf8 !important;
+}
+
+.bg-slate-50,
+.bg-slate-100 {
+  background-color: #eee8dc !important;
+}
+
+.shadow-sm,
+.shadow-2xl {
+  box-shadow: 0 14px 32px rgb(50 43 35 / 0.08) !important;
+}
+
 @layer components {
   .primary {
     min-height: 54px;
     width: 100%;
-    border-radius: 16px;
-    background: #ea7a22;
+    border-radius: 18px;
+    background: #243631;
     padding: 0 18px;
     font-size: 14px;
     font-weight: 900;
     color: white;
-    box-shadow: 0 18px 35px rgb(154 64 12 / 0.18);
+    box-shadow: 0 16px 28px rgb(36 54 49 / 0.16);
   }
 
   .secondary {
     min-height: 54px;
     width: 100%;
-    border-radius: 16px;
-    background: white;
+    border-radius: 18px;
+    background: #fffdf8;
     padding: 0 16px;
     font-size: 14px;
     font-weight: 900;
-    color: #172432;
-    box-shadow: 0 1px 2px rgb(15 23 42 / 0.04);
-    border: 1px solid #e2e8f0;
+    color: #1f2d2a;
+    box-shadow: 0 1px 2px rgb(50 43 35 / 0.05);
+    border: 1px solid #ddd6ca;
   }
 
   .pill,
@@ -98,18 +158,18 @@ button:disabled {
   .small,
   .cat,
   .toggle {
-    background: white;
-    color: #475569;
-    border: 1px solid #e2e8f0;
+    background: #fffdf8;
+    color: #66736d;
+    border: 1px solid #ddd6ca;
   }
 
   .pill-on,
   .small-on,
   .cat-on,
   .toggle-on {
-    background: #172432;
+    background: #243631;
     color: white;
-    border: 1px solid #172432;
+    border: 1px solid #243631;
   }
 
   .small,
@@ -121,7 +181,7 @@ button:disabled {
 
   .cat,
   .cat-on {
-    min-height: 48px;
+    min-height: 46px;
     flex-shrink: 0;
     padding: 0 16px;
     text-align: center;
@@ -142,18 +202,18 @@ button:disabled {
     border-radius: 999px;
     font-size: 11px;
     font-weight: 900;
-    border: 1px solid #e2e8f0;
+    border: 1px solid #ddd6ca;
   }
 
   .heart {
-    background: white;
-    color: #172432;
+    background: #fffdf8;
+    color: #1f2d2a;
   }
 
   .heart-on {
-    background: #fff1e7;
-    color: #c85b12;
-    border-color: #fed7aa;
+    background: #eee1d2;
+    color: #795c43;
+    border-color: #d8c2a8;
   }
 
   .qty,
@@ -172,39 +232,39 @@ button:disabled {
   }
 
   .qty {
-    background: rgb(255 255 255 / 0.14);
+    background: rgb(255 255 255 / 0.16);
   }
 
   .qty-accent,
   .add {
-    background: #ea7a22;
+    background: #243631;
     color: white;
   }
 
   .add {
     height: 36px;
     width: 36px;
-    box-shadow: 0 12px 22px rgb(154 64 12 / 0.16);
+    box-shadow: 0 10px 18px rgb(36 54 49 / 0.14);
   }
 
   .table,
   .table-on {
     min-height: 54px;
-    border-radius: 16px;
+    border-radius: 18px;
     font-size: 14px;
     font-weight: 900;
   }
 
   .table {
-    background: white;
-    color: #172432;
-    border: 1px solid #e2e8f0;
+    background: #fffdf8;
+    color: #1f2d2a;
+    border: 1px solid #ddd6ca;
   }
 
   .table-on {
-    background: #172432;
+    background: #243631;
     color: white;
-    border: 1px solid #172432;
+    border: 1px solid #243631;
   }
 
   @media (max-width: 379px) {
@@ -217,7 +277,7 @@ button:disabled {
 
     .cat,
     .cat-on {
-      min-height: 46px;
+      min-height: 44px;
       padding: 0 14px;
       font-size: 12px;
     }
