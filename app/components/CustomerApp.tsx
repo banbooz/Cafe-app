@@ -72,7 +72,14 @@ export default function CustomerApp() {
       status: "new",
       notes: chefNotes.trim(),
       total,
-      items: cartItems.map((item) => ({ name: item.name, quantity: item.qty, allergens: item.allergens }))
+      items: cartItems.map((item) => ({
+        name: item.name,
+        quantity: item.qty,
+        description: item.description,
+        allergens: item.allergens,
+        vegetarian: Boolean(item.vegetarian),
+        vegan: Boolean(item.vegan)
+      }))
     };
 
     const existing = JSON.parse(window.localStorage.getItem("cafeKitchenOrders") || "[]");
