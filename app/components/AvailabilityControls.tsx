@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { menuItems } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
+import DietaryBadges from "./DietaryBadges";
 
 type Props = {
   section: "Kitchen" | "Business";
@@ -56,6 +57,10 @@ export default function AvailabilityControls({ section, compact = false }: Props
                         <h3 className="truncate font-black text-slate-950">{item.name}</h3>
                       </div>
                       <span className={available ? "shrink-0 rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700" : "shrink-0 rounded-full bg-red-100 px-2 py-1 text-[10px] font-black uppercase text-red-700"}>{available ? "On" : "Off"}</span>
+                    </div>
+                    <div className="mt-2 flex items-center gap-2">
+                      <DietaryBadges item={item} />
+                      <p className="line-clamp-1 text-xs font-bold text-slate-500">{item.description}</p>
                     </div>
                     <button
                       onClick={() => setItemAvailability(item.id, !available)}
