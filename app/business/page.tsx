@@ -1,3 +1,5 @@
+import AvailabilityControls from "../components/AvailabilityControls";
+
 type OrderItem = {
   name: string;
   qty: number;
@@ -66,12 +68,17 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The Corner Cafe</h1>
               <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">
-                Track orders, sales and menu performance from the app.
+                Track orders, sales, menu performance and item availability.
               </p>
             </div>
-            <a href="/" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">
-              Open customer view
-            </a>
+            <div className="flex flex-wrap gap-2">
+              <a href="/kitchen" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-5 text-sm font-black text-white">
+                Open kitchen view
+              </a>
+              <a href="/" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">
+                Open customer view
+              </a>
+            </div>
           </div>
         </header>
 
@@ -80,6 +87,10 @@ export default function BusinessDashboard() {
           <Metric label="App revenue" value={money(analytics.revenue)} detail={`${money(analytics.averageOrder)} average order`} />
           <Metric label="Most ordered item" value={analytics.topItem.name} detail={`${analytics.topItem.qty} sold today`} />
           <Metric label="Best category" value={analytics.topCategory.name} detail={`${analytics.topCategory.qty} items ordered`} />
+        </div>
+
+        <div className="mt-5">
+          <AvailabilityControls section="Business" />
         </div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
