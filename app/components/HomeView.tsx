@@ -2,7 +2,7 @@
 
 import { useEffect, useState, type MouseEvent } from "react";
 import { categories, money, type MenuItem } from "../lib/menu";
-import VegetarianBadge from "./VegetarianBadge";
+import DietaryBadges from "./DietaryBadges";
 
 type Props = {
   category: string;
@@ -97,7 +97,6 @@ export default function HomeView(props: Props) {
               return (
                 <article key={item.id} onClick={() => props.openItem(item)} className={unavailable ? "flex cursor-pointer gap-3 rounded-3xl bg-white p-3 opacity-70 shadow-sm ring-1 ring-slate-200 active:scale-[0.99]" : "flex cursor-pointer gap-3 rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200 active:scale-[0.99]"}>
                   <div className="relative h-24 w-24 shrink-0 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-                    {item.vegetarian && <VegetarianBadge className="absolute left-2 top-2" />}
                     {unavailable && <UnavailableOverlay />}
                   </div>
                   <div className="min-w-0 flex-1">
@@ -106,7 +105,10 @@ export default function HomeView(props: Props) {
                       <span className={unavailable ? "rounded-full bg-red-100 px-2 py-1 text-[10px] font-black uppercase text-red-700" : "rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700"}>{unavailable ? "Unavailable" : "Available"}</span>
                     </div>
                     <h3 className="mt-1 line-clamp-1 font-black text-slate-950">{item.name}</h3>
-                    <p className="mt-1 line-clamp-2 text-xs font-bold leading-5 text-slate-500">{item.description}</p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <DietaryBadges item={item} />
+                      <p className="line-clamp-1 text-xs font-bold leading-5 text-slate-500">{item.description}</p>
+                    </div>
                     <p className="mt-1 line-clamp-1 text-[11px] font-black text-slate-500">Allergens: {item.allergens.join(", ")}</p>
                     <div className="mt-2 flex items-center justify-between">
                       <span className="font-black">{money(item.price)}</span>
