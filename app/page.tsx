@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 
 type Screen = "menu" | "detail" | "cart" | "allergens" | "tables" | "confirmed";
-type Category = "All" | "Starters" | "Breakfast" | "Lunch" | "Desserts" | "Coffee" | "Cold";
-type UpsellCategory = "Starters" | "Desserts";
+type Category = "All" | "Starters" | "Breakfast" | "Brunch" | "Lunch" | "Salads" | "Sides" | "Desserts" | "Coffee" | "Smoothies" | "Cold";
+type UpsellCategory = "Starters" | "Sides" | "Desserts";
 type OrderType = "Dine in" | "Takeaway" | "Delivery";
 type UpsellMode = "basket" | "order" | null;
 type NavState = { screen: Screen; selectedId?: number };
@@ -23,7 +23,7 @@ type Item = {
   upsell?: boolean;
 };
 
-const categories: Category[] = ["All", "Starters", "Breakfast", "Lunch", "Desserts", "Coffee", "Cold"];
+const categories: Category[] = ["All", "Starters", "Breakfast", "Brunch", "Lunch", "Salads", "Sides", "Desserts", "Coffee", "Smoothies", "Cold"];
 const orderTypes: OrderType[] = ["Dine in", "Takeaway", "Delivery"];
 
 const items: Item[] = [
@@ -36,9 +36,19 @@ const items: Item[] = [
   { id: 7, name: "Flat White", category: "Coffee", tag: "Double espresso, steamed milk", description: "Double espresso with silky steamed milk and a smooth microfoam finish.", price: 3.4, image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", allergens: ["Milk"], prep: "3 min", popular: true },
   { id: 8, name: "Iced Latte", category: "Cold", tag: "Espresso, milk, ice", description: "Chilled espresso poured over milk and ice.", price: 4.1, image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80", allergens: ["Milk"], prep: "3 min", popular: true },
   { id: 9, name: "Fresh Lemonade", category: "Cold", tag: "Sparkling, mint, lemon", description: "Sparkling lemonade with fresh lemon slices, mint and crushed ice.", price: 3.6, image: "https://images.unsplash.com/photo-1621263764928-df1444c5e859?auto=format&fit=crop&w=900&q=80", allergens: ["None listed"], prep: "3 min" },
-  { id: 10, name: "Garlic Dough Bites", category: "Starters", tag: "Garlic butter, parmesan", description: "Warm dough bites tossed in garlic butter with parmesan and herbs.", price: 4.8, image: "https://images.unsplash.com/photo-1573140247632-f8fd74997d5c?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk"], prep: "6 min", popular: true, upsell: true },
+  { id: 10, name: "Garlic Dough Bites", category: "Starters", tag: "Garlic butter, parmesan", description: "Warm dough bites tossed in garlic butter with parmesan and herbs.", price: 4.8, image: "https://www.bbcgoodfoodme.com/assets/legacy/recipe/recipe-image/2019/02/dough%2Dballs-with-garlic-butter.jpg", allergens: ["Gluten", "Milk"], prep: "6 min", popular: true, upsell: true },
   { id: 11, name: "Halloumi Fries", category: "Starters", tag: "Chilli jam, lemon", description: "Crispy halloumi fries served with sweet chilli jam and fresh lemon.", price: 5.6, image: "https://images.unsplash.com/photo-1625944230945-1b7dd3b949ab?auto=format&fit=crop&w=900&q=80", allergens: ["Milk"], prep: "7 min", popular: true, upsell: true },
   { id: 12, name: "Biscoff Cheesecake", category: "Desserts", tag: "Creamy, biscuit crumb", description: "Smooth cheesecake with biscuit crumb and caramelised biscuit sauce.", price: 5.4, image: "https://images.unsplash.com/photo-1533134242443-d4fd215305ad?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk", "Egg"], prep: "4 min", popular: true, upsell: true },
+  { id: 13, name: "Buttermilk Pancakes", category: "Brunch", tag: "Maple syrup, berries, cream", description: "Soft pancakes with maple syrup, berries and a spoon of vanilla cream.", price: 7.4, image: "https://images.unsplash.com/photo-1528207776546-365bb710ee93?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk", "Egg"], prep: "9 min", popular: true },
+  { id: 14, name: "Greek Yoghurt Granola", category: "Brunch", tag: "Honey, berries, toasted oats", description: "Thick yoghurt layered with honey, berries and crunchy toasted granola.", price: 5.8, image: "https://images.unsplash.com/photo-1511690743698-d9d85f2fbf38?auto=format&fit=crop&w=900&q=80", allergens: ["Milk", "Gluten", "Nuts"], prep: "4 min" },
+  { id: 15, name: "Caesar Chicken Salad", category: "Salads", tag: "Chicken, parmesan, croutons", description: "Crisp leaves with roast chicken, parmesan, croutons and Caesar dressing.", price: 8.9, image: "https://images.unsplash.com/photo-1550304943-4f24f54ddde9?auto=format&fit=crop&w=900&q=80", allergens: ["Milk", "Gluten", "Egg", "Mustard"], prep: "7 min", popular: true },
+  { id: 16, name: "Superfood Grain Bowl", category: "Salads", tag: "Avocado, grains, seeds", description: "A fresh bowl of grains, avocado, greens, seeds and lemon dressing.", price: 8.6, image: "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&w=900&q=80", allergens: ["Sesame"], prep: "7 min" },
+  { id: 17, name: "Rosemary Fries", category: "Sides", tag: "Sea salt, rosemary", description: "Crispy fries finished with rosemary, sea salt and house dip.", price: 4.2, image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80", allergens: ["None listed"], prep: "6 min", upsell: true },
+  { id: 18, name: "Tomato Soup & Toast", category: "Lunch", tag: "Basil oil, toasted sourdough", description: "Smooth tomato soup with basil oil and warm toasted sourdough.", price: 6.4, image: "https://images.unsplash.com/photo-1547592166-23ac45744acd?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk"], prep: "8 min" },
+  { id: 19, name: "Mango Sunrise Smoothie", category: "Smoothies", tag: "Mango, orange, banana", description: "Bright mango, orange and banana blended smooth over ice.", price: 4.7, image: "https://images.unsplash.com/photo-1505252585461-04db1eb84625?auto=format&fit=crop&w=900&q=80", allergens: ["None listed"], prep: "4 min", popular: true },
+  { id: 20, name: "Berry Oat Smoothie", category: "Smoothies", tag: "Mixed berries, oat milk", description: "Mixed berries blended with oat milk for a smooth café-style drink.", price: 4.9, image: "https://images.unsplash.com/photo-1553530666-ba11a7da3888?auto=format&fit=crop&w=900&q=80", allergens: ["Oats"], prep: "4 min" },
+  { id: 21, name: "Mac & Cheese Pot", category: "Sides", tag: "Cheddar, crispy crumb", description: "Creamy macaroni cheese topped with a golden crispy crumb.", price: 5.9, image: "https://images.unsplash.com/photo-1543339494-b4cd4f7ba686?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk"], prep: "9 min", upsell: true },
+  { id: 22, name: "Salted Caramel Brownie", category: "Desserts", tag: "Chocolate, caramel, sea salt", description: "Rich chocolate brownie with salted caramel and a soft centre.", price: 4.6, image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=900&q=80", allergens: ["Gluten", "Milk", "Egg"], prep: "4 min", upsell: true },
 ];
 
 const tables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -94,7 +104,8 @@ export default function Home() {
   const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.qty, 0);
   const service = orderType === "Dine in" ? subtotal * 0.05 : 0;
   const total = subtotal + service;
-  const upsellItems = items.filter((item) => item.category === "Starters" || item.category === "Desserts");
+  const upsellItems = items.filter((item) => item.category === "Starters" || item.category === "Sides" || item.category === "Desserts");
+  const popularItems = items.filter((item) => item.popular);
 
   function go(next: Screen, selectedId = selected.id) {
     setScreen(next);
@@ -188,12 +199,12 @@ export default function Home() {
         <Top title="Basket" back={goBack} right="Allergens" onRight={() => go("allergens")} />
         <main className="space-y-4 px-3 pb-40 pt-4 min-[380px]:px-4">
           <div className="grid grid-cols-3 gap-1 rounded-3xl bg-white p-1 shadow-sm ring-1 ring-slate-200 min-[380px]:gap-2">{orderTypes.map((type) => <button key={type} onClick={() => setOrderType(type)} className={orderType === type ? "toggle-on" : "toggle"}>{type}</button>)}</div>
-          <button onClick={() => go("tables")} className="secondary flex items-center justify-between gap-3"><span className="truncate">{orderType} · Table {table}</span><span className="shrink-0 text-orange-600">Change</span></button>
+          <button onClick={() => go("tables")} className="secondary flex items-center justify-between gap-3"><span className="truncate">{orderType} · Table {table}</span><span className="shrink-0 text-orange-600">Need to change table?</span></button>
           {cartItems.length ? cartItems.map((item) => <article key={item.id} className="flex gap-3 rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200"><button onClick={() => openItem(item)} className="h-20 w-20 shrink-0 rounded-2xl bg-cover bg-center min-[380px]:h-24 min-[380px]:w-24" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="min-w-0 flex-1"><h2 className="truncate font-black text-slate-950">{item.name}</h2><p className="mt-1 line-clamp-2 text-xs font-bold text-slate-500">{item.tag}</p><div className="mt-3 flex items-center justify-between gap-2"><span className="font-black">{money(item.price)}</span><Stepper qty={item.qty} minus={() => remove(item.id)} plus={() => add(item.id)} /></div></div></article>) : <Empty onClick={() => go("menu")} />}
           <label className="block rounded-3xl bg-white p-4 shadow-sm ring-1 ring-slate-200"><span className="text-xs font-black uppercase tracking-[0.16em] text-slate-500">Order note</span><textarea value={note} onChange={(event) => setNote(event.target.value)} className="mt-3 min-h-24 w-full resize-none rounded-2xl border border-slate-200 bg-slate-50 p-3 text-sm font-semibold outline-none focus:border-orange-500" placeholder="No tomato, oat milk, bring with cutlery..." /></label>
           <Panel><Line label="Subtotal" value={money(subtotal)} /><Line label="Table service" value={money(service)} /><Line label="Total" value={money(total)} /></Panel>
         </main>
-        <Footer><button onClick={() => askForExtras("order")} disabled={!count} className="primary disabled:bg-slate-300 disabled:text-slate-500">Place order · {money(total)}</button></Footer>
+        <Footer><button onClick={() => askForExtras("order")} disabled={!count} className="primary disabled:bg-slate-300 disabled:text-slate-500">Send order to kitchen · {money(total)}</button></Footer>
         {upsell}
       </Shell>
     );
@@ -202,8 +213,8 @@ export default function Home() {
   if (screen === "tables") {
     return (
       <Shell>
-        <Top title="Change table" back={goBack} right="Menu" onRight={() => go("menu")} />
-        <main className="px-3 pb-28 pt-4 min-[380px]:px-4"><Panel><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Backup option</p><h1 className="mt-1 text-xl font-black min-[380px]:text-2xl">Only change this if you scanned the wrong QR code.</h1><div className="mt-5 grid grid-cols-3 gap-2 min-[380px]:grid-cols-4 min-[380px]:gap-3">{tables.map((id) => <button key={id} onClick={() => setTable(id)} className={table === id ? "table-on" : "table"}>{id}</button>)}</div><button onClick={() => go("cart")} className="primary mt-5">Use table {table}</button></Panel></main>
+        <Top title="Need to change table?" back={goBack} right="Menu" onRight={() => go("menu")} />
+        <main className="px-3 pb-28 pt-4 min-[380px]:px-4"><Panel><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Table check</p><h1 className="mt-1 text-xl font-black min-[380px]:text-2xl">Only change this if you scanned the wrong QR code.</h1><div className="mt-5 grid grid-cols-3 gap-2 min-[380px]:grid-cols-4 min-[380px]:gap-3">{tables.map((id) => <button key={id} onClick={() => setTable(id)} className={table === id ? "table-on" : "table"}>{id}</button>)}</div><button onClick={() => go("cart")} className="primary mt-5">Use table {table}</button></Panel></main>
       </Shell>
     );
   }
@@ -213,23 +224,23 @@ export default function Home() {
   }
 
   if (screen === "confirmed") {
-    return <Shell><main className="mx-auto flex min-h-[100svh] max-w-md flex-col justify-center px-6 text-center"><div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-4xl font-black text-white">OK</div><p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p><h1 className="mt-2 text-3xl font-black text-slate-950">Order confirmed</h1><p className="mt-3 text-sm leading-6 text-slate-600">Order #{confirmed?.id} is being prepared for table {table}.</p><Panel><Line label="Total" value={money(confirmed?.total || 0)} /><Line label="Order type" value={orderType} /></Panel><button onClick={() => go("menu")} className="primary mt-4">Order more items</button><button onClick={callWaiter} className={waiterCalled ? "secondary mt-3 bg-slate-900 text-white" : "secondary mt-3"}>{waiterCalled ? "Waiter called" : "Call waiter"}</button></main></Shell>;
+    return <Shell><main className="mx-auto flex min-h-[100svh] max-w-md flex-col justify-center px-6 text-center"><div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-4xl font-black text-white">OK</div><p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p><h1 className="mt-2 text-3xl font-black text-slate-950">Order sent to kitchen</h1><p className="mt-3 text-sm leading-6 text-slate-600">Order #{confirmed?.id} is being prepared for table {table}.</p><Panel><Line label="Total" value={money(confirmed?.total || 0)} /><Line label="Order type" value={orderType} /></Panel><button onClick={() => go("menu")} className="primary mt-4">Add more food</button><button onClick={callWaiter} className={waiterCalled ? "secondary mt-3 bg-slate-900 text-white" : "secondary mt-3"}>{waiterCalled ? "Help requested" : "Need help?"}</button></main></Shell>;
   }
 
   return (
     <Shell>
       <header className="bg-slate-900 px-3 pb-5 pt-4 text-white min-[380px]:px-4">
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0"><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">The Corner Cafe</p><p className="mt-2 text-sm font-bold text-white/80">Table {table} confirmed from QR</p></div>
+            <div className="min-w-0"><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Ordering to Table {table}</p><h1 className="mt-1 text-2xl font-black leading-tight text-white">What would you like?</h1><p className="mt-2 text-sm font-bold text-white/75">Fresh food, drinks & extras</p></div>
             <button onClick={() => askForExtras("basket")} className="small shrink-0 bg-orange-500 text-white">Cart {count || ""}</button>
           </div>
-          <div className="grid grid-cols-2 gap-2"><button onClick={callWaiter} className={waiterCalled ? "small-on" : "small"}>{waiterCalled ? "Called" : "Waiter"}</button><button onClick={() => go("allergens")} className="small">Allergen info</button></div>
+          <div className="flex items-center justify-between gap-3 text-xs font-black"><button onClick={callWaiter} className="rounded-full bg-white/10 px-3 py-2 text-white/85 ring-1 ring-white/10">{waiterCalled ? "Help requested" : "Need help?"}</button><button onClick={() => go("allergens")} className="rounded-full bg-white/10 px-3 py-2 text-white/85 ring-1 ring-white/10">Allergen info</button></div>
         </div>
-        <label className="mt-5 flex min-h-[3.25rem] items-center rounded-2xl bg-white px-4 text-slate-900"><input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-sm font-semibold outline-none" placeholder="Search food, coffee, cake" /></label>
+        <label className="mt-5 flex min-h-[3.25rem] items-center rounded-2xl bg-white px-4 text-slate-900"><input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-sm font-semibold outline-none" placeholder="Search food, drinks, desserts" /></label>
       </header>
-      <main className="px-3 pb-32 pt-4 min-[380px]:px-4"><div className="flex gap-2 overflow-x-auto pb-3 min-[380px]:gap-3">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={category === item ? "cat-on" : "cat"}>{item}</button>)}</div><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">Order at your pace</p><h1 className="mt-1 text-2xl font-black text-slate-950">Menu</h1></div><button onClick={() => go("allergens")} className="shrink-0 text-sm font-black text-orange-600">Allergens</button></div>{!query && category === "All" && <div className="mb-5 flex gap-3 overflow-x-auto pb-2">{items.filter((item) => item.popular).map((item) => <button key={item.id} onClick={() => openItem(item)} className="relative h-32 w-[78vw] max-w-64 shrink-0 overflow-hidden rounded-3xl bg-cover bg-center text-left min-[380px]:h-36" style={{ backgroundImage: `url(${item.image})` }}><span className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" /><span className="absolute bottom-3 left-3 right-3 font-black text-white">{item.name}</span></button>)}</div>}<div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">{filtered.map((item) => <article key={item.id} className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"><button onClick={() => openItem(item)} className="h-32 w-full bg-cover bg-center min-[380px]:h-36" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-3"><button onClick={() => openItem(item)} className="w-full text-left"><p className="text-[11px] font-black uppercase tracking-[0.12em] text-orange-600">{item.category}</p><h2 className="mt-1 min-h-0 text-sm font-black leading-5 text-slate-950 min-[380px]:min-h-10">{item.name}</h2><p className="mt-1 min-h-0 text-xs font-semibold leading-[18px] text-slate-500 min-[380px]:min-h-9">{item.tag}</p></button><div className="mt-3 flex items-center justify-between gap-2"><span className="font-black">{money(item.price)}</span>{cart[item.id] ? <Stepper qty={cart[item.id]} minus={() => remove(item.id)} plus={() => add(item.id)} /> : <button onClick={() => add(item.id)} className="add">+</button>}</div></div></article>)}</div>{!filtered.length && <Empty onClick={() => setQuery("")} />}</main>
-      <Footer><button onClick={() => askForExtras("basket")} className="flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl bg-slate-900 px-4 text-left text-white"><span className="min-w-0"><span className="block truncate text-sm font-black">{count ? `${count} items in basket` : `Table ${table}`}</span><span className="block truncate text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items from the menu"}</span></span><span className="shrink-0 rounded-xl bg-orange-500 px-3 py-3 text-sm font-black min-[380px]:px-4">{count ? money(total) : "Basket"}</span></button></Footer>
+      <main className="px-3 pb-32 pt-4 min-[380px]:px-4"><div className="flex gap-2 overflow-x-auto pb-3 min-[380px]:gap-3">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={category === item ? "cat-on" : "cat"}>{item}</button>)}</div><div className="mb-4 flex items-end justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">Choose your food</p><h1 className="mt-1 text-2xl font-black text-slate-950">Menu</h1></div><button onClick={() => go("allergens")} className="shrink-0 text-sm font-black text-orange-600">Allergens</button></div>{!query && category === "All" && <section className="mb-5"><div className="mb-2 flex items-center justify-between gap-3"><h2 className="font-black text-slate-950">Popular today</h2><span className="text-xs font-black text-orange-600">Tap to view</span></div><div className="flex gap-3 overflow-x-auto pb-2">{popularItems.map((item) => <button key={item.id} onClick={() => openItem(item)} className="relative h-32 w-[78vw] max-w-64 shrink-0 overflow-hidden rounded-3xl bg-cover bg-center text-left min-[380px]:h-36" style={{ backgroundImage: `url(${item.image})` }}><span className="absolute inset-0 bg-gradient-to-t from-slate-950/80 to-transparent" /><span className="absolute bottom-3 left-3 right-3"><span className="block font-black text-white">{item.name}</span><span className="mt-1 inline-block rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">{money(item.price)}</span></span></button>)}</div></section>}<div className="grid grid-cols-1 gap-3 min-[380px]:grid-cols-2">{filtered.map((item) => <article key={item.id} className="overflow-hidden rounded-3xl bg-white shadow-sm ring-1 ring-slate-200"><button onClick={() => openItem(item)} className="h-32 w-full bg-cover bg-center min-[380px]:h-36" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-3"><button onClick={() => openItem(item)} className="w-full text-left"><p className="text-[11px] font-black uppercase tracking-[0.12em] text-orange-600">{item.category}</p><div className="mt-1 flex items-start justify-between gap-2"><h2 className="min-h-0 text-sm font-black leading-5 text-slate-950 min-[380px]:min-h-10">{item.name}</h2><span className="shrink-0 text-sm font-black text-slate-950">{money(item.price)}</span></div><p className="mt-1 min-h-0 text-xs font-semibold leading-[18px] text-slate-500 min-[380px]:min-h-9">{item.tag}</p></button><div className="mt-3 flex items-center justify-between gap-2"><span className="text-xs font-black text-slate-400">{item.prep}</span>{cart[item.id] ? <Stepper qty={cart[item.id]} minus={() => remove(item.id)} plus={() => add(item.id)} /> : <button onClick={() => add(item.id)} className="add">+</button>}</div></div></article>)}</div>{!filtered.length && <Empty onClick={() => setQuery("")} />}</main>
+      <Footer><button onClick={() => askForExtras("basket")} className="flex min-h-16 w-full items-center justify-between gap-3 rounded-2xl bg-slate-900 px-4 text-left text-white"><span className="min-w-0"><span className="block truncate text-sm font-black">{count ? `${count} items in basket` : "Start your order"}</span><span className="block truncate text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Choose food from the menu"}</span></span><span className="shrink-0 rounded-xl bg-orange-500 px-3 py-3 text-sm font-black min-[380px]:px-4">{count ? money(total) : "Basket"}</span></button></Footer>
       {upsell}
     </Shell>
   );
@@ -247,13 +258,13 @@ function UpsellModal({ active, cart, items, mode, setActive, add, remove, close,
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Quick add</p>
             <h2 className="mt-1 text-2xl font-black leading-tight text-slate-950">{title}</h2>
-            <p className="mt-2 text-sm font-bold leading-5 text-slate-500">Would you also like a dessert or starter? Add one fast, or skip without wasting time.</p>
+            <p className="mt-2 text-sm font-bold leading-5 text-slate-500">Would you also like a dessert, starter or side? Add one fast, or skip without wasting time.</p>
           </div>
           <button onClick={close} className="h-11 w-11 shrink-0 rounded-full bg-white text-xs font-black shadow-sm ring-1 ring-slate-200">Close</button>
         </div>
 
-        <div className="mt-4 grid grid-cols-2 gap-2 rounded-3xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
-          {(["Desserts", "Starters"] as UpsellCategory[]).map((item) => <button key={item} onClick={() => setActive(item)} className={active === item ? "toggle-on" : "toggle"}>{item}</button>)}
+        <div className="mt-4 grid grid-cols-3 gap-2 rounded-3xl bg-white p-1 shadow-sm ring-1 ring-slate-200">
+          {(["Desserts", "Starters", "Sides"] as UpsellCategory[]).map((item) => <button key={item} onClick={() => setActive(item)} className={active === item ? "toggle-on" : "toggle"}>{item}</button>)}
         </div>
 
         <div className="mt-4">
