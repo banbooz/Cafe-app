@@ -2,6 +2,7 @@
 
 import { money, type MenuItem } from "../lib/menu";
 import { Footer, Top } from "./AppShell";
+import VegetarianBadge from "./VegetarianBadge";
 
 type Props = {
   item: MenuItem;
@@ -18,7 +19,9 @@ export default function DetailView({ item, qty, add, remove, back, openCart }: P
       <Top title={item.name} back={back} right="Basket" onRight={openCart} />
       <main className="px-4 pb-32 pt-4">
         <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200">
-          <div className="h-72 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+          <div className="relative h-72 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+            {item.vegetarian && <VegetarianBadge className="absolute left-4 top-4" />}
+          </div>
           <div className="p-5">
             <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">{item.category}</p>
             <div className="mt-2 flex items-start justify-between gap-4">
