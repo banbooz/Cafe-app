@@ -2,8 +2,18 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
+import DietaryBadges from "../components/DietaryBadges";
 
 type OrderStatus = "new" | "preparing" | "ready" | "served";
+
+type KitchenItem = {
+  name: string;
+  quantity: number;
+  description?: string;
+  allergens?: string[];
+  vegetarian?: boolean;
+  vegan?: boolean;
+};
 
 type KitchenOrder = {
   id: number;
@@ -12,12 +22,10 @@ type KitchenOrder = {
   status: OrderStatus;
   notes?: string;
   total: number;
-  items: {
-    name: string;
-    quantity: number;
-    allergens?: string[];
-  }[];
+  items: KitchenItem[];
 };
+
+const allergyOptions = ["Gluten", "Milk", "Egg", "Nuts", "Soy", "Mustard", "Celery", "Sesame"];
 
 const statusText: Record<OrderStatus, string> = {
   new: "New",
@@ -60,9 +68,14 @@ function saveOrders(orders: KitchenOrder[]) {
   window.localStorage.setItem("cafeKitchenOrders", JSON.stringify(orders));
 }
 
+function cleanAllergens(value: string) {
+  return value.split(",").map((item) => item.trim()).filter(Boolean);
+}
+
 export default function KitchenScreen() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "active">("active");
+  const [openItem, setOpenItem] = useState<string | null>(null);
 
   useEffect(() => {
     setOrders(loadOrders());
@@ -88,6 +101,26 @@ export default function KitchenScreen() {
       saveOrders(next);
       return next;
     });
+  }
+
+  function updateKitchenItem(orderId: number, itemName: string, changes: Partial<KitchenItem>) {
+    setOrders((current) => {
+      const next = current.map((order) => {
+        if (order.id !== orderId) return order;
+        return {
+          ...order,
+          items: order.items.map((item) => item.name === itemName ? { ...item, ...changes } : item),
+        };
+      });
+      saveOrders(next);
+      return next;
+    });
+  }
+
+  function toggleAllergen(orderId: number, item: KitchenItem, allergen: string) {
+    const current = item.allergens || [];
+    const next = current.includes(allergen) ? current.filter((entry) => entry !== allergen) : [...current.filter((entry) => entry !== "None listed"), allergen];
+    updateKitchenItem(orderId, item.name, { allergens: next.length ? next : ["None listed"] });
   }
 
   return (
@@ -139,15 +172,67 @@ export default function KitchenScreen() {
               {order.notes && <p className="mt-4 rounded-xl bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-900 ring-1 ring-yellow-100">Chef notes: {order.notes}</p>}
 
               <div className="space-y-3 py-4">
-                {order.items.map((item) => (
-                  <div key={`${order.id}-${item.name}`} className="rounded-2xl bg-stone-50 p-3">
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="text-base font-black">{item.name}</p>
-                      <p className="rounded-full bg-white px-3 py-1 text-sm font-black shadow-sm">×{item.quantity}</p>
-                    </div>
-                    {item.allergens?.length ? <p className="mt-2 text-xs font-bold text-stone-500">Allergens: {item.allergens.join(", ")}</p> : null}
-                  </div>
-                ))}
+                {order.items.map((item) => {
+                  const itemKey = `${order.id}-${item.name}`;
+                  const expanded = openItem === itemKey;
+
+                  return (
+                    <button
+                      key={itemKey}
+                      onClick={() => setOpenItem(expanded ? null : itemKey)}
+                      className="block w-full rounded-2xl bg-stone-50 p-3 text-left ring-1 ring-stone-100 transition active:scale-[0.99]"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="truncate text-base font-black">{item.name}</p>
+                            <DietaryBadges item={item} />
+                          </div>
+                          {item.description && <p className="mt-1 line-clamp-2 text-xs font-bold text-stone-500">{item.description}</p>}
+                        </div>
+                        <p className="rounded-full bg-white px-3 py-1 text-sm font-black shadow-sm">×{item.quantity}</p>
+                      </div>
+                      {item.allergens?.length ? <p className="mt-2 text-xs font-bold text-stone-500">Allergens: {item.allergens.join(", ")}</p> : null}
+
+                      {expanded && (
+                        <div onClick={(event) => event.stopPropagation()} className="mt-4 rounded-2xl bg-white p-3 ring-1 ring-stone-200">
+                          <label className="block">
+                            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-stone-500">Description</span>
+                            <textarea
+                              value={item.description || ""}
+                              onChange={(event) => updateKitchenItem(order.id, item.name, { description: event.target.value })}
+                              className="mt-2 min-h-20 w-full resize-none rounded-xl bg-stone-50 p-3 text-sm font-bold outline-none ring-1 ring-stone-200"
+                            />
+                          </label>
+
+                          <div className="mt-3">
+                            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-stone-500">Dietary badges</span>
+                            <div className="mt-2 flex gap-2">
+                              <button type="button" onClick={() => updateKitchenItem(order.id, item.name, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>V</button>
+                              <button type="button" onClick={() => updateKitchenItem(order.id, item.name, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>VG</button>
+                            </div>
+                          </div>
+
+                          <div className="mt-3">
+                            <span className="text-[11px] font-black uppercase tracking-[0.14em] text-stone-500">Allergy badges</span>
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {allergyOptions.map((allergen) => {
+                                const active = item.allergens?.includes(allergen);
+                                return <button key={allergen} type="button" onClick={() => toggleAllergen(order.id, item, allergen)} className={active ? "rounded-full bg-[#20160f] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>{allergen}</button>;
+                              })}
+                            </div>
+                            <input
+                              value={(item.allergens || []).join(", ")}
+                              onChange={(event) => updateKitchenItem(order.id, item.name, { allergens: cleanAllergens(event.target.value) })}
+                              className="mt-2 w-full rounded-xl bg-stone-50 p-3 text-sm font-bold outline-none ring-1 ring-stone-200"
+                              placeholder="Gluten, Milk, Nuts"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  );
+                })}
               </div>
 
               <button onClick={() => updateOrder(order.id)} disabled={order.status === "served"} className="w-full rounded-2xl bg-[#20160f] px-4 py-4 text-sm font-black text-white shadow-lg shadow-stone-950/20 disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none">
