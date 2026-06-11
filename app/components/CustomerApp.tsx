@@ -78,6 +78,7 @@ export default function CustomerApp() {
       notes: chefNotes.trim(),
       total,
       items: cartItems.map((item) => ({
+        id: item.id,
         name: item.name,
         quantity: item.qty,
         description: item.description,
