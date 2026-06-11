@@ -3,9 +3,9 @@ export default function VegetarianBadge({ className = "" }: { className?: string
     <span
       aria-label="Vegetarian"
       title="Vegetarian"
-      className={`grid h-8 w-8 place-items-center rounded-full bg-white/95 shadow-sm ring-1 ring-black/5 ${className}`}
+      className={`grid h-7 w-7 place-items-center ${className}`}
     >
-      <svg viewBox="0 0 64 64" className="h-7 w-7" aria-hidden="true" fill="none">
+      <svg viewBox="0 0 64 64" className="h-full w-full drop-shadow-sm" aria-hidden="true" fill="none">
         <path
           d="M49.7 10.7A24 24 0 1 0 58 32"
           stroke="#75c993"
