@@ -47,8 +47,8 @@ function getAnalytics() {
     itemCount,
     revenue,
     averageOrder: orders.length ? revenue / orders.length : 0,
-    topItem: itemsRanked[0] || { name: "No orders yet", qty: 0 },
-    topCategory: categoriesRanked[0] || { name: "No data yet", qty: 0 },
+    topItem: itemsRanked[0] || { name: "No orders", qty: 0 },
+    topCategory: categoriesRanked[0] || { name: "No data", qty: 0 },
     itemsRanked,
     categoriesRanked,
   };
@@ -66,7 +66,7 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The Corner Cafe</h1>
               <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">
-                Real app analytics will appear here once live order storage is connected. This page is open for now, ready for a passcode lock later.
+                Track orders, sales and menu performance from the app.
               </p>
             </div>
             <a href="/" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">
@@ -113,7 +113,7 @@ export default function BusinessDashboard() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="No item data yet" text="When customers place real orders, the most ordered items will show here." />
+              <EmptyState title="No item data" text="Most ordered items will appear here." />
             )}
           </section>
 
@@ -130,7 +130,7 @@ export default function BusinessDashboard() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="No category data yet" text="Category analytics will appear once real orders are stored." />
+              <EmptyState title="No category data" text="Category performance will appear here." />
             )}
           </section>
         </div>
@@ -138,10 +138,10 @@ export default function BusinessDashboard() {
         <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live orders</p>
-              <h2 className="mt-1 text-xl font-black">Recent app orders</h2>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Orders</p>
+              <h2 className="mt-1 text-xl font-black">Recent orders</h2>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Waiting for orders</span>
+            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">No orders</span>
           </div>
 
           {orders.length ? (
@@ -166,7 +166,7 @@ export default function BusinessDashboard() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No real orders yet" text="This dashboard is now clean. It will stay at £0 until we connect real order storage." />
+            <EmptyState title="No orders" text="Orders will appear here when they are placed." />
           )}
         </section>
       </section>
