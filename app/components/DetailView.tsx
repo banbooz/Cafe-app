@@ -2,7 +2,7 @@
 
 import { money, type MenuItem } from "../lib/menu";
 import { Footer, Top } from "./AppShell";
-import VegetarianBadge from "./VegetarianBadge";
+import DietaryBadges from "./DietaryBadges";
 
 type Props = {
   item: MenuItem;
@@ -22,7 +22,6 @@ export default function DetailView({ item, qty, add, remove, back, openCart }: P
       <main className="px-4 pb-32 pt-4">
         <div className="overflow-hidden rounded-[2rem] bg-white shadow-sm ring-1 ring-slate-200">
           <div className="relative h-72 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-            {item.vegetarian && <VegetarianBadge className="absolute left-4 top-4" />}
             {unavailable && <div className="absolute inset-0 grid place-items-center bg-slate-950/55"><span className="rounded-full bg-white px-4 py-2 text-xs font-black uppercase text-red-700">Not available</span></div>}
           </div>
           <div className="p-5">
@@ -34,7 +33,10 @@ export default function DetailView({ item, qty, add, remove, back, openCart }: P
               <h1 className="text-2xl font-black leading-tight text-slate-950">{item.name}</h1>
               <span className="h-fit rounded-2xl bg-slate-100 px-3 py-2 font-black">{money(item.price)}</span>
             </div>
-            <p className="mt-3 text-sm font-bold leading-6 text-slate-500">{unavailable ? "This item is currently unavailable from the kitchen." : item.description}</p>
+            <div className="mt-3 flex items-center gap-2">
+              <DietaryBadges item={item} />
+              <p className="text-sm font-bold leading-6 text-slate-500">{unavailable ? "This item is currently unavailable from the kitchen." : item.description}</p>
+            </div>
             <p className="mt-2 text-sm font-black leading-6 text-slate-600">Allergens: {item.allergens.join(", ")}</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Info label="Prep" value={item.prep} />
