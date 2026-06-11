@@ -3,32 +3,58 @@ export default function VegetarianBadge({ className = "" }: { className?: string
     <span
       aria-label="Vegetarian"
       title="Vegetarian"
-      className={`grid h-7 w-7 place-items-center ${className}`}
+      className={`grid h-10 w-10 place-items-center ${className}`}
     >
-      <svg viewBox="0 0 64 64" className="h-full w-full drop-shadow-sm" aria-hidden="true" fill="none">
+      <svg viewBox="0 0 100 100" className="h-full w-full drop-shadow-sm" aria-hidden="true" fill="none">
         <path
-          d="M49.7 10.7A24 24 0 1 0 58 32"
-          stroke="#75c993"
-          strokeWidth="5.4"
+          d="M25 62a29 29 0 0 0 50 0"
+          stroke="#4fab55"
+          strokeWidth="5"
           strokeLinecap="round"
         />
         <path
-          d="M18.2 26.1 30 47.2 45.9 17.4"
-          stroke="#75c993"
-          strokeWidth="7.2"
+          d="M25 55a29 29 0 0 1 4-15"
+          stroke="#4fab55"
+          strokeWidth="5"
           strokeLinecap="round"
-          strokeLinejoin="round"
         />
         <path
-          d="M35.2 15.2c7.9-1.3 15.2.2 21.2 3.7-1.8 8.6-6.5 14.4-13.9 17.3-4.3 1.7-8.9 1.9-13.4.7.3-8.7 2.3-16 6.1-21.7Z"
-          fill="#75c993"
+          d="M75 55a29 29 0 0 0-4-15"
+          stroke="#4fab55"
+          strokeWidth="5"
+          strokeLinecap="round"
         />
         <path
-          d="M34.1 34.1c5.1-6.8 10.8-11.5 17.2-14.2"
+          d="M48 78C35 60 27 39 29 12c16 13 26 33 25 60-2 2-4 4-6 6Z"
+          fill="#4fab55"
+        />
+        <path
+          d="M52 78C63 55 73 35 82 8c-20 10-35 30-36 62 2 3 4 5 6 8Z"
+          fill="#4fab55"
+        />
+        <path
+          d="M41 27c4 13 6 26 6 42"
           stroke="white"
           strokeWidth="3.4"
           strokeLinecap="round"
         />
+        <path
+          d="M71 21C62 35 55 50 50 70"
+          stroke="white"
+          strokeWidth="3.6"
+          strokeLinecap="round"
+        />
+        <text
+          x="50"
+          y="94"
+          textAnchor="middle"
+          fontSize="12"
+          fontWeight="900"
+          letterSpacing="1.5"
+          fill="#4fab55"
+        >
+          VEG
+        </text>
       </svg>
     </span>
   );
