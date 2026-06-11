@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, type MouseEvent } from "react";
 import { categories, menuItems, money, type MenuItem } from "../lib/menu";
 import VegetarianBadge from "./VegetarianBadge";
 
@@ -34,12 +34,12 @@ export default function HomeView(props: Props) {
     return () => window.clearInterval(timer);
   }, [popular.length]);
 
-  function addOnly(event: React.MouseEvent, id: number) {
+  function addOnly(event: MouseEvent, id: number) {
     event.stopPropagation();
     props.add(id);
   }
 
-  function removeOnly(event: React.MouseEvent, id: number) {
+  function removeOnly(event: MouseEvent, id: number) {
     event.stopPropagation();
     props.remove(id);
   }
@@ -113,7 +113,7 @@ export default function HomeView(props: Props) {
   );
 }
 
-export function Stepper({ qty, minus, plus }: { qty: number; minus: (event: React.MouseEvent) => void; plus: (event: React.MouseEvent) => void }) {
+export function Stepper({ qty, minus, plus }: { qty: number; minus: (event: MouseEvent) => void; plus: (event: MouseEvent) => void }) {
   return <div className="flex items-center rounded-full bg-slate-100 p-1"><button onClick={minus} className="grid h-7 w-7 place-items-center rounded-full bg-white font-black">-</button><span className="min-w-7 text-center text-xs font-black">{qty}</span><button onClick={plus} className="grid h-7 w-7 place-items-center rounded-full bg-slate-900 font-black text-white">+</button></div>;
 }
 
