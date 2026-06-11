@@ -6,6 +6,7 @@ import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
 import { Center, Phone } from "./AppShell";
 import { menuItems, type MenuItem } from "../lib/menu";
+import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 
 export default function CustomerApp() {
   const [screen, setScreen] = useState<"home" | "detail" | "done">("home");
@@ -16,22 +17,35 @@ export default function CustomerApp() {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
+  const { availability } = useMenuAvailability();
+
+  const itemsWithAvailability = useMemo(
+    () => menuItems.map((item) => ({ ...item, available: isItemAvailable(item.id, availability) })),
+    [availability]
+  );
+
+  const selectedWithAvailability = useMemo(
+    () => itemsWithAvailability.find((item) => item.id === selected.id) || selected,
+    [itemsWithAvailability, selected]
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    return menuItems.filter((item) => {
+    return itemsWithAvailability.filter((item) => {
       const byPopular = !popularOnly || item.popular;
       const byCategory = popularOnly || category === "All" || item.category === category;
       const bySearch = !q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
       return byPopular && byCategory && bySearch;
     });
-  }, [category, query, popularOnly]);
+  }, [category, query, popularOnly, itemsWithAvailability]);
 
-  const cartItems = menuItems.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
+  const cartItems = itemsWithAvailability.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
+  const unavailableCartItems = cartItems.filter((item) => item.available === false);
   const count = cartItems.reduce((sum, item) => sum + item.qty, 0);
   const total = cartItems.reduce((sum, item) => sum + item.qty * item.price, 0);
 
   function add(id: number) {
+    if (!isItemAvailable(id, availability)) return;
     setCart((old) => ({ ...old, [id]: (old[id] || 0) + 1 }));
   }
 
@@ -66,7 +80,7 @@ export default function CustomerApp() {
   }
 
   function sendOrder() {
-    if (!cartItems.length) return;
+    if (!cartItems.length || unavailableCartItems.length) return;
     saveOrderForKitchen();
     setCartOpen(false);
     setScreen("done");
@@ -77,7 +91,7 @@ export default function CustomerApp() {
   }
 
   if (screen === "detail") {
-    return <Phone><DetailView item={selected} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} />}</Phone>;
+    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} />}</Phone>;
   }
 
   return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openItem} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} />}</Phone>;
