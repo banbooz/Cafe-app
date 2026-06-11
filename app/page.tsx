@@ -55,7 +55,7 @@ const items: Item[] = [
 const tables = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 function VegetarianBadge({ className = "" }: { className?: string }) {
-  return <span className={`inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 shadow-sm ring-1 ring-emerald-100 ${className}`}><span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-600 text-[9px] leading-none text-white">V</span>Vegetarian</span>;
+  return <span className={`z-10 inline-flex items-center gap-1 rounded-full bg-white/95 px-2.5 py-1 text-[10px] font-black uppercase tracking-[0.12em] text-emerald-700 shadow-sm ring-1 ring-emerald-100 ${className}`}><span className="grid h-4 w-4 place-items-center rounded-full bg-emerald-600 text-[9px] leading-none text-white">V</span>Vegetarian</span>;
 }
 
 export default function Home() {
@@ -92,7 +92,7 @@ export default function Home() {
     }
 
     window.addEventListener("popstate", onPopState);
-    return () => window.removeEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate");
   }, []);
 
   const filtered = useMemo(() => {
@@ -275,7 +275,7 @@ function UpsellModal({ active, cart, items, mode, setActive, add, remove, close,
         <div className="mt-4">
           <div className="mb-2 flex items-center justify-between gap-3"><h3 className="font-black text-slate-950">Recommended</h3><span className="text-xs font-black text-orange-600">Tap + to add</span></div>
           <div className="flex gap-3 overflow-x-auto pb-2">
-            {recommended.map((item) => <button key={item.id} onClick={() => add(item.id)} className="relative h-28 w-44 shrink-0 overflow-hidden rounded-3xl bg-cover bg-center text-left shadow-sm ring-1 ring-slate-200" style={{ backgroundImage: `url(${item.image})` }}>{item.vegetarian && <span className="absolute left-3 top-3 rounded-full bg-white/95 px-2 py-1 text-[10px] font-black uppercase text-emerald-700 shadow-sm ring-1 ring-emerald-100">V</span>}<span className="absolute inset-0 bg-gradient-to-t from-slate-950/85 to-transparent" /><span className="absolute bottom-3 left-3 right-3"><span className="block truncate text-sm font-black text-white">{item.name}</span><span className="mt-1 inline-block rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">+ {money(item.price)}</span></span></button>)}
+            {recommended.map((item) => <button key={item.id} onClick={() => add(item.id)} className="relative h-28 w-44 shrink-0 overflow-hidden rounded-3xl bg-cover bg-center text-left shadow-sm ring-1 ring-slate-200" style={{ backgroundImage: `url(${item.image})` }}>{item.vegetarian && <span className="absolute left-3 top-3 z-10 rounded-full bg-white/95 px-2 py-1 text-[10px] font-black uppercase text-emerald-700 shadow-sm ring-1 ring-emerald-100">V</span>}<span className="absolute inset-0 bg-gradient-to-t from-slate-950/85 to-transparent" /><span className="absolute bottom-3 left-3 right-3"><span className="block truncate text-sm font-black text-white">{item.name}</span><span className="mt-1 inline-block rounded-full bg-orange-500 px-3 py-1 text-xs font-black text-white">+ {money(item.price)}</span></span></button>)}
           </div>
         </div>
 
@@ -300,6 +300,6 @@ function Top({ title, back, right, onRight }: { title: string; back?: () => void
 function Panel({ children }: { children: ReactNode }) { return <div className="mt-5 rounded-3xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-200 min-[380px]:p-5">{children}</div>; }
 function Footer({ children }: { children: ReactNode }) { return <section className="fixed bottom-0 left-1/2 right-auto z-50 w-full max-w-[430px] -translate-x-1/2 bg-[#f8fafb]/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur min-[380px]:px-4 sm:bottom-6 sm:rounded-b-[2rem]">{children}</section>; }
 function Stepper({ qty, minus, plus }: { qty: number; minus: () => void; plus: () => void }) { return <div className="flex shrink-0 items-center rounded-full bg-slate-100 p-1"><button onClick={minus} className="grid h-7 w-7 place-items-center rounded-full bg-white font-black">-</button><span className="min-w-6 text-center text-xs font-black min-[380px]:min-w-7">{qty}</span><button onClick={plus} className="grid h-7 w-7 place-items-center rounded-full bg-orange-500 font-black text-white">+</button></div>; }
-function Line({ label, value }: { label: string }) { return <div className="flex items-center justify-between gap-4 py-1 text-sm font-bold"><span>{label}</span><span className="font-black">{value}</span></div>; }
+function Line({ label, value }: { label: string; value: string }) { return <div className="flex items-center justify-between gap-4 py-1 text-sm font-bold"><span>{label}</span><span className="font-black">{value}</span></div>; }
 function Empty({ onClick }: { onClick: () => void }) { return <div className="rounded-3xl bg-white p-8 text-center shadow-sm ring-1 ring-slate-200"><h2 className="text-xl font-black">Nothing here yet</h2><p className="mt-2 text-sm font-semibold text-slate-500">Try another search or category.</p><button onClick={onClick} className="primary mt-5">Browse menu</button></div>; }
 function money(value: number) { return `£${value.toFixed(2)}`; }
