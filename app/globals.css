@@ -67,6 +67,22 @@ header.bg-slate-900 {
 
 button:active, article:active { transform: scale(0.99); }
 
+span[class*="inline-flex"][class*="tracking-"][class*="text-emerald-700"] {
+  width: 28px !important;
+  height: 28px !important;
+  justify-content: center !important;
+  gap: 0 !important;
+  padding: 0 !important;
+  font-size: 0 !important;
+  letter-spacing: 0 !important;
+}
+
+span[class*="inline-flex"][class*="tracking-"][class*="text-emerald-700"] > span {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 11px !important;
+}
+
 @layer components {
   .primary {
     min-height: 56px;
