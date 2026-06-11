@@ -1,6 +1,7 @@
 "use client";
 
 import { categoryIcons, categories, menuItems, money, type MenuItem } from "../lib/menu";
+import VegetarianBadge from "./VegetarianBadge";
 
 type Props = {
   category: string;
@@ -68,7 +69,9 @@ export default function HomeView(props: Props) {
             <div className="flex gap-3 overflow-x-auto pb-2">
               {popular.map((item) => (
                 <button key={item.id} onClick={() => props.openItem(item)} className="w-44 shrink-0 rounded-3xl bg-white p-3 text-left shadow-sm ring-1 ring-slate-200">
-                  <div className="h-24 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+                  <div className="relative h-24 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+                    {item.vegetarian && <VegetarianBadge className="absolute left-2 top-2" />}
+                  </div>
                   <h3 className="mt-3 line-clamp-1 font-black text-slate-950">{item.name}</h3>
                   <p className="mt-1 line-clamp-1 text-xs font-bold text-slate-500">{item.description}</p>
                   <div className="mt-3 flex items-center justify-between">
@@ -89,7 +92,9 @@ export default function HomeView(props: Props) {
           <div className="space-y-3">
             {props.filtered.map((item) => (
               <article key={item.id} className="flex gap-3 rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200">
-                <button onClick={() => props.openItem(item)} className="h-24 w-24 shrink-0 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} />
+                <button onClick={() => props.openItem(item)} className="relative h-24 w-24 shrink-0 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+                  {item.vegetarian && <VegetarianBadge className="absolute left-2 top-2" />}
+                </button>
                 <div className="min-w-0 flex-1">
                   <button onClick={() => props.openItem(item)} className="w-full text-left">
                     <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-600">{item.category}</p>
