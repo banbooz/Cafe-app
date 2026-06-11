@@ -35,6 +35,59 @@ button, input, textarea { font: inherit; }
 button { cursor: pointer; touch-action: manipulation; }
 button:disabled { cursor: not-allowed; }
 
+button:not(:disabled),
+a[role="button"] {
+  position: relative;
+  transform: translateZ(0);
+  transition: transform 140ms ease, filter 140ms ease, box-shadow 140ms ease, background-color 140ms ease, border-color 140ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:not(:disabled):active,
+a[role="button"]:active {
+  transform: scale(0.94) translateY(1px);
+  filter: brightness(0.94) saturate(1.08);
+}
+
+button:not(:disabled):focus-visible,
+a[role="button"]:focus-visible {
+  outline: 3px solid rgb(154 118 88 / 0.45);
+  outline-offset: 3px;
+}
+
+.primary:not(:disabled):active,
+.secondary:not(:disabled):active,
+.add:not(:disabled):active,
+.qty:not(:disabled):active,
+.qty-accent:not(:disabled):active,
+.toggle:not(:disabled):active,
+.toggle-on:not(:disabled):active,
+.table:not(:disabled):active,
+.table-on:not(:disabled):active {
+  animation: button-pop 240ms ease;
+}
+
+.add:not(:disabled):active,
+.qty-accent:not(:disabled):active {
+  box-shadow: 0 0 0 8px rgb(36 54 49 / 0.12), 0 8px 16px rgb(36 54 49 / 0.18) !important;
+}
+
+.primary:not(:disabled):active,
+.bg-slate-900:not(:disabled):active {
+  box-shadow: 0 0 0 8px rgb(36 54 49 / 0.12), 0 12px 22px rgb(36 54 49 / 0.16) !important;
+}
+
+.secondary:not(:disabled):active,
+.bg-white:not(:disabled):active {
+  box-shadow: 0 0 0 8px rgb(154 118 88 / 0.12), 0 10px 20px rgb(50 43 35 / 0.08) !important;
+}
+
+@keyframes button-pop {
+  0% { transform: scale(1); }
+  45% { transform: scale(0.94) translateY(1px); }
+  100% { transform: scale(1); }
+}
+
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
