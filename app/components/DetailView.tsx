@@ -29,9 +29,10 @@ export default function DetailView({ item, qty, add, remove, back, openCart }: P
               <span className="h-fit rounded-2xl bg-slate-100 px-3 py-2 font-black">{money(item.price)}</span>
             </div>
             <p className="mt-3 text-sm font-bold leading-6 text-slate-500">{item.description}</p>
+            <p className="mt-2 text-sm font-black leading-6 text-slate-600">Allergens: {item.allergens.join(", ")}</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
               <Info label="Prep" value={item.prep} />
-              <Info label="Allergens" value={item.allergens[0] || "None"} />
+              <Info label="Category" value={item.category} />
             </div>
           </div>
         </div>
