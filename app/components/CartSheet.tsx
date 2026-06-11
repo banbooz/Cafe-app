@@ -1,7 +1,7 @@
 "use client";
 
 import { money, type MenuItem } from "../lib/menu";
-import VegetarianBadge from "./VegetarianBadge";
+import DietaryBadges from "./DietaryBadges";
 
 type CartItem = MenuItem & { qty: number };
 
@@ -55,7 +55,6 @@ function CartRow({ item, add, remove }: { item: CartItem; add: (id: number) => v
   return (
     <article className={unavailable ? "flex items-center gap-3 rounded-3xl bg-white p-3 opacity-70 ring-1 ring-red-100" : "flex items-center gap-3 rounded-3xl bg-white p-3 ring-1 ring-slate-200"}>
       <div className="relative h-16 w-16 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-        {item.vegetarian && <VegetarianBadge className="absolute left-1 top-1 h-5 w-5 text-[10px]" />}
         {unavailable && <div className="absolute inset-0 rounded-2xl bg-slate-950/45" />}
       </div>
       <div className="min-w-0 flex-1">
@@ -63,7 +62,10 @@ function CartRow({ item, add, remove }: { item: CartItem; add: (id: number) => v
           <h3 className="truncate font-black text-slate-950">{item.name}</h3>
           {unavailable && <span className="shrink-0 rounded-full bg-red-100 px-2 py-1 text-[10px] font-black uppercase text-red-700">Unavailable</span>}
         </div>
-        <p className="text-xs font-bold text-slate-500">{money(item.price)}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <DietaryBadges item={item} />
+          <p className="text-xs font-bold text-slate-500">{money(item.price)}</p>
+        </div>
         <p className="mt-1 line-clamp-1 text-[11px] font-black text-slate-500">Allergens: {item.allergens.join(", ")}</p>
       </div>
       <div className="flex items-center rounded-full bg-slate-100 p-1">
