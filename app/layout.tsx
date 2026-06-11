@@ -1,7 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
-const APP_VERSION = "v0.2.3";
+const APP_VERSION = "v0.2.4";
 
 export const metadata: Metadata = {
   title: "Cafe Table Ordering",
@@ -139,15 +139,44 @@ export default function RootLayout({
           header.rounded-\[2rem\],
           header.bg-slate-900,
           header.bg-\[\#111827\],
-          header.bg-\[\#20160f\] {
+          header.bg-\[\#20160f\],
+          section.bg-slate-900,
+          section.bg-\[\#111827\],
+          section.bg-\[\#20160f\],
+          .rounded-\[2rem\].bg-slate-900,
+          .rounded-\[2rem\].bg-\[\#111827\],
+          .rounded-\[2rem\].bg-\[\#20160f\] {
             background-color: #b91c1c !important;
             background-image:
-              linear-gradient(45deg, rgba(255,255,255,0.22) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.22) 75%),
-              linear-gradient(45deg, rgba(255,255,255,0.22) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.22) 75%) !important;
-            background-position: 0 0, 12px 12px !important;
-            background-size: 24px 24px !important;
+              linear-gradient(45deg, rgba(255,255,255,0.96) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.96) 75%),
+              linear-gradient(45deg, rgba(255,255,255,0.96) 25%, transparent 25%, transparent 75%, rgba(255,255,255,0.96) 75%) !important;
+            background-position: 0 0, 14px 14px !important;
+            background-size: 28px 28px !important;
             color: #ffffff !important;
             box-shadow: 0 18px 38px rgb(153 27 27 / 0.20) !important;
+          }
+
+          header.rounded-\[2rem\]::before,
+          header.bg-slate-900::before,
+          header.bg-\[\#111827\]::before,
+          header.bg-\[\#20160f\]::before,
+          section.bg-slate-900::before,
+          section.bg-\[\#111827\]::before,
+          section.bg-\[\#20160f\]::before,
+          .rounded-\[2rem\].bg-slate-900::before,
+          .rounded-\[2rem\].bg-\[\#111827\]::before,
+          .rounded-\[2rem\].bg-\[\#20160f\]::before {
+            content: "";
+            display: block;
+            height: 12px;
+            margin: -1.25rem -1.25rem 1rem -1.25rem;
+            border-radius: 2rem 2rem 0 0;
+            background-color: #ffffff;
+            background-image:
+              linear-gradient(45deg, #b91c1c 25%, transparent 25%, transparent 75%, #b91c1c 75%),
+              linear-gradient(45deg, #b91c1c 25%, transparent 25%, transparent 75%, #b91c1c 75%);
+            background-position: 0 0, 8px 8px;
+            background-size: 16px 16px;
           }
 
           header.rounded-\[2rem\] h1,
@@ -155,7 +184,10 @@ export default function RootLayout({
           header.bg-\[\#111827\] h1,
           header.bg-\[\#111827\] p,
           header.bg-slate-900 h1,
-          header.bg-slate-900 p {
+          header.bg-slate-900 p,
+          section.bg-slate-900 h1,
+          section.bg-slate-900 h2,
+          section.bg-slate-900 p {
             color: #ffffff !important;
           }
 
