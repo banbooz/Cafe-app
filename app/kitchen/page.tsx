@@ -3,10 +3,13 @@
 import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
 import DietaryBadges from "../components/DietaryBadges";
+import { menuItems } from "../lib/menu";
+import { cleanAllergenList, useMenuSettings, type MenuItemSetting } from "../lib/menuSettings";
 
 type OrderStatus = "new" | "preparing" | "ready" | "served";
 
 type KitchenItem = {
+  id?: number;
   name: string;
   quantity: number;
   description?: string;
@@ -68,14 +71,15 @@ function saveOrders(orders: KitchenOrder[]) {
   window.localStorage.setItem("cafeKitchenOrders", JSON.stringify(orders));
 }
 
-function cleanAllergens(value: string) {
-  return value.split(",").map((item) => item.trim()).filter(Boolean);
+function findMenuItemId(item: KitchenItem) {
+  return item.id || menuItems.find((menuItem) => menuItem.name === item.name)?.id;
 }
 
 export default function KitchenScreen() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "active">("active");
   const [openItem, setOpenItem] = useState<string | null>(null);
+  const { updateItemSettings } = useMenuSettings();
 
   useEffect(() => {
     setOrders(loadOrders());
@@ -103,13 +107,23 @@ export default function KitchenScreen() {
     });
   }
 
-  function updateKitchenItem(orderId: number, itemName: string, changes: Partial<KitchenItem>) {
+  function updateKitchenItem(orderId: number, item: KitchenItem, changes: Partial<KitchenItem>) {
+    const globalId = findMenuItemId(item);
+    const globalChanges: MenuItemSetting = {
+      description: changes.description,
+      allergens: changes.allergens,
+      vegetarian: changes.vegetarian,
+      vegan: changes.vegan,
+    };
+
+    if (globalId) updateItemSettings(globalId, globalChanges);
+
     setOrders((current) => {
       const next = current.map((order) => {
         if (order.id !== orderId) return order;
         return {
           ...order,
-          items: order.items.map((item) => item.name === itemName ? { ...item, ...changes } : item),
+          items: order.items.map((entry) => entry.name === item.name ? { ...entry, ...changes } : entry),
         };
       });
       saveOrders(next);
@@ -120,7 +134,7 @@ export default function KitchenScreen() {
   function toggleAllergen(orderId: number, item: KitchenItem, allergen: string) {
     const current = item.allergens || [];
     const next = current.includes(allergen) ? current.filter((entry) => entry !== allergen) : [...current.filter((entry) => entry !== "None listed"), allergen];
-    updateKitchenItem(orderId, item.name, { allergens: next.length ? next : ["None listed"] });
+    updateKitchenItem(orderId, item, { allergens: next.length ? next : ["None listed"] });
   }
 
   return (
@@ -200,7 +214,7 @@ export default function KitchenScreen() {
                             <span className="text-[11px] font-black uppercase tracking-[0.14em] text-stone-500">Description</span>
                             <textarea
                               value={item.description || ""}
-                              onChange={(event) => updateKitchenItem(order.id, item.name, { description: event.target.value })}
+                              onChange={(event) => updateKitchenItem(order.id, item, { description: event.target.value })}
                               className="mt-2 min-h-20 w-full resize-none rounded-xl bg-stone-50 p-3 text-sm font-bold outline-none ring-1 ring-stone-200"
                             />
                           </label>
@@ -208,8 +222,8 @@ export default function KitchenScreen() {
                           <div className="mt-3">
                             <span className="text-[11px] font-black uppercase tracking-[0.14em] text-stone-500">Dietary badges</span>
                             <div className="mt-2 flex gap-2">
-                              <button type="button" onClick={() => updateKitchenItem(order.id, item.name, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>V</button>
-                              <button type="button" onClick={() => updateKitchenItem(order.id, item.name, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>VG</button>
+                              <button type="button" onClick={() => updateKitchenItem(order.id, item, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>V</button>
+                              <button type="button" onClick={() => updateKitchenItem(order.id, item, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-stone-100 px-3 py-2 text-xs font-black text-stone-600"}>VG</button>
                             </div>
                           </div>
 
@@ -223,7 +237,7 @@ export default function KitchenScreen() {
                             </div>
                             <input
                               value={(item.allergens || []).join(", ")}
-                              onChange={(event) => updateKitchenItem(order.id, item.name, { allergens: cleanAllergens(event.target.value) })}
+                              onChange={(event) => updateKitchenItem(order.id, item, { allergens: cleanAllergenList(event.target.value) })}
                               className="mt-2 w-full rounded-xl bg-stone-50 p-3 text-sm font-bold outline-none ring-1 ring-stone-200"
                               placeholder="Gluten, Milk, Nuts"
                             />
