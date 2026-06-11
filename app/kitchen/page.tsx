@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import AvailabilityControls from "../components/AvailabilityControls";
 
 type OrderStatus = "new" | "preparing" | "ready" | "served";
 
@@ -98,7 +99,10 @@ export default function KitchenScreen() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Cafe App</p>
               <h1 className="text-2xl font-black sm:text-3xl">Kitchen orders</h1>
             </div>
-            <a href="/" className="rounded-2xl bg-[#20160f] px-5 py-4 text-center text-sm font-black text-white shadow-lg shadow-stone-950/20">Customer view</a>
+            <div className="flex flex-wrap gap-2">
+              <a href="/business" className="rounded-2xl bg-stone-100 px-5 py-4 text-center text-sm font-black text-stone-800">Business view</a>
+              <a href="/" className="rounded-2xl bg-[#20160f] px-5 py-4 text-center text-sm font-black text-white shadow-lg shadow-stone-950/20">Customer view</a>
+            </div>
           </div>
         </header>
 
@@ -114,6 +118,10 @@ export default function KitchenScreen() {
               <p className="mt-1 text-sm font-black">{label}</p>
             </button>
           ))}
+        </section>
+
+        <section className="px-4 pb-5 sm:px-6">
+          <AvailabilityControls section="Kitchen" />
         </section>
 
         <section className="grid gap-4 px-4 pb-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
