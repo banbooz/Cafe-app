@@ -9,6 +9,7 @@ export type MenuItem = {
   allergens: string[];
   popular?: boolean;
   vegetarian?: boolean;
+  available?: boolean;
 };
 
 export const categories = ["All", "Starter", "Main", "Pudding", "Drinks"];
