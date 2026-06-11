@@ -7,6 +7,7 @@ import CartSheet from "./CartSheet";
 import { Center, Phone } from "./AppShell";
 import { menuItems, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
+import { applyMenuSettings, useMenuSettings } from "../lib/menuSettings";
 
 export default function CustomerApp() {
   const [screen, setScreen] = useState<"home" | "detail" | "done">("home");
@@ -18,10 +19,14 @@ export default function CustomerApp() {
   const [cartOpen, setCartOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
   const { availability } = useMenuAvailability();
+  const { settings } = useMenuSettings();
 
   const itemsWithAvailability = useMemo(
-    () => menuItems.map((item) => ({ ...item, available: isItemAvailable(item.id, availability) })),
-    [availability]
+    () => menuItems.map((item) => {
+      const edited = applyMenuSettings(item, settings);
+      return { ...edited, available: isItemAvailable(item.id, availability) };
+    }),
+    [availability, settings]
   );
 
   const selectedWithAvailability = useMemo(
