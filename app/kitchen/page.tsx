@@ -75,6 +75,15 @@ function findMenuItemId(item: KitchenItem) {
   return item.id || menuItems.find((menuItem) => menuItem.name === item.name)?.id;
 }
 
+function menuSettingChanges(changes: Partial<KitchenItem>) {
+  const next: MenuItemSetting = {};
+  if ("description" in changes) next.description = changes.description;
+  if ("allergens" in changes) next.allergens = changes.allergens;
+  if ("vegetarian" in changes) next.vegetarian = changes.vegetarian;
+  if ("vegan" in changes) next.vegan = changes.vegan;
+  return next;
+}
+
 export default function KitchenScreen() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "active">("active");
@@ -109,14 +118,7 @@ export default function KitchenScreen() {
 
   function updateKitchenItem(orderId: number, item: KitchenItem, changes: Partial<KitchenItem>) {
     const globalId = findMenuItemId(item);
-    const globalChanges: MenuItemSetting = {
-      description: changes.description,
-      allergens: changes.allergens,
-      vegetarian: changes.vegetarian,
-      vegan: changes.vegan,
-    };
-
-    if (globalId) updateItemSettings(globalId, globalChanges);
+    if (globalId) updateItemSettings(globalId, menuSettingChanges(changes));
 
     setOrders((current) => {
       const next = current.map((order) => {
