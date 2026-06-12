@@ -33,6 +33,7 @@ const categoryIcons: Record<string, string> = {
 export default function HomeView(props: Props) {
   const popular = props.filtered.filter((item) => item.popular);
   const [popularIndex, setPopularIndex] = useState(0);
+  const [menuOpen, setMenuOpen] = useState(false);
   const popularItem = popular.length ? popular[popularIndex % popular.length] : undefined;
 
   useEffect(() => {
@@ -54,6 +55,14 @@ export default function HomeView(props: Props) {
     props.remove(id);
   }
 
+  function goHomeFromMenu() {
+    props.setQuery("");
+    props.showAll();
+    props.setCategory("All");
+    setMenuOpen(false);
+    window.requestAnimationFrame(() => window.scrollTo({ top: 0, behavior: "smooth" }));
+  }
+
   const title = props.popularOnly ? "Popular today" : props.category === "All" ? "Explore menu" : props.category;
 
   return (
@@ -66,8 +75,12 @@ export default function HomeView(props: Props) {
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Table 3</p>
                 <h1 className="text-xl font-black tracking-tight text-[#111517]">The Corner Cafe</h1>
               </div>
-              <button onClick={props.openCart} className="grid h-11 w-11 place-items-center rounded-full bg-white text-sm font-black shadow-[0_12px_30px_rgba(29,37,40,0.12)] ring-1 ring-black/5">
-                {props.count || "☰"}
+              <button onClick={() => setMenuOpen(true)} aria-label="Open menu" className="grid h-11 w-11 place-items-center rounded-full bg-white shadow-[0_12px_30px_rgba(29,37,40,0.12)] ring-1 ring-black/5">
+                <span className="grid gap-1.5">
+                  <span className="block h-0.5 w-5 rounded-full bg-[#111517]" />
+                  <span className="block h-0.5 w-5 rounded-full bg-[#111517]" />
+                  <span className="block h-0.5 w-5 rounded-full bg-[#111517]" />
+                </span>
               </button>
             </div>
 
@@ -94,7 +107,8 @@ export default function HomeView(props: Props) {
 
         {!props.query && !props.popularOnly && popularItem && (
           <button onClick={props.showPopular} className="feature-motion-card mt-5 block w-full overflow-hidden rounded-[2rem] bg-white text-left shadow-[0_24px_60px_rgba(29,37,40,0.16)] ring-1 ring-black/5 active:scale-[0.99]">
-            <div key={popularItem.id} className="feature-kenburns relative h-64 bg-cover bg-center" style={{ backgroundImage: `url(${popularItem.image})` }}>
+            <div key={popularItem.id} className="relative h-64 overflow-hidden">
+              <div className="feature-kenburns absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${popularItem.image})` }} />
               <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/18 to-transparent" />
               {popularItem.available === false && <UnavailableOverlay />}
               <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
@@ -126,6 +140,7 @@ export default function HomeView(props: Props) {
         </section>
       </main>
       <Bottom count={props.count} total={props.total} open={props.openCart} />
+      {menuOpen && <MenuSheet count={props.count} total={props.total} close={() => setMenuOpen(false)} goHome={goHomeFromMenu} openCart={() => { setMenuOpen(false); props.openCart(); }} />}
     </>
   );
 }
@@ -135,8 +150,8 @@ function FoodCard({ item, qty, index, open, plus, minus }: { item: MenuItem; qty
 
   return (
     <article onClick={open} style={{ animationDelay: `${Math.min(index, 8) * 55}ms` }} className={unavailable ? "food-card-motion cursor-pointer overflow-hidden rounded-[1.8rem] bg-white opacity-70 shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]" : "food-card-motion cursor-pointer overflow-hidden rounded-[1.8rem] bg-white shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]"}>
-      <div className="relative h-52 overflow-hidden bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-        <button onClick={plus} disabled={unavailable} className={unavailable ? "add-burst absolute right-4 top-4 grid h-11 w-11 cursor-not-allowed place-items-center rounded-full bg-white/70 font-black text-slate-400 shadow-lg backdrop-blur-md" : "add-burst absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white font-black text-[#111517] shadow-[0_12px_26px_rgba(29,37,40,0.22)]"}>+</button>
+      <div className="relative h-52 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+        <button onClick={plus} disabled={unavailable} className={unavailable ? "add-burst absolute right-5 top-5 z-10 grid h-11 w-11 cursor-not-allowed place-items-center rounded-full bg-white/80 font-black text-slate-400 shadow-lg backdrop-blur-md" : "add-burst absolute right-5 top-5 z-10 grid h-11 w-11 place-items-center rounded-full bg-white font-black text-[#111517] shadow-[0_12px_26px_rgba(29,37,40,0.22)]"}>+</button>
         {unavailable && <UnavailableOverlay />}
       </div>
       <div className="p-4">
@@ -170,4 +185,34 @@ export function Stepper({ qty, minus, plus, disabled = false }: { qty: number; m
 
 function Bottom({ count, total, open }: { count: number; total: number; open: () => void }) {
   return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5"><button key={count || "empty"} onClick={open} className={count ? "basket-dock basket-count-pop flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl" : "basket-dock flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl"}><span><span className="block text-sm font-black">{count ? `${count} item${count === 1 ? "" : "s"}` : "Table 3"}</span><span className="block text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items to start"}</span></span><span key={total} className="basket-price-pill rounded-full bg-[#ff385c] px-5 py-3 text-sm font-black shadow-lg">{count ? money(total) : "Basket"}</span></button></section>;
+}
+
+function MenuSheet({ count, total, close, goHome, openCart }: { count: number; total: number; close: () => void; goHome: () => void; openCart: () => void }) {
+  return (
+    <div className="sheet-backdrop-enter fixed inset-0 z-[95] flex items-start justify-center bg-[#111517]/35 p-4 pt-20 backdrop-blur-sm">
+      <div className="sheet-panel-enter w-full max-w-[430px] rounded-[2rem] bg-[#f7f7f5] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.28)] ring-1 ring-white/80">
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Menu</p>
+            <h2 className="text-2xl font-black tracking-tight text-[#111517]">The Corner Cafe</h2>
+          </div>
+          <button onClick={close} className="rounded-full bg-white px-4 py-3 text-xs font-black text-[#1d2528] shadow-sm ring-1 ring-black/5">Close</button>
+        </div>
+        <div className="mt-5 grid gap-3">
+          <button onClick={goHome} className="flex min-h-16 items-center justify-between rounded-[1.5rem] bg-white px-4 text-left shadow-sm ring-1 ring-black/5">
+            <span><span className="block text-sm font-black text-[#111517]">Home</span><span className="block text-xs font-bold text-[#617174]">Back to the main menu</span></span>
+            <span className="text-xl">›</span>
+          </button>
+          <button onClick={goHome} className="flex min-h-16 items-center justify-between rounded-[1.5rem] bg-white px-4 text-left shadow-sm ring-1 ring-black/5">
+            <span><span className="block text-sm font-black text-[#111517]">Allergens menu</span><span className="block text-xs font-bold text-[#617174]">Opens the menu for now</span></span>
+            <span className="text-xl">›</span>
+          </button>
+          <button onClick={openCart} className="flex min-h-16 items-center justify-between rounded-[1.5rem] bg-[#263238] px-4 text-left text-white shadow-[0_18px_42px_rgba(29,37,40,0.22)]">
+            <span><span className="block text-sm font-black">Basket</span><span className="block text-xs font-bold text-white/65">{count ? `${count} items • ${money(total)}` : "No items yet"}</span></span>
+            <span className="text-xl">›</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
