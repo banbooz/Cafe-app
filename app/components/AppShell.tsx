@@ -1,5 +1,5 @@
 export function Phone({ children }: { children: React.ReactNode }) {
-  return <main className="min-h-[100svh] bg-[#f2f2ef]"><style>{`html{overflow-y:scroll;scrollbar-gutter:stable;}body{overflow-x:hidden;}`}</style><div className="mx-auto min-h-[100svh] w-full max-w-[430px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">{children}</div></main>;
+  return <main className="min-h-[100svh] bg-[#f2f2ef]"><div className="mx-auto min-h-[100svh] w-full max-w-[480px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">{children}</div><span className="fixed bottom-2 left-2 z-[120] rounded-full bg-[#263238] px-3 py-1 text-[11px] font-black text-white shadow-lg">v3.0.0</span></main>;
 }
 
 export function Top({ title, back, right, onRight }: { title: string; back: () => void; right: string; onRight: () => void }) {
@@ -7,7 +7,7 @@ export function Top({ title, back, right, onRight }: { title: string; back: () =
 }
 
 export function Footer({ children }: { children: React.ReactNode }) {
-  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5">{children}</section>;
+  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5">{children}</section>;
 }
 
 export function Center({ children }: { children: React.ReactNode }) {
