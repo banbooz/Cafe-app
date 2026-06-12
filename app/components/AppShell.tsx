@@ -1,5 +1,5 @@
 export function Phone({ children }: { children: React.ReactNode }) {
-  return <main className="min-h-[100svh] bg-[#f2f2ef]"><div className="mx-auto min-h-[100svh] w-full max-w-[430px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">{children}</div></main>;
+  return <main className="min-h-[100svh] bg-[#f2f2ef]"><style>{`html{overflow-y:scroll;scrollbar-gutter:stable;}body{overflow-x:hidden;}`}</style><div className="mx-auto min-h-[100svh] w-full max-w-[430px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">{children}</div></main>;
 }
 
 export function Top({ title, back, right, onRight }: { title: string; back: () => void; right: string; onRight: () => void }) {
