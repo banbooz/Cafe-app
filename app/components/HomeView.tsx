@@ -22,6 +22,14 @@ type Props = {
   openCart: () => void;
 };
 
+const categoryIcons: Record<string, string> = {
+  All: "⌂",
+  Starter: "✦",
+  Main: "◉",
+  Pudding: "◆",
+  Drinks: "◌",
+};
+
 export default function HomeView(props: Props) {
   const popular = props.filtered.filter((item) => item.popular);
   const [popularIndex, setPopularIndex] = useState(0);
@@ -46,78 +54,74 @@ export default function HomeView(props: Props) {
     props.remove(id);
   }
 
+  const title = props.popularOnly ? "Popular today" : props.category === "All" ? "Explore menu" : props.category;
+
   return (
     <>
-      <main className="px-4 pb-32 pt-4">
-        <header className="rounded-[2rem] bg-white p-4 shadow-sm ring-1 ring-slate-200">
-          <div className="text-center">
-            <p className="text-xs font-black uppercase tracking-[0.14em] text-orange-600">Table 3</p>
-            <h1 className="text-lg font-black text-slate-950">The Corner Cafe</h1>
+      <main className="min-h-screen bg-[#f7f7f5] px-4 pb-32 pt-4 text-[#1d2528]">
+        <header className="sticky top-0 z-30 -mx-4 bg-[#f7f7f5]/85 px-4 pb-3 pt-2 backdrop-blur-xl">
+          <div className="mx-auto max-w-[430px]">
+            <div className="mb-3 flex items-center justify-between px-1">
+              <div>
+                <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Table 3</p>
+                <h1 className="text-xl font-black tracking-tight text-[#111517]">The Corner Cafe</h1>
+              </div>
+              <button onClick={props.openCart} className="grid h-11 w-11 place-items-center rounded-full bg-white text-sm font-black shadow-[0_12px_30px_rgba(29,37,40,0.12)] ring-1 ring-black/5">
+                {props.count || "☰"}
+              </button>
+            </div>
+
+            <label className="flex h-14 items-center gap-3 rounded-full bg-white px-5 shadow-[0_18px_40px_rgba(29,37,40,0.13)] ring-1 ring-black/5">
+              <span className="text-sm text-slate-400">⌕</span>
+              <input value={props.query} onChange={(e) => props.setQuery(e.target.value)} className="w-full bg-transparent text-sm font-bold text-[#1d2528] outline-none placeholder:text-slate-400" placeholder="Start your search" />
+            </label>
           </div>
-          <label className="mt-4 flex h-12 items-center rounded-2xl bg-slate-100 px-4">
-            <input value={props.query} onChange={(e) => props.setQuery(e.target.value)} className="w-full bg-transparent text-sm font-bold outline-none" placeholder="Search menu" />
-          </label>
         </header>
 
+        <section className="mt-3">
+          <div className="no-scrollbar flex gap-7 overflow-x-auto border-b border-black/10 pb-3">
+            {categories.map((entry) => {
+              const active = props.category === entry && !props.popularOnly;
+              return (
+                <button key={entry} onClick={() => { props.setCategory(entry); if (props.popularOnly) props.showAll(); }} className={active ? "min-w-16 border-b-2 border-[#111517] pb-2 text-center text-[#111517]" : "min-w-16 border-b-2 border-transparent pb-2 text-center text-[#617174]"}>
+                  <span className="mx-auto grid h-8 w-8 place-items-center rounded-2xl bg-white text-lg shadow-[0_10px_24px_rgba(29,37,40,0.08)] ring-1 ring-black/5">{categoryIcons[entry] || "•"}</span>
+                  <span className="mt-1 block text-xs font-black">{entry}</span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
+
         {!props.query && !props.popularOnly && popularItem && (
-          <button onClick={props.showPopular} className="mt-4 block w-full overflow-hidden rounded-[2rem] bg-slate-900 text-left text-white shadow-sm transition active:scale-[0.99]">
-            <div key={popularItem.id} className="relative h-40 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: `url(${popularItem.image})` }}>
+          <button onClick={props.showPopular} className="mt-5 block w-full overflow-hidden rounded-[2rem] bg-white text-left shadow-[0_24px_60px_rgba(29,37,40,0.16)] ring-1 ring-black/5 active:scale-[0.99]">
+            <div className="relative h-64 bg-cover bg-center" style={{ backgroundImage: `url(${popularItem.image})` }}>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/72 via-black/18 to-transparent" />
               {popularItem.available === false && <UnavailableOverlay />}
-            </div>
-            <div className="p-5">
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-300">Popular today</p>
-              <h2 className="mt-1 text-2xl font-black">{popularItem.name}</h2>
-              <p className="mt-2 text-sm font-semibold text-white/70">Tap to view popular items.</p>
+              <div className="absolute bottom-0 left-0 right-0 p-5 text-white">
+                <p className="text-[11px] font-black uppercase tracking-[0.24em] text-white/80">Featured today</p>
+                <h2 className="mt-2 max-w-[280px] text-3xl font-black leading-none tracking-tight">{popularItem.name}</h2>
+                <div className="mt-4 flex items-center justify-between gap-3">
+                  <span className="rounded-full bg-white/18 px-3 py-2 text-xs font-black backdrop-blur-md">{money(popularItem.price)}</span>
+                  <span className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#111517] shadow-lg">View popular</span>
+                </div>
+              </div>
             </div>
           </button>
         )}
 
-        <section className="mt-5">
-          <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
-            {categories.map((entry) => (
-              <button key={entry} onClick={() => { props.setCategory(entry); if (props.popularOnly) props.showAll(); }} className={props.category === entry && !props.popularOnly ? "min-w-[88px] rounded-[1.4rem] bg-slate-900 px-4 py-4 text-sm font-black text-white" : "min-w-[88px] rounded-[1.4rem] bg-white px-4 py-4 text-sm font-black text-slate-700 ring-1 ring-slate-200"}>
-                {entry}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section className="mt-5">
-          <div className="mb-3 flex items-end justify-between gap-3">
+        <section className="mt-7">
+          <div className="mb-4 flex items-end justify-between gap-3">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.16em] text-orange-600">Menu</p>
-              <h2 className="text-xl font-black text-slate-950">{props.popularOnly ? "Popular items" : props.category === "All" ? "All items" : props.category}</h2>
+              <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Menu</p>
+              <h2 className="text-2xl font-black tracking-tight text-[#111517]">{title}</h2>
             </div>
-            {props.popularOnly && <button onClick={props.showAll} className="text-sm font-black text-orange-600">Show all</button>}
+            {props.popularOnly && <button onClick={props.showAll} className="rounded-full bg-white px-4 py-2 text-xs font-black text-[#263238] shadow-sm ring-1 ring-black/5">Show all</button>}
           </div>
 
-          <div className="space-y-3">
-            {props.filtered.map((item) => {
-              const unavailable = item.available === false;
-              return (
-                <article key={item.id} onClick={() => props.openItem(item)} className={unavailable ? "flex cursor-pointer gap-3 rounded-3xl bg-white p-3 opacity-70 shadow-sm ring-1 ring-slate-200 active:scale-[0.99]" : "flex cursor-pointer gap-3 rounded-3xl bg-white p-3 shadow-sm ring-1 ring-slate-200 active:scale-[0.99]"}>
-                  <div className="relative h-24 w-24 shrink-0 rounded-2xl bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-                    {unavailable && <UnavailableOverlay />}
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs font-black uppercase tracking-[0.12em] text-orange-600">{item.category}</p>
-                      <span className={unavailable ? "rounded-full bg-red-100 px-2 py-1 text-[10px] font-black uppercase text-red-700" : "rounded-full bg-emerald-100 px-2 py-1 text-[10px] font-black uppercase text-emerald-700"}>{unavailable ? "Unavailable" : "Available"}</span>
-                    </div>
-                    <h3 className="mt-1 line-clamp-1 font-black text-slate-950">{item.name}</h3>
-                    <div className="mt-1 flex items-center gap-2">
-                      <DietaryBadges item={item} />
-                      <p className="line-clamp-1 text-xs font-bold leading-5 text-slate-500">{item.description}</p>
-                    </div>
-                    <p className="mt-1 line-clamp-1 text-[11px] font-black text-slate-500">Allergens: {item.allergens.join(", ")}</p>
-                    <div className="mt-2 flex items-center justify-between">
-                      <span className="font-black">{money(item.price)}</span>
-                      {props.cart[item.id] ? <Stepper qty={props.cart[item.id]} minus={(event) => removeOnly(event, item.id)} plus={(event) => addOnly(event, item)} disabled={unavailable} /> : <button onClick={(event) => addOnly(event, item)} disabled={unavailable} className={unavailable ? "grid h-9 w-9 cursor-not-allowed place-items-center rounded-full bg-slate-200 font-black text-slate-400" : "add"}>+</button>}
-                    </div>
-                  </div>
-                </article>
-              );
-            })}
+          <div className="grid gap-5">
+            {props.filtered.map((item) => (
+              <FoodCard key={item.id} item={item} qty={props.cart[item.id] || 0} open={() => props.openItem(item)} plus={(event) => addOnly(event, item)} minus={(event) => removeOnly(event, item.id)} />
+            ))}
           </div>
         </section>
       </main>
@@ -126,14 +130,44 @@ export default function HomeView(props: Props) {
   );
 }
 
+function FoodCard({ item, qty, open, plus, minus }: { item: MenuItem; qty: number; open: () => void; plus: (event: MouseEvent) => void; minus: (event: MouseEvent) => void }) {
+  const unavailable = item.available === false;
+
+  return (
+    <article onClick={open} className={unavailable ? "cursor-pointer overflow-hidden rounded-[1.8rem] bg-white opacity-70 shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]" : "cursor-pointer overflow-hidden rounded-[1.8rem] bg-white shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]"}>
+      <div className="relative h-52 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
+        <button onClick={plus} disabled={unavailable} className={unavailable ? "absolute right-4 top-4 grid h-11 w-11 cursor-not-allowed place-items-center rounded-full bg-white/70 font-black text-slate-400 shadow-lg backdrop-blur-md" : "absolute right-4 top-4 grid h-11 w-11 place-items-center rounded-full bg-white font-black text-[#111517] shadow-[0_12px_26px_rgba(29,37,40,0.22)]"}>+</button>
+        {unavailable && <UnavailableOverlay />}
+      </div>
+      <div className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#5f7f80]">{item.category}</p>
+            <h3 className="mt-1 line-clamp-1 text-xl font-black tracking-tight text-[#111517]">{item.name}</h3>
+          </div>
+          <span className={unavailable ? "rounded-full bg-rose-50 px-3 py-2 text-[10px] font-black uppercase text-rose-700" : "rounded-full bg-emerald-50 px-3 py-2 text-[10px] font-black uppercase text-emerald-700"}>{unavailable ? "Unavailable" : "Available"}</span>
+        </div>
+        <div className="mt-3 flex items-center gap-2">
+          <DietaryBadges item={item} />
+          <p className="line-clamp-1 text-sm font-semibold text-[#617174]">{item.description}</p>
+        </div>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <span className="text-base font-black text-[#111517]">{money(item.price)}</span>
+          {qty ? <Stepper qty={qty} minus={minus} plus={plus} disabled={unavailable} /> : <span className="text-xs font-black text-[#617174]">Tap for details</span>}
+        </div>
+      </div>
+    </article>
+  );
+}
+
 function UnavailableOverlay() {
-  return <div className="absolute inset-0 grid place-items-center rounded-2xl bg-slate-950/55"><span className="rounded-full bg-white px-3 py-1 text-[10px] font-black uppercase text-red-700">Not available</span></div>;
+  return <div className="absolute inset-0 grid place-items-center bg-slate-950/55"><span className="rounded-full bg-white px-3 py-2 text-[10px] font-black uppercase text-rose-700 shadow-lg">Not available</span></div>;
 }
 
 export function Stepper({ qty, minus, plus, disabled = false }: { qty: number; minus: (event: MouseEvent) => void; plus: (event: MouseEvent) => void; disabled?: boolean }) {
-  return <div className="flex items-center rounded-full bg-slate-100 p-1"><button onClick={minus} className="grid h-7 w-7 place-items-center rounded-full bg-white font-black">-</button><span className="min-w-7 text-center text-xs font-black">{qty}</span><button onClick={plus} disabled={disabled} className={disabled ? "grid h-7 w-7 cursor-not-allowed place-items-center rounded-full bg-slate-200 font-black text-slate-400" : "grid h-7 w-7 place-items-center rounded-full bg-slate-900 font-black text-white"}>+</button></div>;
+  return <div className="flex items-center rounded-full bg-[#f1f4f4] p-1 ring-1 ring-black/5"><button onClick={minus} className="grid h-8 w-8 place-items-center rounded-full bg-white font-black shadow-sm">-</button><span className="min-w-8 text-center text-xs font-black">{qty}</span><button onClick={plus} disabled={disabled} className={disabled ? "grid h-8 w-8 cursor-not-allowed place-items-center rounded-full bg-slate-200 font-black text-slate-400" : "grid h-8 w-8 place-items-center rounded-full bg-[#263238] font-black text-white shadow-sm"}>+</button></div>;
 }
 
 function Bottom({ count, total, open }: { count: number; total: number; open: () => void }) {
-  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 bg-[#f4f1ea]/95 px-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 backdrop-blur sm:bottom-6 sm:rounded-b-[2rem]"><button onClick={open} className="flex min-h-16 w-full items-center justify-between rounded-2xl bg-slate-900 px-4 text-left text-white"><span><span className="block text-sm font-black">{count ? `${count} items` : "Table 3"}</span><span className="block text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items to start"}</span></span><span className="rounded-xl bg-orange-500 px-4 py-3 text-sm font-black">{count ? money(total) : "Basket"}</span></button></section>;
+  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5"><button onClick={open} className="flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl"><span><span className="block text-sm font-black">{count ? `${count} item${count === 1 ? "" : "s"}` : "Table 3"}</span><span className="block text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items to start"}</span></span><span className="rounded-full bg-[#ff385c] px-5 py-3 text-sm font-black shadow-lg">{count ? money(total) : "Basket"}</span></button></section>;
 }
