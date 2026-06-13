@@ -14,8 +14,8 @@ type Props = {
 const editTabs = [
   { id: "info", label: "Info" },
   { id: "image", label: "Image" },
-  { id: "dietary", label: "Dietary" },
-  { id: "description", label: "Description" },
+  { id: "dietary", label: "Diet" },
+  { id: "description", label: "Desc" },
 ] as const;
 
 type EditTab = (typeof editTabs)[number]["id"];
@@ -119,12 +119,12 @@ export default function AvailabilityControls({ section, compact = false }: Props
 
                     {editing && (
                       <div className="mt-3 rounded-2xl bg-white p-3 ring-1 ring-slate-200">
-                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                        <div className="grid grid-cols-4 gap-1.5">
                           {editTabs.map((tab) => (
                             <button
                               key={tab.id}
                               onClick={() => setActiveEditTab(tab.id)}
-                              className={activeEditTab === tab.id ? "min-h-11 rounded-2xl bg-slate-900 px-3 py-2 text-xs font-black text-white" : "min-h-11 rounded-2xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}
+                              className={activeEditTab === tab.id ? "flex min-h-10 items-center justify-center rounded-xl bg-slate-900 px-1 text-[10px] font-black leading-none text-white" : "flex min-h-10 items-center justify-center rounded-xl bg-slate-100 px-1 text-[10px] font-black leading-none text-slate-600"}
                             >
                               {tab.label}
                             </button>
