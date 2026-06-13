@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onSnapshot, setDoc } from "firebase/firestore";
 import { menuItems, type MenuItem } from "./menu";
+import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type MenuItemSetting = {
   name?: string;
@@ -50,6 +52,26 @@ function readMenuSettings() {
   }
 }
 
+function writeMenuSettingsLocally(settings: MenuSettingsMap) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(MENU_SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  window.dispatchEvent(new StorageEvent("storage", { key: MENU_SETTINGS_STORAGE_KEY }));
+}
+
+async function writeMenuSettingsToFirebase(settings: MenuSettingsMap) {
+  const stateDoc = getFirebaseStateDoc();
+  if (!stateDoc) return;
+
+  const signedIn = await ensureFirebaseSignedIn();
+  if (!signedIn) return;
+
+  try {
+    await setDoc(stateDoc, { menuSettings: settings, updatedAt: Date.now() }, { merge: true });
+  } catch (error) {
+    console.warn("Could not sync menu settings to Firebase. Local storage still works.", error);
+  }
+}
+
 export function applyMenuSettings<T extends MenuItem>(item: T, settings: MenuSettingsMap): T {
   const saved = settings[item.id];
   if (!saved) return item;
@@ -76,8 +98,38 @@ export function useMenuSettings() {
       if (!event || event.key === MENU_SETTINGS_STORAGE_KEY) setSettings(readMenuSettings());
     }
 
+    let active = true;
+    let unsubscribeFromFirebase: (() => void) | undefined;
+
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+
+    const stateDoc = getFirebaseStateDoc();
+    if (stateDoc) {
+      void ensureFirebaseSignedIn().then((signedIn) => {
+        if (!active || !signedIn) return;
+
+        unsubscribeFromFirebase = onSnapshot(
+          stateDoc,
+          (snapshot) => {
+            const cloudSettings = snapshot.data()?.menuSettings;
+            if (!cloudSettings || Array.isArray(cloudSettings) || typeof cloudSettings !== "object") return;
+
+            const next = { ...defaults(), ...cloudSettings } as MenuSettingsMap;
+            writeMenuSettingsLocally(next);
+            setSettings(next);
+          },
+          (error) => {
+            console.warn("Could not listen to Firebase menu settings. Local storage still works.", error);
+          }
+        );
+      });
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener("storage", refresh);
+      unsubscribeFromFirebase?.();
+    };
   }, []);
 
   function updateItemSettings(id: number, changes: MenuItemSetting) {
@@ -89,16 +141,16 @@ export function useMenuSettings() {
           ...changes,
         },
       };
-      window.localStorage.setItem(MENU_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new StorageEvent("storage", { key: MENU_SETTINGS_STORAGE_KEY }));
+      writeMenuSettingsLocally(next);
+      void writeMenuSettingsToFirebase(next);
       return next;
     });
   }
 
   function resetMenuSettings() {
     const next = defaults();
-    window.localStorage.setItem(MENU_SETTINGS_STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new StorageEvent("storage", { key: MENU_SETTINGS_STORAGE_KEY }));
+    writeMenuSettingsLocally(next);
+    void writeMenuSettingsToFirebase(next);
     setSettings(next);
   }
 
