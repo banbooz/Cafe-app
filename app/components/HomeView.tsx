@@ -69,7 +69,7 @@ export default function HomeView(props: Props) {
     <>
       <main className="page-enter min-h-screen bg-[#f7f7f5] px-4 pb-32 pt-4 text-[#1d2528]">
         <header className="motion-header sticky top-0 z-30 -mx-4 bg-[#f7f7f5]/85 px-4 pb-3 pt-2 backdrop-blur-xl">
-          <div className="mx-auto max-w-[430px]">
+          <div className="mx-auto max-w-[480px]">
             <div className="mb-3 flex items-center justify-between px-1">
               <div>
                 <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Table 3</p>
@@ -151,7 +151,6 @@ function FoodCard({ item, qty, index, open, plus, minus }: { item: MenuItem; qty
   return (
     <article onClick={open} style={{ animationDelay: `${Math.min(index, 8) * 55}ms` }} className={unavailable ? "food-card-motion cursor-pointer overflow-hidden rounded-[1.8rem] bg-white opacity-70 shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]" : "food-card-motion cursor-pointer overflow-hidden rounded-[1.8rem] bg-white shadow-[0_18px_42px_rgba(29,37,40,0.10)] ring-1 ring-black/5 active:scale-[0.99]"}>
       <div className="relative h-52 bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }}>
-        <button onClick={plus} disabled={unavailable} className={unavailable ? "add-burst absolute right-5 top-5 z-10 grid h-11 w-11 cursor-not-allowed place-items-center rounded-full bg-white/80 font-black text-slate-400 shadow-lg backdrop-blur-md" : "add-burst absolute right-5 top-5 z-10 grid h-11 w-11 place-items-center rounded-full bg-white font-black text-[#111517] shadow-[0_12px_26px_rgba(29,37,40,0.22)]"}>+</button>
         {unavailable && <UnavailableOverlay />}
       </div>
       <div className="p-4">
@@ -168,7 +167,7 @@ function FoodCard({ item, qty, index, open, plus, minus }: { item: MenuItem; qty
         </div>
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-base font-black text-[#111517]">{money(item.price)}</span>
-          {qty ? <Stepper qty={qty} minus={minus} plus={plus} disabled={unavailable} /> : <span className="text-xs font-black text-[#617174]">Tap for details</span>}
+          {qty ? <Stepper qty={qty} minus={minus} plus={plus} disabled={unavailable} /> : <button onClick={plus} disabled={unavailable} className={unavailable ? "rounded-full bg-slate-200 px-4 py-2 text-xs font-black text-slate-400" : "add-burst rounded-full bg-[#263238] px-4 py-2 text-xs font-black text-white shadow-sm"}>Add +</button>}
         </div>
       </div>
     </article>
@@ -184,13 +183,13 @@ export function Stepper({ qty, minus, plus, disabled = false }: { qty: number; m
 }
 
 function Bottom({ count, total, open }: { count: number; total: number; open: () => void }) {
-  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5"><button key={count || "empty"} onClick={open} className={count ? "basket-dock basket-count-pop flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl" : "basket-dock flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl"}><span><span className="block text-sm font-black">{count ? `${count} item${count === 1 ? "" : "s"}` : "Table 3"}</span><span className="block text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items to start"}</span></span><span key={total} className="basket-price-pill rounded-full bg-[#ff385c] px-5 py-3 text-sm font-black shadow-lg">{count ? money(total) : "Basket"}</span></button></section>;
+  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5"><button key={count || "empty"} onClick={open} className={count ? "basket-dock basket-count-pop flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl" : "basket-dock flex min-h-16 w-full items-center justify-between rounded-full bg-[#263238]/95 px-5 text-left text-white shadow-[0_20px_50px_rgba(29,37,40,0.32)] backdrop-blur-xl"}><span><span className="block text-sm font-black">{count ? `${count} item${count === 1 ? "" : "s"}` : "Table 3"}</span><span className="block text-xs font-semibold text-white/65">{count ? "Ready for checkout" : "Add items to start"}</span></span><span key={total} className="basket-price-pill rounded-full bg-[#ff385c] px-5 py-3 text-sm font-black shadow-lg">{count ? money(total) : "Basket"}</span></button></section>;
 }
 
 function MenuSheet({ count, total, close, goHome, openCart }: { count: number; total: number; close: () => void; goHome: () => void; openCart: () => void }) {
   return (
     <div className="sheet-backdrop-enter fixed inset-0 z-[95] flex items-start justify-center bg-[#111517]/35 p-4 pt-20 backdrop-blur-sm">
-      <div className="sheet-panel-enter w-full max-w-[430px] rounded-[2rem] bg-[#f7f7f5] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.28)] ring-1 ring-white/80">
+      <div className="sheet-panel-enter w-full max-w-[480px] rounded-[2rem] bg-[#f7f7f5] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.28)] ring-1 ring-white/80">
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Menu</p>
