@@ -11,6 +11,15 @@ type Props = {
   compact?: boolean;
 };
 
+const editTabs = [
+  { id: "info", label: "Info" },
+  { id: "image", label: "Image" },
+  { id: "dietary", label: "Dietary" },
+  { id: "description", label: "Description" },
+] as const;
+
+type EditTab = (typeof editTabs)[number]["id"];
+
 function cleanPriceInput(value: string) {
   const decimalCleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
   const [wholeRaw, decimalRaw] = decimalCleaned.split(".");
@@ -27,6 +36,7 @@ export default function AvailabilityControls({ section, compact = false }: Props
   const { settings, updateItemSettings, resetMenuSettings } = useMenuSettings();
   const [open, setOpen] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
+  const [activeEditTab, setActiveEditTab] = useState<EditTab>("info");
   const visibleItems = useMemo(() => menuItems.map((item) => applyMenuSettings(item, settings)), [settings]);
   const availableCount = visibleItems.filter((item) => isItemAvailable(item.id, availability)).length;
   const otherHref = section === "Kitchen" ? "/business" : "/kitchen";
@@ -39,6 +49,11 @@ export default function AvailabilityControls({ section, compact = false }: Props
       if (typeof reader.result === "string") updateItemSettings(id, { image: reader.result });
     };
     reader.readAsDataURL(file);
+  }
+
+  function toggleEditing(id: number, isEditing: boolean) {
+    setEditingId(isEditing ? null : id);
+    if (!isEditing) setActiveEditTab("info");
   }
 
   return (
@@ -97,40 +112,67 @@ export default function AvailabilityControls({ section, compact = false }: Props
                       >
                         {available ? "Available" : "Not available"}
                       </button>
-                      <button onClick={() => setEditingId(editing ? null : item.id)} className="flex h-10 items-center justify-center rounded-2xl bg-white px-3 text-xs font-black text-slate-700 ring-1 ring-slate-200">
+                      <button onClick={() => toggleEditing(item.id, editing)} className="flex h-10 items-center justify-center rounded-2xl bg-white px-3 text-xs font-black text-slate-700 ring-1 ring-slate-200">
                         {editing ? "Close" : "Edit"}
                       </button>
                     </div>
 
                     {editing && (
                       <div className="mt-3 rounded-2xl bg-white p-3 ring-1 ring-slate-200">
-                        <div className="flex flex-wrap gap-2">
-                          <button onClick={() => updateItemSettings(item.id, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>V</button>
-                          <button onClick={() => updateItemSettings(item.id, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>VG</button>
+                        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                          {editTabs.map((tab) => (
+                            <button
+                              key={tab.id}
+                              onClick={() => setActiveEditTab(tab.id)}
+                              className={activeEditTab === tab.id ? "min-h-11 rounded-2xl bg-slate-900 px-3 py-2 text-xs font-black text-white" : "min-h-11 rounded-2xl bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}
+                            >
+                              {tab.label}
+                            </button>
+                          ))}
                         </div>
-                        <label className="mt-3 block">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Product name</span>
-                          <input value={item.name} onChange={(event) => updateItemSettings(item.id, { name: event.target.value })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
-                        </label>
-                        <label className="mt-3 block">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Upload/change picture</span>
-                          <div className="mt-2 flex items-center gap-3">
-                            <div className="h-16 w-16 shrink-0 rounded-2xl bg-cover bg-center ring-1 ring-slate-200" style={{ backgroundImage: `url(${item.image})` }} />
-                            <input type="file" accept="image/*" onChange={(event) => handleImageUpload(item.id, event.target.files?.[0])} className="w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+
+                        {activeEditTab === "info" && (
+                          <div className="mt-3 space-y-3">
+                            <label className="block">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Product name</span>
+                              <input value={item.name} onChange={(event) => updateItemSettings(item.id, { name: event.target.value })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                            </label>
+                            <label className="block">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
+                              <input type="text" inputMode="decimal" value={priceInputValue(item.price)} onChange={(event) => { const next = cleanPriceInput(event.target.value); updateItemSettings(item.id, { price: Number.parseFloat(next || "0") }); }} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                            </label>
                           </div>
-                        </label>
-                        <label className="mt-3 block">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
-                          <input type="text" inputMode="decimal" value={priceInputValue(item.price)} onChange={(event) => { const next = cleanPriceInput(event.target.value); updateItemSettings(item.id, { price: Number.parseFloat(next || "0") }); }} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
-                        </label>
-                        <label className="mt-3 block">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Description</span>
-                          <textarea value={item.description} onChange={(event) => updateItemSettings(item.id, { description: event.target.value })} className="mt-2 min-h-20 w-full resize-none rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
-                        </label>
-                        <label className="mt-3 block">
-                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Allergens</span>
-                          <input value={item.allergens.join(", ")} onChange={(event) => updateItemSettings(item.id, { allergens: cleanAllergenList(event.target.value) })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
-                        </label>
+                        )}
+
+                        {activeEditTab === "image" && (
+                          <label className="mt-3 block">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Upload/change picture</span>
+                            <div className="mt-2 flex items-center gap-3">
+                              <div className="h-16 w-16 shrink-0 rounded-2xl bg-cover bg-center ring-1 ring-slate-200" style={{ backgroundImage: `url(${item.image})` }} />
+                              <input type="file" accept="image/*" onChange={(event) => handleImageUpload(item.id, event.target.files?.[0])} className="w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                            </div>
+                          </label>
+                        )}
+
+                        {activeEditTab === "dietary" && (
+                          <div className="mt-3 space-y-3">
+                            <div className="flex flex-wrap gap-2">
+                              <button onClick={() => updateItemSettings(item.id, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "min-h-11 rounded-full bg-[#16803a] px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600"}>V</button>
+                              <button onClick={() => updateItemSettings(item.id, { vegan: !item.vegan })} className={item.vegan ? "min-h-11 rounded-full bg-[#16803a] px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-slate-100 px-4 py-2 text-xs font-black text-slate-600"}>VG</button>
+                            </div>
+                            <label className="block">
+                              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Allergens</span>
+                              <input value={item.allergens.join(", ")} onChange={(event) => updateItemSettings(item.id, { allergens: cleanAllergenList(event.target.value) })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                            </label>
+                          </div>
+                        )}
+
+                        {activeEditTab === "description" && (
+                          <label className="mt-3 block">
+                            <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Description</span>
+                            <textarea value={item.description} onChange={(event) => updateItemSettings(item.id, { description: event.target.value })} className="mt-2 min-h-20 w-full resize-none rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                          </label>
+                        )}
                       </div>
                     )}
                   </div>
