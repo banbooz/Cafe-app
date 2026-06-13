@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { menuItems, type MenuItem } from "./menu";
 
 export type MenuItemSetting = {
+  name?: string;
+  image?: string;
   description?: string;
   price?: number;
   allergens?: string[];
@@ -20,6 +22,8 @@ function defaults(): MenuSettingsMap {
     menuItems.map((item) => [
       item.id,
       {
+        name: item.name,
+        image: item.image,
         description: item.description,
         price: item.price,
         allergens: item.allergens,
@@ -52,6 +56,8 @@ export function applyMenuSettings<T extends MenuItem>(item: T, settings: MenuSet
 
   return {
     ...item,
+    name: saved.name ?? item.name,
+    image: saved.image ?? item.image,
     description: saved.description ?? item.description,
     price: saved.price ?? item.price,
     allergens: saved.allergens ?? item.allergens,
