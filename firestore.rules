@@ -1,0 +1,12 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /cafes/{cafeId} {
+      // Starter rule for the Firebase-connected demo:
+      // customers, kitchen screens and business screens must at least be signed in anonymously.
+      // Before using with real customers, upgrade this to proper staff/customer roles.
+      allow read, write: if request.auth != null;
+    }
+  }
+}
