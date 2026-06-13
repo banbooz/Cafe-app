@@ -11,6 +11,17 @@ type Props = {
   compact?: boolean;
 };
 
+function cleanPriceInput(value: string) {
+  const decimalCleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+  const [wholeRaw, decimalRaw] = decimalCleaned.split(".");
+  const whole = wholeRaw.replace(/^0+(?=\d)/, "") || "0";
+  return decimalRaw === undefined ? whole : `${whole}.${decimalRaw.slice(0, 2)}`;
+}
+
+function priceInputValue(value: number) {
+  return String(value).replace(/^0+(?=\d)/, "");
+}
+
 export default function AvailabilityControls({ section, compact = false }: Props) {
   const { availability, setItemAvailability, resetAvailability } = useMenuAvailability();
   const { settings, updateItemSettings, resetMenuSettings } = useMenuSettings();
@@ -90,7 +101,7 @@ export default function AvailabilityControls({ section, compact = false }: Props
                         </div>
                         <label className="mt-3 block">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
-                          <input type="number" step="0.01" min="0" value={item.price} onChange={(event) => updateItemSettings(item.id, { price: Number.parseFloat(event.target.value || "0") })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                          <input type="text" inputMode="decimal" value={priceInputValue(item.price)} onChange={(event) => { const next = cleanPriceInput(event.target.value); updateItemSettings(item.id, { price: Number.parseFloat(next || "0") }); }} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
                         </label>
                         <label className="mt-3 block">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Description</span>
