@@ -5,28 +5,7 @@ import AvailabilityControls from "../components/AvailabilityControls";
 import DietaryBadges from "../components/DietaryBadges";
 import { menuItems } from "../lib/menu";
 import { cleanAllergenList, useMenuSettings, type MenuItemSetting } from "../lib/menuSettings";
-
-type OrderStatus = "new" | "preparing" | "ready" | "served";
-
-type KitchenItem = {
-  id?: number;
-  name: string;
-  quantity: number;
-  description?: string;
-  allergens?: string[];
-  vegetarian?: boolean;
-  vegan?: boolean;
-};
-
-type KitchenOrder = {
-  id: number;
-  table: number;
-  time: string;
-  status: OrderStatus;
-  notes?: string;
-  total: number;
-  items: KitchenItem[];
-};
+import { readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type KitchenOrderItem, type OrderStatus } from "../lib/orders";
 
 const allergyOptions = ["Gluten", "Milk", "Egg", "Nuts", "Soy", "Mustard", "Celery", "Sesame"];
 
@@ -58,24 +37,11 @@ function actionText(status: OrderStatus) {
   return "Completed";
 }
 
-function loadOrders(): KitchenOrder[] {
-  if (typeof window === "undefined") return [];
-  try {
-    return JSON.parse(window.localStorage.getItem("cafeKitchenOrders") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveOrders(orders: KitchenOrder[]) {
-  window.localStorage.setItem("cafeKitchenOrders", JSON.stringify(orders));
-}
-
-function findMenuItemId(item: KitchenItem) {
+function findMenuItemId(item: KitchenOrderItem) {
   return item.id || menuItems.find((menuItem) => menuItem.name === item.name)?.id;
 }
 
-function menuSettingChanges(changes: Partial<KitchenItem>) {
+function menuSettingChanges(changes: Partial<KitchenOrderItem>) {
   const next: MenuItemSetting = {};
   if ("description" in changes) next.description = changes.description;
   if ("allergens" in changes) next.allergens = changes.allergens;
@@ -91,9 +57,12 @@ export default function KitchenScreen() {
   const { updateItemSettings } = useMenuSettings();
 
   useEffect(() => {
-    setOrders(loadOrders());
-    const timer = window.setInterval(() => setOrders(loadOrders()), 3000);
-    return () => window.clearInterval(timer);
+    function refreshOrders() {
+      setOrders(readKitchenOrders());
+    }
+
+    refreshOrders();
+    return subscribeToKitchenOrders(refreshOrders);
   }, []);
 
   const visibleOrders = useMemo(() => {
@@ -111,12 +80,12 @@ export default function KitchenScreen() {
   function updateOrder(id: number) {
     setOrders((current) => {
       const next = current.map((order) => order.id === id ? { ...order, status: nextStatus(order.status) } : order);
-      saveOrders(next);
+      writeKitchenOrders(next);
       return next;
     });
   }
 
-  function updateKitchenItem(orderId: number, item: KitchenItem, changes: Partial<KitchenItem>) {
+  function updateKitchenItem(orderId: number, item: KitchenOrderItem, changes: Partial<KitchenOrderItem>) {
     const globalId = findMenuItemId(item);
     if (globalId) updateItemSettings(globalId, menuSettingChanges(changes));
 
@@ -128,12 +97,12 @@ export default function KitchenScreen() {
           items: order.items.map((entry) => entry.name === item.name ? { ...entry, ...changes } : entry),
         };
       });
-      saveOrders(next);
+      writeKitchenOrders(next);
       return next;
     });
   }
 
-  function toggleAllergen(orderId: number, item: KitchenItem, allergen: string) {
+  function toggleAllergen(orderId: number, item: KitchenOrderItem, allergen: string) {
     const current = item.allergens || [];
     const next = current.includes(allergen) ? current.filter((entry) => entry !== allergen) : [...current.filter((entry) => entry !== "None listed"), allergen];
     updateKitchenItem(orderId, item, { allergens: next.length ? next : ["None listed"] });
