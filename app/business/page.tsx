@@ -1,27 +1,15 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
+import { menuItems, money } from "../lib/menu";
+import { readKitchenOrders, subscribeToKitchenOrders, type KitchenOrder } from "../lib/orders";
 
-type OrderItem = {
-  name: string;
-  qty: number;
-  category: string;
-};
-
-type Order = {
-  id: number;
-  table: number;
-  type: string;
-  total: number;
-  time: string;
-  items: OrderItem[];
-};
-
-const orders: Order[] = [];
-
-function money(value: number) {
-  return `£${value.toFixed(2)}`;
+function getItemCategory(itemId: number | undefined, itemName: string) {
+  return menuItems.find((item) => item.id === itemId || item.name === itemName)?.category || "Other";
 }
 
-function getAnalytics() {
+function getAnalytics(orders: KitchenOrder[]) {
   const itemTotals: Record<string, number> = {};
   const categoryTotals: Record<string, number> = {};
   let itemCount = 0;
@@ -30,9 +18,10 @@ function getAnalytics() {
   orders.forEach((order) => {
     revenue += order.total;
     order.items.forEach((item) => {
-      itemTotals[item.name] = (itemTotals[item.name] || 0) + item.qty;
-      categoryTotals[item.category] = (categoryTotals[item.category] || 0) + item.qty;
-      itemCount += item.qty;
+      const category = getItemCategory(item.id, item.name);
+      itemTotals[item.name] = (itemTotals[item.name] || 0) + item.quantity;
+      categoryTotals[category] = (categoryTotals[category] || 0) + item.quantity;
+      itemCount += item.quantity;
     });
   });
 
@@ -57,7 +46,18 @@ function getAnalytics() {
 }
 
 export default function BusinessDashboard() {
-  const analytics = getAnalytics();
+  const [orders, setOrders] = useState<KitchenOrder[]>([]);
+
+  useEffect(() => {
+    function refreshOrders() {
+      setOrders(readKitchenOrders());
+    }
+
+    refreshOrders();
+    return subscribeToKitchenOrders(refreshOrders);
+  }, []);
+
+  const analytics = useMemo(() => getAnalytics(orders), [orders]);
 
   return (
     <main className="min-h-screen bg-[#eef1f3] px-4 py-5 text-slate-900 sm:px-6 lg:px-8">
@@ -68,7 +68,7 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard</p>
               <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The Corner Cafe</h1>
               <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">
-                Track orders, sales, menu performance and item availability.
+                Track live orders, sales, menu performance and item availability from the same Firebase data as the kitchen screen.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -100,7 +100,7 @@ export default function BusinessDashboard() {
                 <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Menu performance</p>
                 <h2 className="mt-1 text-xl font-black">Most ordered items</h2>
               </div>
-              <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Today</span>
+              <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Live</span>
             </div>
 
             {analytics.itemsRanked.length ? (
@@ -152,7 +152,7 @@ export default function BusinessDashboard() {
               <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Orders</p>
               <h2 className="mt-1 text-xl font-black">Recent orders</h2>
             </div>
-            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">No orders</span>
+            <span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{orders.length ? "Live orders" : "No orders"}</span>
           </div>
 
           {orders.length ? (
@@ -164,10 +164,10 @@ export default function BusinessDashboard() {
                       <p className="text-xs font-black text-slate-400">Order #{order.id}</p>
                       <h3 className="mt-1 font-black">Table {order.table}</h3>
                     </div>
-                    <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.type}</span>
+                    <span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.status}</span>
                   </div>
                   <p className="mt-3 text-sm font-bold leading-6 text-slate-500">
-                    {order.items.map((item) => `${item.qty}x ${item.name}`).join(", ")}
+                    {order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}
                   </p>
                   <div className="mt-4 flex items-center justify-between">
                     <span className="text-xs font-black text-slate-400">{order.time}</span>
