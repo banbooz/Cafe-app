@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { menuItems } from "../lib/menu";
+import { menuItems, money } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { applyMenuSettings, cleanAllergenList, useMenuSettings } from "../lib/menuSettings";
 import DietaryBadges from "./DietaryBadges";
@@ -28,7 +28,7 @@ export default function AvailabilityControls({ section, compact = false }: Props
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live menu controls</p>
             <h2 className="mt-1 text-xl font-black">Menu item toggles</h2>
-            <p className="mt-2 text-sm font-bold text-slate-500">Edit availability, descriptions and V/VG badges. Changes update across the app.</p>
+            <p className="mt-2 text-sm font-bold text-slate-500">Edit availability, descriptions, prices and V/VG badges. Changes update across the app.</p>
           </div>
           <span className="shrink-0 rounded-2xl bg-slate-100 px-4 py-3 text-xs font-black text-slate-700">{open ? "Hide" : "Show"} menu</span>
         </button>
@@ -66,6 +66,7 @@ export default function AvailabilityControls({ section, compact = false }: Props
                     </div>
                     <div className="mt-2 flex items-center gap-2">
                       <DietaryBadges item={item} />
+                      <span className="rounded-full bg-white px-2 py-1 text-[10px] font-black text-slate-700 ring-1 ring-slate-200">{money(item.price)}</span>
                       <p className="line-clamp-1 text-xs font-bold text-slate-500">{item.description}</p>
                     </div>
                     <div className="mt-3 grid grid-cols-2 gap-2">
@@ -87,6 +88,10 @@ export default function AvailabilityControls({ section, compact = false }: Props
                           <button onClick={() => updateItemSettings(item.id, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>V</button>
                           <button onClick={() => updateItemSettings(item.id, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>VG</button>
                         </div>
+                        <label className="mt-3 block">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
+                          <input type="number" step="0.01" min="0" value={item.price} onChange={(event) => updateItemSettings(item.id, { price: Number.parseFloat(event.target.value || "0") })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                        </label>
                         <label className="mt-3 block">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Description</span>
                           <textarea value={item.description} onChange={(event) => updateItemSettings(item.id, { description: event.target.value })} className="mt-2 min-h-20 w-full resize-none rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
