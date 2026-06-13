@@ -145,7 +145,7 @@ export default function CustomerApp() {
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
           <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
-          <p className="mt-3 text-sm font-bold text-slate-500">Your order is being prepared for table 3.</p>
+          <p className="mt-3 text-sm font-bold text-slate-500">Track your table 3 order below.</p>
           <CustomerOrderStatus order={currentOrder} />
           <button onClick={() => { setCart({}); setChefNotes(""); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
         </Center>
