@@ -5,6 +5,7 @@ import { menuItems, type MenuItem } from "./menu";
 
 export type MenuItemSetting = {
   description?: string;
+  price?: number;
   allergens?: string[];
   vegetarian?: boolean;
   vegan?: boolean;
@@ -20,6 +21,7 @@ function defaults(): MenuSettingsMap {
       item.id,
       {
         description: item.description,
+        price: item.price,
         allergens: item.allergens,
         vegetarian: Boolean(item.vegetarian),
         vegan: Boolean(item.vegan),
@@ -51,6 +53,7 @@ export function applyMenuSettings<T extends MenuItem>(item: T, settings: MenuSet
   return {
     ...item,
     description: saved.description ?? item.description,
+    price: saved.price ?? item.price,
     allergens: saved.allergens ?? item.allergens,
     vegetarian: saved.vegetarian ?? Boolean(item.vegetarian),
     vegan: saved.vegan ?? Boolean(item.vegan),
