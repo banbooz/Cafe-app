@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { onSnapshot, setDoc } from "firebase/firestore";
 import { menuItems } from "./menu";
+import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type AvailabilityMap = Record<number, boolean>;
 
@@ -26,6 +28,26 @@ function readAvailability() {
   }
 }
 
+function writeAvailabilityLocally(availability: AvailabilityMap) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(AVAILABILITY_STORAGE_KEY, JSON.stringify(availability));
+  window.dispatchEvent(new StorageEvent("storage", { key: AVAILABILITY_STORAGE_KEY }));
+}
+
+async function writeAvailabilityToFirebase(availability: AvailabilityMap) {
+  const stateDoc = getFirebaseStateDoc();
+  if (!stateDoc) return;
+
+  const signedIn = await ensureFirebaseSignedIn();
+  if (!signedIn) return;
+
+  try {
+    await setDoc(stateDoc, { availability, updatedAt: Date.now() }, { merge: true });
+  } catch (error) {
+    console.warn("Could not sync menu availability to Firebase. Local storage still works.", error);
+  }
+}
+
 export function useMenuAvailability() {
   const [availability, setAvailability] = useState<AvailabilityMap>(() => defaultAvailability());
 
@@ -36,23 +58,53 @@ export function useMenuAvailability() {
       if (!event || event.key === AVAILABILITY_STORAGE_KEY) setAvailability(readAvailability());
     }
 
+    let active = true;
+    let unsubscribeFromFirebase: (() => void) | undefined;
+
     window.addEventListener("storage", refresh);
-    return () => window.removeEventListener("storage", refresh);
+
+    const stateDoc = getFirebaseStateDoc();
+    if (stateDoc) {
+      void ensureFirebaseSignedIn().then((signedIn) => {
+        if (!active || !signedIn) return;
+
+        unsubscribeFromFirebase = onSnapshot(
+          stateDoc,
+          (snapshot) => {
+            const cloudAvailability = snapshot.data()?.availability;
+            if (!cloudAvailability || Array.isArray(cloudAvailability) || typeof cloudAvailability !== "object") return;
+
+            const next = { ...defaultAvailability(), ...cloudAvailability } as AvailabilityMap;
+            writeAvailabilityLocally(next);
+            setAvailability(next);
+          },
+          (error) => {
+            console.warn("Could not listen to Firebase menu availability. Local storage still works.", error);
+          }
+        );
+      });
+    }
+
+    return () => {
+      active = false;
+      window.removeEventListener("storage", refresh);
+      unsubscribeFromFirebase?.();
+    };
   }, []);
 
   function setItemAvailability(id: number, available: boolean) {
     setAvailability((current) => {
       const next = { ...current, [id]: available };
-      window.localStorage.setItem(AVAILABILITY_STORAGE_KEY, JSON.stringify(next));
-      window.dispatchEvent(new StorageEvent("storage", { key: AVAILABILITY_STORAGE_KEY }));
+      writeAvailabilityLocally(next);
+      void writeAvailabilityToFirebase(next);
       return next;
     });
   }
 
   function resetAvailability() {
     const next = defaultAvailability();
-    window.localStorage.setItem(AVAILABILITY_STORAGE_KEY, JSON.stringify(next));
-    window.dispatchEvent(new StorageEvent("storage", { key: AVAILABILITY_STORAGE_KEY }));
+    writeAvailabilityLocally(next);
+    void writeAvailabilityToFirebase(next);
     setAvailability(next);
   }
 
