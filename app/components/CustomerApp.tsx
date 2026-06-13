@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import HomeView from "./HomeView";
 import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
@@ -8,6 +8,32 @@ import { Center, Phone } from "./AppShell";
 import { menuItems, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { applyMenuSettings, useMenuSettings } from "../lib/menuSettings";
+import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentCustomerOrderId, subscribeToKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
+
+const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
+
+function orderStepIndex(status: OrderStatus) {
+  return orderSteps.indexOf(status);
+}
+
+function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
+  const status = order?.status || "new";
+  const activeStep = orderStepIndex(status);
+
+  return (
+    <div className="mt-5 w-full rounded-3xl bg-slate-50 p-4 text-left ring-1 ring-slate-200">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live order status</p>
+      <h2 className="mt-2 text-2xl font-black text-slate-950">{customerStatusText[status]}</h2>
+      <p className="mt-2 text-sm font-bold text-slate-500">Kitchen updates this when your order moves forward.</p>
+      <div className="mt-4 grid grid-cols-4 gap-2">
+        {orderSteps.map((step, index) => (
+          <div key={step} className={index <= activeStep ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />
+        ))}
+      </div>
+      {order && <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Order #{order.id}</p>}
+    </div>
+  );
+}
 
 export default function CustomerApp() {
   const [screen, setScreen] = useState<"home" | "detail" | "done">("home");
@@ -18,8 +44,20 @@ export default function CustomerApp() {
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
+  const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
   const { availability } = useMenuAvailability();
   const { settings } = useMenuSettings();
+
+  useEffect(() => {
+    function refreshCurrentOrder() {
+      const orderId = currentOrder?.id || readCurrentCustomerOrderId();
+      if (!orderId) return;
+      setCurrentOrder(findKitchenOrder(orderId));
+    }
+
+    refreshCurrentOrder();
+    return subscribeToKitchenOrders(refreshCurrentOrder);
+  }, [currentOrder?.id]);
 
   const itemsWithAvailability = useMemo(
     () => menuItems.map((item) => {
@@ -70,7 +108,7 @@ export default function CustomerApp() {
   }
 
   function saveOrderForKitchen() {
-    const order = {
+    const order: KitchenOrder = {
       id: Date.now(),
       table: 3,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
@@ -88,19 +126,31 @@ export default function CustomerApp() {
       }))
     };
 
-    const existing = JSON.parse(window.localStorage.getItem("cafeKitchenOrders") || "[]");
-    window.localStorage.setItem("cafeKitchenOrders", JSON.stringify([order, ...existing]));
+    prependKitchenOrder(order);
+    return order;
   }
 
   function sendOrder() {
     if (!cartItems.length || unavailableCartItems.length) return;
-    saveOrderForKitchen();
+    const order = saveOrderForKitchen();
+    setCurrentOrder(order);
     setCartOpen(false);
     setScreen("done");
   }
 
   if (screen === "done") {
-    return <Phone><Center><div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div><p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p><h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1><p className="mt-3 text-sm font-bold text-slate-500">Your order is being prepared for table 3.</p><button onClick={() => { setCart({}); setChefNotes(""); setScreen("home"); }} className="primary mt-6">Order more</button></Center></Phone>;
+    return (
+      <Phone>
+        <Center>
+          <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p>
+          <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
+          <p className="mt-3 text-sm font-bold text-slate-500">Your order is being prepared for table 3.</p>
+          <CustomerOrderStatus order={currentOrder} />
+          <button onClick={() => { setCart({}); setChefNotes(""); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
+        </Center>
+      </Phone>
+    );
   }
 
   if (screen === "detail") {
