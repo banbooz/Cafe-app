@@ -32,6 +32,15 @@ export default function AvailabilityControls({ section, compact = false }: Props
   const otherHref = section === "Kitchen" ? "/business" : "/kitchen";
   const otherLabel = section === "Kitchen" ? "Business app" : "Kitchen app";
 
+  function handleImageUpload(id: number, file?: File) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === "string") updateItemSettings(id, { image: reader.result });
+    };
+    reader.readAsDataURL(file);
+  }
+
   return (
     <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -39,7 +48,7 @@ export default function AvailabilityControls({ section, compact = false }: Props
           <div>
             <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live menu controls</p>
             <h2 className="mt-1 text-xl font-black">Menu item toggles</h2>
-            <p className="mt-2 text-sm font-bold text-slate-500">Edit availability, descriptions, prices and V/VG badges. Changes update across the app.</p>
+            <p className="mt-2 text-sm font-bold text-slate-500">Edit availability, names, images, descriptions, prices and V/VG badges. Changes update across the app.</p>
           </div>
           <span className="shrink-0 rounded-2xl bg-slate-100 px-4 py-3 text-xs font-black text-slate-700">{open ? "Hide" : "Show"} menu</span>
         </button>
@@ -99,6 +108,17 @@ export default function AvailabilityControls({ section, compact = false }: Props
                           <button onClick={() => updateItemSettings(item.id, { vegetarian: !item.vegetarian })} className={item.vegetarian ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>V</button>
                           <button onClick={() => updateItemSettings(item.id, { vegan: !item.vegan })} className={item.vegan ? "rounded-full bg-[#16803a] px-3 py-2 text-xs font-black text-white" : "rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600"}>VG</button>
                         </div>
+                        <label className="mt-3 block">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Product name</span>
+                          <input value={item.name} onChange={(event) => updateItemSettings(item.id, { name: event.target.value })} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                        </label>
+                        <label className="mt-3 block">
+                          <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Upload/change picture</span>
+                          <div className="mt-2 flex items-center gap-3">
+                            <div className="h-16 w-16 shrink-0 rounded-2xl bg-cover bg-center ring-1 ring-slate-200" style={{ backgroundImage: `url(${item.image})` }} />
+                            <input type="file" accept="image/*" onChange={(event) => handleImageUpload(item.id, event.target.files?.[0])} className="w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                          </div>
+                        </label>
                         <label className="mt-3 block">
                           <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
                           <input type="text" inputMode="decimal" value={priceInputValue(item.price)} onChange={(event) => { const next = cleanPriceInput(event.target.value); updateItemSettings(item.id, { price: Number.parseFloat(next || "0") }); }} className="mt-2 w-full rounded-xl bg-slate-50 p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
