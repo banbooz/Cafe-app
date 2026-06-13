@@ -24,6 +24,7 @@ export type KitchenOrder = {
 
 export const KITCHEN_ORDERS_STORAGE_KEY = "cafeKitchenOrders";
 export const KITCHEN_ORDERS_CHANGED_EVENT = "cafeKitchenOrdersChanged";
+export const CURRENT_CUSTOMER_ORDER_STORAGE_KEY = "cafeCurrentCustomerOrderId";
 
 export const customerStatusText: Record<OrderStatus, string> = {
   new: "Order received",
@@ -47,9 +48,20 @@ export function writeKitchenOrders(orders: KitchenOrder[]) {
   window.dispatchEvent(new Event(KITCHEN_ORDERS_CHANGED_EVENT));
 }
 
+export function prependKitchenOrder(order: KitchenOrder) {
+  writeKitchenOrders([order, ...readKitchenOrders()]);
+  window.localStorage.setItem(CURRENT_CUSTOMER_ORDER_STORAGE_KEY, String(order.id));
+}
+
+export function readCurrentCustomerOrderId() {
+  if (typeof window === "undefined") return null;
+  const saved = Number(window.localStorage.getItem(CURRENT_CUSTOMER_ORDER_STORAGE_KEY));
+  return Number.isFinite(saved) && saved > 0 ? saved : null;
+}
+
 export function subscribeToKitchenOrders(callback: () => void) {
   function handleStorage(event: StorageEvent) {
-    if (event.key === KITCHEN_ORDERS_STORAGE_KEY) callback();
+    if (event.key === KITCHEN_ORDERS_STORAGE_KEY || event.key === CURRENT_CUSTOMER_ORDER_STORAGE_KEY) callback();
   }
 
   window.addEventListener(KITCHEN_ORDERS_CHANGED_EVENT, callback);
