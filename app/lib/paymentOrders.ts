@@ -37,6 +37,14 @@ function findPendingOrder(pendingOrders: Record<string, PendingOrder>, orderId?:
   return match ? { key: match[0], order: match[1] } : null;
 }
 
+function findExistingPaidOrder(orders: KitchenOrder[], orderId?: string, sessionId?: string) {
+  return orders.find((order) => {
+    const sameOrderId = orderId && String(order.id) === String(orderId);
+    const sameSessionId = sessionId && order.payment?.checkoutSessionId === sessionId;
+    return Boolean(sameOrderId || sameSessionId);
+  });
+}
+
 export function isProductionPaymentStoreConfigured() {
   return isFirebaseAdminConfigured();
 }
@@ -108,8 +116,12 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
     const snapshot = await transaction.get(stateRef);
     const data = snapshot.data() || {};
     const pendingOrders = { ...(data.pendingOrders || {}) } as Record<string, PendingOrder>;
-    const match = findPendingOrder(pendingOrders, orderId, session.id);
+    const existingOrders = Array.isArray(data.orders) ? data.orders as KitchenOrder[] : [];
+    const alreadyPaidOrder = findExistingPaidOrder(existingOrders, orderId, session.id);
 
+    if (alreadyPaidOrder) return;
+
+    const match = findPendingOrder(pendingOrders, orderId, session.id);
     if (!match) throw new Error("Paid Stripe order was not found in pendingOrders.");
 
     const pendingOrder = match.order;
@@ -118,8 +130,6 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
       throw new Error("Paid amount does not match the server-calculated order total.");
     }
 
-    const existingOrders = Array.isArray(data.orders) ? data.orders as KitchenOrder[] : [];
-    const alreadyAdded = existingOrders.some((order) => String(order.id) === String(pendingOrder.id));
     const paidOrder: KitchenOrder = {
       ...pendingOrder,
       payment: {
@@ -135,7 +145,7 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
 
     transaction.set(stateRef, {
       cafeId: cafeConfig.id,
-      orders: alreadyAdded ? existingOrders : [paidOrder, ...existingOrders],
+      orders: [paidOrder, ...existingOrders],
       pendingOrders,
       updatedAt: Date.now(),
     }, { merge: true });
