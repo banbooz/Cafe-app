@@ -17,7 +17,7 @@ const editTabLabels: Record<EditTab, string> = {
   image: "Pic",
   dietary: "Diet",
   description: "Desc",
-  remove: "Del",
+  remove: "Bin",
 };
 
 function cleanPriceInput(value: string) {
