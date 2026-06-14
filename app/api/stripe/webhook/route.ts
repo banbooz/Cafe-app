@@ -1,33 +1,16 @@
 import { NextResponse } from "next/server";
+import { confirmPaidStripeOrder, type StripePaidSession } from "../../../lib/paymentOrders";
 import { stripeConfig } from "../../../lib/stripeConfig";
 import { verifyStripeWebhookSignature } from "../../../lib/stripeWebhook";
 
 export const runtime = "nodejs";
 
-type StripeCheckoutSession = {
-  id?: string;
-  payment_status?: string;
-  client_reference_id?: string;
-  metadata?: Record<string, string>;
-};
-
 type StripeWebhookEvent = {
   type?: string;
   data?: {
-    object?: StripeCheckoutSession;
+    object?: StripePaidSession;
   };
 };
-
-function handleCheckoutCompleted(session: StripeCheckoutSession) {
-  const paid = session.payment_status === "paid";
-  const cafeId = session.metadata?.cafeId || "unknown-cafe";
-  const orderId = session.metadata?.orderId || session.client_reference_id || "unknown-order";
-
-  // Production next step:
-  // After this verified webhook fires, write the paid order to the database from the server.
-  // Then block direct customer writes in Firestore rules.
-  console.info("Stripe checkout completed", { paid, cafeId, orderId, sessionId: session.id });
-}
 
 export async function POST(request: Request) {
   const payload = await request.text();
@@ -45,8 +28,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Invalid Stripe webhook payload." }, { status: 400 });
   }
 
-  if (event.type === "checkout.session.completed" && event.data?.object) {
-    handleCheckoutCompleted(event.data.object);
+  try {
+    if (event.type === "checkout.session.completed" && event.data?.object) {
+      await confirmPaidStripeOrder(event.data.object);
+    }
+  } catch (error) {
+    console.error("Could not fulfil paid Stripe order", error);
+    return NextResponse.json({ ok: false, error: "Could not fulfil paid Stripe order." }, { status: 500 });
   }
 
   return NextResponse.json({ ok: true, received: true });
