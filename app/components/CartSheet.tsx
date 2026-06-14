@@ -34,6 +34,7 @@ export default function CartSheet({ items, total, chefNotes, setChefNotes, close
           <button onClick={close} className="rounded-full bg-white px-4 py-3 text-xs font-black text-[#1d2528] shadow-sm ring-1 ring-black/5">Close</button>
         </div>
 
+        {isSubmitting && <div className="mt-4 rounded-[1.5rem] bg-slate-900 p-4 text-sm font-black text-white ring-1 ring-slate-800">Checking order with server...</div>}
         {hasUnavailable && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">Some items are no longer available. Remove them before sending the order.</div>}
         {orderError && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">{orderError}</div>}
 
