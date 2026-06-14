@@ -31,8 +31,18 @@ function safeTableNumber(value: unknown) {
   return Number.isInteger(next) && next >= 1 && next <= 999 ? next : cafeConfig.tableNumber;
 }
 
+function readTableNumberFromUrl() {
+  if (typeof window === "undefined") return null;
+  const tableParam = new URLSearchParams(window.location.search).get("table");
+  if (!tableParam) return null;
+  const next = Number(tableParam);
+  return Number.isInteger(next) && next >= 1 && next <= 999 ? next : null;
+}
+
 function readSelectedTableNumber() {
   if (typeof window === "undefined") return cafeConfig.tableNumber;
+  const tableFromUrl = readTableNumberFromUrl();
+  if (tableFromUrl) return tableFromUrl;
   const saved = window.localStorage.getItem(CUSTOMER_TABLE_STORAGE_KEY);
   return saved ? safeTableNumber(saved) : cafeConfig.tableNumber;
 }
