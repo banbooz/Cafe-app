@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
+import { cafeConfig } from "../lib/cafeConfig";
 import { menuItems, money } from "../lib/menu";
 import { readKitchenOrders, subscribeToKitchenOrders, type KitchenOrder } from "../lib/orders";
 
@@ -65,10 +66,10 @@ export default function BusinessDashboard() {
         <header className="rounded-[2rem] bg-[#111827] p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7">
           <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard</p>
-              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">The Corner Cafe</h1>
+              <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard · {cafeConfig.id}</p>
+              <h1 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{cafeConfig.name}</h1>
               <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">
-                Track live orders, sales, menu performance and item availability from the same Firebase data as the kitchen screen.
+                Track live orders, sales, menu performance and item availability for this café only.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -124,7 +125,7 @@ export default function BusinessDashboard() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="No item data" text="Most ordered items will appear here." />
+              <EmptyState title="No item data" text={`Most ordered items for ${cafeConfig.name} will appear here.`} />
             )}
           </section>
 
@@ -141,7 +142,7 @@ export default function BusinessDashboard() {
                 ))}
               </div>
             ) : (
-              <EmptyState title="No category data" text="Category performance will appear here." />
+              <EmptyState title="No category data" text={`Category performance for ${cafeConfig.name} will appear here.`} />
             )}
           </section>
         </div>
@@ -177,7 +178,7 @@ export default function BusinessDashboard() {
               ))}
             </div>
           ) : (
-            <EmptyState title="No orders" text="Orders will appear here when they are placed." />
+            <EmptyState title="No orders" text={`Orders for ${cafeConfig.name} will appear here when they are placed.`} />
           )}
         </section>
       </section>
