@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import HomeView from "./HomeView";
 import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
@@ -39,6 +39,11 @@ function readSelectedTableNumber() {
 
 function moneyValue(value: number) {
   return Number(value.toFixed(2));
+}
+
+function readWindowScrollY() {
+  if (typeof window === "undefined") return 0;
+  return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
 }
 
 function pickUpsells(items: MenuItem[], cart: Record<number, number>) {
@@ -104,6 +109,8 @@ export default function CustomerApp() {
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const homeScrollYRef = useRef(0);
+  const shouldRestoreHomeScrollRef = useRef(false);
   const { availability } = useMenuAvailability();
   const { settings } = useMenuSettings();
   const { visibleItems } = useMenuCatalogue(settings);
@@ -116,6 +123,17 @@ export default function CustomerApp() {
   useEffect(() => {
     if (tableLoaded && typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(selectedTable));
   }, [selectedTable, tableLoaded]);
+
+  useEffect(() => {
+    if (screen !== "home" || !shouldRestoreHomeScrollRef.current || typeof window === "undefined") return;
+    shouldRestoreHomeScrollRef.current = false;
+    const savedScrollY = homeScrollYRef.current;
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollY, behavior: "auto" });
+      window.requestAnimationFrame(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
+    });
+  }, [screen, filtered.length, category, query, popularOnly]);
 
   useEffect(() => {
     function refreshCurrentOrder() {
@@ -165,6 +183,17 @@ export default function CustomerApp() {
       else next[id] = qty;
       return next;
     });
+  }
+
+  function openMenuItem(item: MenuItem) {
+    homeScrollYRef.current = readWindowScrollY();
+    setSelected(item);
+    setScreen("detail");
+  }
+
+  function backToMenu() {
+    shouldRestoreHomeScrollRef.current = true;
+    setScreen("home");
   }
 
   function orderRequestBody() {
@@ -233,8 +262,8 @@ export default function CustomerApp() {
   }
 
   if (screen === "detail") {
-    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
+    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
   }
 
-  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={(item) => { setSelected(item); setScreen("detail"); }} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
+  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
 }
