@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
 import DietaryBadges from "../components/DietaryBadges";
+import { cafeConfig } from "../lib/cafeConfig";
 import { menuItems } from "../lib/menu";
 import { cleanAllergenList, useMenuSettings, type MenuItemSetting } from "../lib/menuSettings";
 import { readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type KitchenOrderItem, type OrderStatus } from "../lib/orders";
@@ -79,7 +80,7 @@ export default function KitchenScreen() {
 
   function updateOrder(id: number) {
     setOrders((current) => {
-      const next = current.map((order) => order.id === id ? { ...order, status: nextStatus(order.status) } : order);
+      const next = current.map((order) => order.id === id ? { ...order, cafeId: cafeConfig.id, status: nextStatus(order.status) } : order);
       writeKitchenOrders(next);
       return next;
     });
@@ -94,6 +95,7 @@ export default function KitchenScreen() {
         if (order.id !== orderId) return order;
         return {
           ...order,
+          cafeId: cafeConfig.id,
           items: order.items.map((entry) => entry.name === item.name ? { ...entry, ...changes } : entry),
         };
       });
@@ -114,7 +116,7 @@ export default function KitchenScreen() {
         <header className="sticky top-0 z-20 border-b border-stone-200 bg-[#fbfaf7]/95 px-4 py-4 backdrop-blur sm:px-6">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">Cafe App</p>
+              <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">{cafeConfig.name} · {cafeConfig.id}</p>
               <h1 className="text-2xl font-black sm:text-3xl">Kitchen orders</h1>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -229,7 +231,7 @@ export default function KitchenScreen() {
           {visibleOrders.length === 0 && (
             <div className="col-span-full rounded-[1.5rem] bg-white p-8 text-center shadow-sm ring-1 ring-stone-200">
               <h2 className="text-2xl font-black">No orders</h2>
-              <p className="mt-2 text-sm font-semibold text-stone-500">Orders will appear here.</p>
+              <p className="mt-2 text-sm font-semibold text-stone-500">Orders for {cafeConfig.name} will appear here.</p>
             </div>
           )}
         </section>
