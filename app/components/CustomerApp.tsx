@@ -125,17 +125,6 @@ export default function CustomerApp() {
   }, [selectedTable, tableLoaded]);
 
   useEffect(() => {
-    if (screen !== "home" || !shouldRestoreHomeScrollRef.current || typeof window === "undefined") return;
-    shouldRestoreHomeScrollRef.current = false;
-    const savedScrollY = homeScrollYRef.current;
-
-    window.requestAnimationFrame(() => {
-      window.scrollTo({ top: savedScrollY, behavior: "auto" });
-      window.requestAnimationFrame(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
-    });
-  }, [screen, filtered.length, category, query, popularOnly]);
-
-  useEffect(() => {
     function refreshCurrentOrder() {
       const orderId = currentOrder?.id || readCurrentCustomerOrderId();
       if (orderId) setCurrentOrder(findKitchenOrder(orderId));
@@ -155,6 +144,17 @@ export default function CustomerApp() {
       return byPopular && byCategory && bySearch;
     });
   }, [category, query, popularOnly, itemsWithAvailability]);
+
+  useEffect(() => {
+    if (screen !== "home" || !shouldRestoreHomeScrollRef.current || typeof window === "undefined") return;
+    shouldRestoreHomeScrollRef.current = false;
+    const savedScrollY = homeScrollYRef.current;
+
+    window.requestAnimationFrame(() => {
+      window.scrollTo({ top: savedScrollY, behavior: "auto" });
+      window.requestAnimationFrame(() => window.scrollTo({ top: savedScrollY, behavior: "auto" }));
+    });
+  }, [screen, filtered.length, category, query, popularOnly]);
 
   const cartItems = itemsWithAvailability.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
   const unavailableCartItems = cartItems.filter((item) => item.available === false);
