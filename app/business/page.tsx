@@ -66,9 +66,14 @@ function analyticsFor(orders: KitchenOrder[], menu: MenuLookup[]) {
   const categories: Record<string, number> = {};
   let itemCount = 0;
   let revenue = 0;
+  let subtotalRevenue = 0;
+  let tipRevenue = 0;
 
   orders.forEach((order) => {
+    const tipAmount = Number(order.tipAmount || 0);
     revenue += order.total;
+    tipRevenue += tipAmount;
+    subtotalRevenue += typeof order.subtotal === "number" ? order.subtotal : order.total - tipAmount;
     order.items.forEach((rawItem) => {
       const item = rawItem as SoldItem;
       const category = itemCategory(item, menu);
@@ -84,6 +89,8 @@ function analyticsFor(orders: KitchenOrder[], menu: MenuLookup[]) {
     orderCount: orders.length,
     itemCount,
     revenue,
+    subtotalRevenue,
+    tipRevenue,
     averageOrder: orders.length ? revenue / orders.length : 0,
     topProduct: soldProducts[0] || { key: "none", name: "No orders", category: "Other", quantity: 0, revenue: 0 },
     topCategory: categoriesRanked[0] || { name: "No data", qty: 0 },
@@ -132,9 +139,9 @@ export default function BusinessDashboard() {
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="Orders tracked" value={String(analytics.orderCount)} detail={`${analytics.itemCount} items sold`} />
-          <Metric label="App revenue" value={money(analytics.revenue)} detail={`${money(analytics.averageOrder)} average order`} />
+          <Metric label="Revenue incl. tips" value={money(analytics.revenue)} detail={`${money(analytics.subtotalRevenue)} before tips`} />
+          <Metric label="Tips received" value={money(analytics.tipRevenue)} detail="Optional customer tips" />
           <Metric label="Top sold product" value={analytics.topProduct.name} detail={`${analytics.topProduct.quantity} sold - ${money(analytics.topProduct.revenue)}`} />
-          <Metric label="Best category" value={analytics.topCategory.name} detail={`${analytics.topCategory.qty} items ordered`} />
         </div>
 
         <div className="mt-5"><AvailabilityControls section="Business" /></div>
@@ -167,7 +174,7 @@ export default function BusinessDashboard() {
 
         <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
           <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Orders</p><h2 className="mt-1 text-xl font-black">Recent orders</h2></div><span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{orders.length ? "Live orders" : "No orders"}</span></div>
-          {orders.length ? <div className="mt-5 grid gap-3 lg:grid-cols-4">{orders.map((order) => <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-400">Order #{order.id}</p><h3 className="mt-1 font-black">Table {order.table}</h3></div><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.status}</span></div><p className="mt-3 text-sm font-bold leading-6 text-slate-500">{order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}</p><div className="mt-4 flex items-center justify-between"><span className="text-xs font-black text-slate-400">{order.time}</span><span className="font-black">{money(order.total)}</span></div></article>)}</div> : <EmptyState title="No orders" text={`Orders for ${cafeConfig.name} will appear here when they are placed.`} />}
+          {orders.length ? <div className="mt-5 grid gap-3 lg:grid-cols-4">{orders.map((order) => <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-400">Order #{order.id}</p><h3 className="mt-1 font-black">Table {order.table}</h3></div><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.status}</span></div><p className="mt-3 text-sm font-bold leading-6 text-slate-500">{order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}</p><div className="mt-4 space-y-2"><div className="flex items-center justify-between text-xs font-black text-slate-400"><span>{order.time}</span><span>Subtotal {money(order.subtotal ?? order.total - Number(order.tipAmount || 0))}</span></div>{order.tipAmount ? <div className="flex items-center justify-between text-xs font-black text-orange-600"><span>Tip {order.tipPercentage || 0}%</span><span>{money(order.tipAmount)}</span></div> : null}<div className="flex items-center justify-between"><span className="text-xs font-black text-slate-400">Total</span><span className="font-black">{money(order.total)}</span></div></div></article>)}</div> : <EmptyState title="No orders" text={`Orders for ${cafeConfig.name} will appear here when they are placed.`} />}
         </section>
       </section>
     </main>
