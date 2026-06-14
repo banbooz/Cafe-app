@@ -57,8 +57,8 @@ export async function POST(request: Request) {
   const appUrl = getAppUrl();
   const form = new URLSearchParams();
   form.append("mode", "payment");
-  form.append("success_url", `${appUrl}/?payment=success&session_id={CHECKOUT_SESSION_ID}`);
-  form.append("cancel_url", `${appUrl}/?payment=cancelled`);
+  form.append("success_url", `${appUrl}/?payment=success&order_id=${result.order.id}&session_id={CHECKOUT_SESSION_ID}`);
+  form.append("cancel_url", `${appUrl}/?payment=cancelled&order_id=${result.order.id}`);
   form.append("client_reference_id", String(result.order.id));
   form.append("metadata[cafeId]", cafeConfig.id);
   form.append("metadata[table]", String(result.order.table));
