@@ -3,11 +3,12 @@
 import { useEffect, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { menuItems } from "./menu";
+import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type AvailabilityMap = Record<number, boolean>;
 
-export const AVAILABILITY_STORAGE_KEY = "cafeItemAvailability";
+export const AVAILABILITY_STORAGE_KEY = getCafeStorageKey("cafeItemAvailability");
 
 export function isItemAvailable(id: number, availability: AvailabilityMap) {
   return availability[id] !== false;
@@ -42,7 +43,7 @@ async function writeAvailabilityToFirebase(availability: AvailabilityMap) {
   if (!signedIn) return;
 
   try {
-    await setDoc(stateDoc, { availability, updatedAt: Date.now() }, { merge: true });
+    await setDoc(stateDoc, { cafeId: cafeConfig.id, availability, updatedAt: Date.now() }, { merge: true });
   } catch (error) {
     console.warn("Could not sync menu availability to Firebase. Local storage still works.", error);
   }
@@ -71,7 +72,10 @@ export function useMenuAvailability() {
         unsubscribeFromFirebase = onSnapshot(
           stateDoc,
           (snapshot) => {
-            const cloudAvailability = snapshot.data()?.availability;
+            const data = snapshot.data();
+            if (data?.cafeId && data.cafeId !== cafeConfig.id) return;
+
+            const cloudAvailability = data?.availability;
             if (!cloudAvailability || Array.isArray(cloudAvailability) || typeof cloudAvailability !== "object") return;
 
             const next = { ...defaultAvailability(), ...cloudAvailability } as AvailabilityMap;
