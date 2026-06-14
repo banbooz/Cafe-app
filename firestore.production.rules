@@ -1,0 +1,13 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Production target after staff login is added.
+    // Server-side Firebase Admin writes bypass these rules.
+    // Customers should not be able to directly write paid orders from the browser.
+    match /cafes/{cafeId} {
+      allow read: if request.auth != null;
+      allow write: if false;
+    }
+  }
+}
