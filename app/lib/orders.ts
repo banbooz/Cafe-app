@@ -1,6 +1,7 @@
 "use client";
 
 import { onSnapshot, setDoc } from "firebase/firestore";
+import { getCafeStorageKey, cafeConfig } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "served";
@@ -17,6 +18,7 @@ export type KitchenOrderItem = {
 
 export type KitchenOrder = {
   id: number;
+  cafeId: string;
   table: number;
   time: string;
   status: OrderStatus;
@@ -25,9 +27,12 @@ export type KitchenOrder = {
   items: KitchenOrderItem[];
 };
 
-export const KITCHEN_ORDERS_STORAGE_KEY = "cafeKitchenOrders";
+const BASE_KITCHEN_ORDERS_STORAGE_KEY = "cafeKitchenOrders";
+const BASE_CURRENT_CUSTOMER_ORDER_STORAGE_KEY = "cafeCurrentCustomerOrderId";
+
+export const KITCHEN_ORDERS_STORAGE_KEY = getCafeStorageKey(BASE_KITCHEN_ORDERS_STORAGE_KEY);
 export const KITCHEN_ORDERS_CHANGED_EVENT = "cafeKitchenOrdersChanged";
-export const CURRENT_CUSTOMER_ORDER_STORAGE_KEY = "cafeCurrentCustomerOrderId";
+export const CURRENT_CUSTOMER_ORDER_STORAGE_KEY = getCafeStorageKey(BASE_CURRENT_CUSTOMER_ORDER_STORAGE_KEY);
 
 export const customerStatusText: Record<OrderStatus, string> = {
   new: "Order received",
@@ -36,6 +41,15 @@ export const customerStatusText: Record<OrderStatus, string> = {
   served: "Served / Completed",
 };
 
+function normaliseOrders(value: unknown): KitchenOrder[] {
+  if (!Array.isArray(value)) return [];
+
+  return value
+    .filter((order): order is KitchenOrder => Boolean(order && typeof order === "object" && "id" in order))
+    .map((order) => ({ ...order, cafeId: order.cafeId || cafeConfig.id }))
+    .filter((order) => order.cafeId === cafeConfig.id);
+}
+
 function emitKitchenOrdersChanged() {
   if (typeof window === "undefined") return;
   window.dispatchEvent(new Event(KITCHEN_ORDERS_CHANGED_EVENT));
@@ -43,7 +57,7 @@ function emitKitchenOrdersChanged() {
 
 function writeKitchenOrdersLocally(orders: KitchenOrder[]) {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(KITCHEN_ORDERS_STORAGE_KEY, JSON.stringify(orders));
+  window.localStorage.setItem(KITCHEN_ORDERS_STORAGE_KEY, JSON.stringify(normaliseOrders(orders)));
   emitKitchenOrdersChanged();
 }
 
@@ -55,7 +69,7 @@ async function writeKitchenOrdersToFirebase(orders: KitchenOrder[]) {
   if (!signedIn) return;
 
   try {
-    await setDoc(stateDoc, { orders, updatedAt: Date.now() }, { merge: true });
+    await setDoc(stateDoc, { cafeId: cafeConfig.id, orders: normaliseOrders(orders), updatedAt: Date.now() }, { merge: true });
   } catch (error) {
     console.warn("Could not sync kitchen orders to Firebase. Local storage still works.", error);
   }
@@ -65,7 +79,7 @@ export function readKitchenOrders(): KitchenOrder[] {
   if (typeof window === "undefined") return [];
 
   try {
-    return JSON.parse(window.localStorage.getItem(KITCHEN_ORDERS_STORAGE_KEY) || "[]");
+    return normaliseOrders(JSON.parse(window.localStorage.getItem(KITCHEN_ORDERS_STORAGE_KEY) || "[]"));
   } catch {
     return [];
   }
@@ -77,7 +91,7 @@ export function writeKitchenOrders(orders: KitchenOrder[]) {
 }
 
 export function prependKitchenOrder(order: KitchenOrder) {
-  writeKitchenOrders([order, ...readKitchenOrders()]);
+  writeKitchenOrders([{ ...order, cafeId: cafeConfig.id }, ...readKitchenOrders()]);
   window.localStorage.setItem(CURRENT_CUSTOMER_ORDER_STORAGE_KEY, String(order.id));
 }
 
@@ -108,9 +122,10 @@ export function subscribeToKitchenOrders(callback: () => void) {
       unsubscribeFromFirebase = onSnapshot(
         stateDoc,
         (snapshot) => {
-          const cloudOrders = snapshot.data()?.orders;
-          if (!Array.isArray(cloudOrders)) return;
+          const data = snapshot.data();
+          if (data?.cafeId && data.cafeId !== cafeConfig.id) return;
 
+          const cloudOrders = normaliseOrders(data?.orders);
           window.localStorage.setItem(KITCHEN_ORDERS_STORAGE_KEY, JSON.stringify(cloudOrders));
           callback();
         },
@@ -130,5 +145,5 @@ export function subscribeToKitchenOrders(callback: () => void) {
 }
 
 export function findKitchenOrder(id: number) {
-  return readKitchenOrders().find((order) => order.id === id) || null;
+  return readKitchenOrders().find((order) => order.id === id && order.cafeId === cafeConfig.id) || null;
 }
