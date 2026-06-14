@@ -1,10 +1,9 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
-
-const APP_VERSION = "v3.1.0";
+import { APP_NAME, APP_VERSION } from "./lib/appMeta";
 
 export const metadata: Metadata = {
-  title: "Cafe Table Ordering",
+  title: APP_NAME,
   description: "A mobile-first cafe table ordering experience.",
 };
 
