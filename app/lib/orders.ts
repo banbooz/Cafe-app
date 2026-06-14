@@ -11,6 +11,7 @@ export type KitchenOrderItem = {
   id?: number;
   name: string;
   quantity: number;
+  unitPrice?: number;
   description?: string;
   allergens?: string[];
   vegetarian?: boolean;
@@ -32,6 +33,9 @@ export type KitchenOrder = {
   time: string;
   status: OrderStatus;
   notes?: string;
+  subtotal?: number;
+  tipPercentage?: number;
+  tipAmount?: number;
   total: number;
   items: KitchenOrderItem[];
   payment?: KitchenOrderPayment;
