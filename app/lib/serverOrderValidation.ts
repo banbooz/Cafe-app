@@ -13,11 +13,14 @@ export type OrderRequestItem = {
 export type OrderRequestBody = {
   items?: OrderRequestItem[];
   notes?: string;
+  table?: number;
 };
 
 const MAX_TOTAL_ITEMS = 30;
 const MAX_ITEM_QTY = 10;
 const MAX_NOTES = 180;
+const MIN_TABLE_NUMBER = 1;
+const MAX_TABLE_NUMBER = 999;
 const CUSTOM_ITEM_ID_START = 10000;
 
 function cleanText(value: unknown, fallback: string) {
@@ -37,6 +40,11 @@ function cleanAllergens(value: unknown) {
   if (!Array.isArray(value)) return ["None listed"];
   const next = value.map((entry) => String(entry).trim()).filter(Boolean).slice(0, 12);
   return next.length ? next : ["None listed"];
+}
+
+function cleanTableNumber(value: unknown) {
+  const next = Number(value);
+  return Number.isInteger(next) && next >= MIN_TABLE_NUMBER && next <= MAX_TABLE_NUMBER ? next : cafeConfig.tableNumber;
 }
 
 function resolveOrderItem(requested: OrderRequestItem, id: number): MenuItem | null {
@@ -117,7 +125,7 @@ export function validateAndBuildOrder(body: OrderRequestBody): { ok: true; order
     order: {
       id: Date.now(),
       cafeId: cafeConfig.id,
-      table: cafeConfig.tableNumber,
+      table: cleanTableNumber(body.table),
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "new",
       notes: typeof body.notes === "string" ? body.notes.trim().slice(0, MAX_NOTES) : "",
