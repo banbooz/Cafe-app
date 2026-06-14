@@ -5,6 +5,7 @@ import HomeView from "./HomeView";
 import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
 import { Center, Phone } from "./AppShell";
+import { cafeConfig } from "../lib/cafeConfig";
 import { menuItems, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { applyMenuSettings, useMenuSettings } from "../lib/menuSettings";
@@ -110,7 +111,8 @@ export default function CustomerApp() {
   function saveOrderForKitchen() {
     const order: KitchenOrder = {
       id: Date.now(),
-      table: 3,
+      cafeId: cafeConfig.id,
+      table: cafeConfig.tableNumber,
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "new",
       notes: chefNotes.trim(),
@@ -145,7 +147,7 @@ export default function CustomerApp() {
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
           <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
-          <p className="mt-3 text-sm font-bold text-slate-500">Track your table 3 order below.</p>
+          <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {cafeConfig.tableNumber} order below.</p>
           <CustomerOrderStatus order={currentOrder} />
           <button onClick={() => { setCart({}); setChefNotes(""); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
         </Center>
