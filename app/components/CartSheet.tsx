@@ -13,10 +13,12 @@ type Props = {
   close: () => void;
   add: (id: number) => void;
   remove: (id: number) => void;
-  send: () => void;
+  send: () => void | Promise<void>;
+  isSubmitting?: boolean;
+  orderError?: string;
 };
 
-export default function CartSheet({ items, total, chefNotes, setChefNotes, close, add, remove, send }: Props) {
+export default function CartSheet({ items, total, chefNotes, setChefNotes, close, add, remove, send, isSubmitting = false, orderError }: Props) {
   const unavailableItems = items.filter((item) => item.available === false);
   const hasUnavailable = unavailableItems.length > 0;
 
@@ -33,6 +35,7 @@ export default function CartSheet({ items, total, chefNotes, setChefNotes, close
         </div>
 
         {hasUnavailable && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">Some items are no longer available. Remove them before sending the order.</div>}
+        {orderError && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">{orderError}</div>}
 
         <div className="no-scrollbar mt-4 max-h-72 space-y-3 overflow-y-auto">
           {items.length ? items.map((item, index) => <CartRow key={item.id} item={item} index={index} add={add} remove={remove} />) : <p className="cart-row-enter rounded-[1.5rem] bg-white p-7 text-center text-sm font-bold text-[#617174] shadow-sm ring-1 ring-black/5">Basket is empty</p>}
@@ -40,14 +43,14 @@ export default function CartSheet({ items, total, chefNotes, setChefNotes, close
 
         <label className="cart-row-enter mt-4 block rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-black/5" style={{ animationDelay: "120ms" }}>
           <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5f7f80]">Chef notes</span>
-          <textarea value={chefNotes} onChange={(event) => setChefNotes(event.target.value)} className="mt-3 min-h-20 w-full resize-none rounded-[1.25rem] bg-[#f1f4f4] p-3 text-sm font-bold text-[#1d2528] outline-none placeholder:text-slate-400" placeholder="No onions, sauce on the side, allergy notes..." />
+          <textarea value={chefNotes} onChange={(event) => setChefNotes(event.target.value)} maxLength={180} className="mt-3 min-h-20 w-full resize-none rounded-[1.25rem] bg-[#f1f4f4] p-3 text-sm font-bold text-[#1d2528] outline-none placeholder:text-slate-400" placeholder="No onions, sauce on the side, allergy notes..." />
         </label>
 
         <div className="cart-row-enter mt-4 flex items-center justify-between rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-black/5" style={{ animationDelay: "170ms" }}>
           <span className="font-black text-[#1d2528]">Total</span>
           <span key={total} className="qty-pop text-2xl font-black text-[#111517]">{money(total)}</span>
         </div>
-        <button onClick={send} disabled={!items.length || hasUnavailable} className="add-burst mt-4 min-h-16 w-full rounded-full bg-[#ff385c] px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(255,56,92,0.25)] disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">{hasUnavailable ? "Remove unavailable item(s)" : "Send order"}</button>
+        <button onClick={() => { void send(); }} disabled={!items.length || hasUnavailable || isSubmitting} className="add-burst mt-4 min-h-16 w-full rounded-full bg-[#ff385c] px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(255,56,92,0.25)] disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">{isSubmitting ? "Checking order..." : hasUnavailable ? "Remove unavailable item(s)" : "Send order"}</button>
       </div>
     </div>
   );
