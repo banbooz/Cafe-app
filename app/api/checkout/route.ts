@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { cafeConfig } from "../../lib/cafeConfig";
-import { menuItems } from "../../lib/menu";
 import type { KitchenOrder } from "../../lib/orders";
 import { attachStripeSessionToPendingOrder, isProductionPaymentStoreConfigured, savePendingStripeOrder } from "../../lib/paymentOrders";
 import { isStripeServerConfigured, stripeConfig } from "../../lib/stripeConfig";
@@ -14,13 +13,21 @@ function getAppUrl() {
 
 function appendLineItems(form: URLSearchParams, order: KitchenOrder) {
   order.items.forEach((item, index) => {
-    const menuItem = menuItems.find((entry) => entry.id === item.id)!;
     form.append(`line_items[${index}][quantity]`, String(item.quantity));
     form.append(`line_items[${index}][price_data][currency]`, "gbp");
-    form.append(`line_items[${index}][price_data][unit_amount]`, String(Math.round(menuItem.price * 100)));
-    form.append(`line_items[${index}][price_data][product_data][name]`, menuItem.name);
-    form.append(`line_items[${index}][price_data][product_data][description]`, menuItem.description);
+    form.append(`line_items[${index}][price_data][unit_amount]`, String(Math.round(Number(item.unitPrice || 0) * 100)));
+    form.append(`line_items[${index}][price_data][product_data][name]`, item.name);
+    if (item.description) form.append(`line_items[${index}][price_data][product_data][description]`, item.description);
   });
+
+  if (order.tipAmount && order.tipAmount > 0) {
+    const tipIndex = order.items.length;
+    form.append(`line_items[${tipIndex}][quantity]`, "1");
+    form.append(`line_items[${tipIndex}][price_data][currency]`, "gbp");
+    form.append(`line_items[${tipIndex}][price_data][unit_amount]`, String(Math.round(order.tipAmount * 100)));
+    form.append(`line_items[${tipIndex}][price_data][product_data][name]`, `Tip ${order.tipPercentage || 0}%`);
+    form.append(`line_items[${tipIndex}][price_data][product_data][description]`, "Optional customer tip");
+  }
 }
 
 export async function POST(request: Request) {
@@ -54,13 +61,16 @@ export async function POST(request: Request) {
   form.append("cancel_url", `${appUrl}/?payment=cancelled`);
   form.append("client_reference_id", String(result.order.id));
   form.append("metadata[cafeId]", cafeConfig.id);
-  form.append("metadata[table]", String(cafeConfig.tableNumber));
+  form.append("metadata[table]", String(result.order.table));
   form.append("metadata[orderId]", String(result.order.id));
+  form.append("metadata[orderSubtotal]", String(result.order.subtotal || result.order.total));
+  form.append("metadata[tipPercentage]", String(result.order.tipPercentage || 0));
+  form.append("metadata[tipAmount]", String(result.order.tipAmount || 0));
   form.append("metadata[orderTotal]", String(result.order.total));
   appendLineItems(form, result.order);
 
   const headers = new Headers();
-  headers.set("Authorization", "Bearer " + stripeConfig.secretKey);
+  headers.set("Authorization", ["Bearer", stripeConfig.secretKey].join(" "));
   headers.set("Content-Type", "application/x-www-form-urlencoded");
 
   const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
