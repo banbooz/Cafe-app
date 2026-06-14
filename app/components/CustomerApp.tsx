@@ -22,6 +22,7 @@ const upsellGroups = [["Drinks"], ["Pudding"], ["Main", "Starter"]];
 
 type OrderApiResponse = { ok: true; order: KitchenOrder } | { ok: false; error?: string };
 type CheckoutApiResponse = { ok: true; checkoutUrl: string; orderId: number } | { ok: false; error?: string };
+type PaymentNotice = { type: "success" | "error" | "info"; title: string; text: string };
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -101,13 +102,30 @@ function snapshot(item: MenuItem) {
   };
 }
 
-function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
+function PaymentBanner({ notice, close }: { notice: PaymentNotice | null; close?: () => void }) {
+  if (!notice) return null;
+  const style = notice.type === "error" ? "bg-rose-50 text-rose-900 ring-rose-200" : notice.type === "success" ? "bg-emerald-50 text-emerald-900 ring-emerald-200" : "bg-sky-50 text-sky-900 ring-sky-200";
+  return (
+    <div className={`mx-4 mb-4 rounded-3xl p-4 text-left ring-1 ${style}`}>
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-black uppercase tracking-[0.16em] opacity-70">{notice.type === "error" ? "Payment issue" : "Payment update"}</p>
+          <h2 className="mt-1 text-lg font-black">{notice.title}</h2>
+          <p className="mt-1 text-sm font-bold leading-5 opacity-80">{notice.text}</p>
+        </div>
+        {close ? <button onClick={close} className="rounded-full bg-white/70 px-3 py-1 text-xs font-black">Close</button> : null}
+      </div>
+    </div>
+  );
+}
+
+function CustomerOrderStatus({ order, confirming }: { order: KitchenOrder | null; confirming: boolean }) {
   if (!order) {
     return (
       <div className="mt-5 w-full rounded-3xl bg-slate-50 p-4 text-left ring-1 ring-slate-200">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Payment confirmed</p>
-        <h2 className="mt-2 text-2xl font-black text-slate-950">Sending to kitchen</h2>
-        <p className="mt-2 text-sm font-bold text-slate-500">Stripe has confirmed the payment. The kitchen order will appear shortly.</p>
+        <h2 className="mt-2 text-2xl font-black text-slate-950">{confirming ? "Sending to kitchen" : "Waiting for kitchen sync"}</h2>
+        <p className="mt-2 text-sm font-bold text-slate-500">The server is checking Stripe and sending the paid order to the kitchen. Refreshing will not create a duplicate.</p>
         <div className="mt-4 grid grid-cols-4 gap-2">
           {orderSteps.map((step, index) => <div key={step} className={index === 0 ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
         </div>
@@ -122,12 +140,38 @@ function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
     <div className="mt-5 w-full rounded-3xl bg-slate-50 p-4 text-left ring-1 ring-slate-200">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Live order status</p>
       <h2 className="mt-2 text-2xl font-black text-slate-950">{customerStatusText[status]}</h2>
-      <p className="mt-2 text-sm font-bold text-slate-500">Kitchen updates this when your order moves forward.</p>
+      <p className="mt-2 text-sm font-bold text-slate-500">This updates live when the kitchen changes your order to Preparing, Ready, or Served.</p>
       <div className="mt-4 grid grid-cols-4 gap-2">
         {orderSteps.map((step, index) => <div key={step} className={index <= activeStep ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
       </div>
-      {order && <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Table {order.table} - Order #{order.id}</p>}
-      {order?.tipAmount ? <p className="mt-2 text-xs font-black text-[#617174]">Tip added: {money(order.tipAmount)}</p> : null}
+      <div className="mt-3 grid grid-cols-4 gap-2 text-center text-[10px] font-black uppercase tracking-[0.08em] text-slate-400">
+        <span>Received</span><span>Preparing</span><span>Ready</span><span>Served</span>
+      </div>
+      <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Table {order.table} - Order #{order.id}</p>
+      {order.payment?.status === "paid" ? <p className="mt-2 text-xs font-black text-emerald-700">Paid by Stripe</p> : null}
+      {order.tipAmount ? <p className="mt-2 text-xs font-black text-[#617174]">Tip added: {money(order.tipAmount)}</p> : null}
+    </div>
+  );
+}
+
+function OrderReceipt({ order }: { order: KitchenOrder | null }) {
+  if (!order) return null;
+  return (
+    <div className="mt-5 w-full rounded-3xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-200">
+      <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Receipt</p>
+      <div className="mt-3 space-y-2">
+        {order.items.map((item) => (
+          <div key={`${order.id}-${item.name}`} className="flex items-start justify-between gap-3 text-sm font-bold text-slate-600">
+            <span>{item.quantity}x {item.name}</span>
+            {item.unitPrice ? <span>{money(item.unitPrice * item.quantity)}</span> : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 space-y-2 border-t border-slate-100 pt-3 text-sm font-black">
+        {typeof order.subtotal === "number" ? <div className="flex justify-between text-slate-500"><span>Subtotal</span><span>{money(order.subtotal)}</span></div> : null}
+        {order.tipAmount ? <div className="flex justify-between text-orange-600"><span>Tip {order.tipPercentage || 0}%</span><span>{money(order.tipAmount)}</span></div> : null}
+        <div className="flex justify-between text-lg text-slate-950"><span>Total paid</span><span>{money(order.total)}</span></div>
+      </div>
     </div>
   );
 }
@@ -147,7 +191,9 @@ export default function CustomerApp() {
   const [tableLoaded, setTableLoaded] = useState(false);
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [isConfirmingPayment, setIsConfirmingPayment] = useState(false);
   const [orderError, setOrderError] = useState("");
+  const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
   const homeScrollYRef = useRef(0);
   const shouldRestoreHomeScrollRef = useRef(false);
   const { availability } = useMenuAvailability();
@@ -160,6 +206,37 @@ export default function CustomerApp() {
     setTableLoaded(true);
     window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(nextTable));
   }, []);
+
+  async function findOrderWithRetry(orderId: number) {
+    for (let attempt = 0; attempt < 10; attempt += 1) {
+      const order = findKitchenOrder(orderId);
+      if (order) return order;
+      await wait(700);
+    }
+    return findKitchenOrder(orderId);
+  }
+
+  async function confirmPaidStripeReturn(orderId: number, sessionId: string) {
+    setIsConfirmingPayment(true);
+    try {
+      if (sessionId.startsWith("cs_")) {
+        const response = await fetch(`/api/checkout/confirm?session_id=${encodeURIComponent(sessionId)}`, { cache: "no-store" });
+        if (!response.ok) throw new Error("Payment was taken, but the order could not be confirmed with the kitchen yet.");
+      }
+
+      const order = await findOrderWithRetry(orderId);
+      if (order) {
+        setCurrentOrder(order);
+        setPaymentNotice({ type: "success", title: "Payment successful", text: "Your paid order has been sent to the kitchen." });
+      } else {
+        setPaymentNotice({ type: "info", title: "Payment confirmed", text: "Your payment is confirmed and the kitchen order is still syncing. It should appear shortly." });
+      }
+    } catch (error) {
+      setPaymentNotice({ type: "error", title: "Payment confirmed, order not synced", text: error instanceof Error ? error.message : "Check the kitchen and Vercel logs before taking another payment." });
+    } finally {
+      setIsConfirmingPayment(false);
+    }
+  }
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -177,13 +254,8 @@ export default function CustomerApp() {
       setCartOpen(false);
       setUpsellOpen(false);
       setScreen("done");
-
-      if (sessionId.startsWith("cs_")) {
-        void fetch(`/api/checkout/confirm?session_id=${encodeURIComponent(sessionId)}`).then(() => {
-          setCurrentOrder(findKitchenOrder(paidOrderId));
-        });
-      }
-
+      setPaymentNotice({ type: "info", title: "Checking payment", text: "We are confirming the Stripe payment and sending your order to the kitchen." });
+      void confirmPaidStripeReturn(paidOrderId, sessionId);
       url.searchParams.delete("payment");
       url.searchParams.delete("order_id");
       url.searchParams.delete("session_id");
@@ -191,6 +263,7 @@ export default function CustomerApp() {
     }
 
     if (paymentStatus === "cancelled") {
+      setPaymentNotice({ type: "error", title: "Payment cancelled", text: "Your payment was cancelled, so no order was sent to the kitchen." });
       setOrderError("Payment was cancelled. Your order has not been sent to the kitchen.");
       url.searchParams.delete("payment");
       url.searchParams.delete("order_id");
@@ -248,12 +321,14 @@ export default function CustomerApp() {
 
   function add(id: number) {
     setOrderError("");
+    setPaymentNotice(null);
     if (!isItemAvailable(id, availability)) return;
     setCart((old) => ({ ...old, [id]: (old[id] || 0) + 1 }));
   }
 
   function remove(id: number) {
     setOrderError("");
+    setPaymentNotice(null);
     setCart((old) => {
       const next = { ...old };
       const qty = (next[id] || 0) - 1;
@@ -297,6 +372,7 @@ export default function CustomerApp() {
     if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
     setIsSubmittingOrder(true);
     setOrderError("");
+    setPaymentNotice(null);
     try {
       if (stripeCheckoutEnabled) {
         await Promise.all([startStripeCheckout(), wait(MIN_SERVER_CHECK_MS)]);
@@ -305,11 +381,13 @@ export default function CustomerApp() {
       const [order] = await Promise.all([validateOrderOnServer(), wait(MIN_SERVER_CHECK_MS)]);
       prependKitchenOrder(order);
       setCurrentOrder(order);
+      setPaymentNotice({ type: "success", title: "Order sent", text: "Demo order sent to the kitchen." });
       setCartOpen(false);
       setUpsellOpen(false);
       setScreen("done");
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : "The order could not be checked.");
+      setPaymentNotice({ type: "error", title: "Checkout failed", text: error instanceof Error ? error.message : "Please try again." });
     } finally {
       setIsSubmittingOrder(false);
     }
@@ -318,6 +396,7 @@ export default function CustomerApp() {
   function requestCheckout() {
     if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
     setOrderError("");
+    setPaymentNotice(null);
     if (upsellRecommendations.length) setUpsellOpen(true);
     else void sendOrder();
   }
@@ -330,19 +409,21 @@ export default function CustomerApp() {
       <Phone>
         <Center>
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
-          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">{currentOrder ? "Paid and sent to kitchen" : "Payment confirmed"}</p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950">{currentOrder ? "Order placed" : "Sending order"}</h1>
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">{currentOrder ? "Paid and sent to kitchen" : isConfirmingPayment ? "Confirming payment" : "Payment update"}</p>
+          <h1 className="mt-2 text-3xl font-black text-slate-950">{currentOrder ? "Order placed" : isConfirmingPayment ? "Sending order" : "Check kitchen"}</h1>
           <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {currentOrder?.table || selectedTable} order below.</p>
-          <CustomerOrderStatus order={currentOrder} />
-          <button onClick={() => { setCart({}); setChefNotes(""); setTipPercentage(null); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
+          <PaymentBanner notice={paymentNotice} />
+          <CustomerOrderStatus order={currentOrder} confirming={isConfirmingPayment} />
+          <OrderReceipt order={currentOrder} />
+          <button onClick={() => { setCart({}); setChefNotes(""); setTipPercentage(null); setCurrentOrder(null); setPaymentNotice(null); setScreen("home"); }} className="primary mt-6">Order more</button>
         </Center>
       </Phone>
     );
   }
 
   if (screen === "detail") {
-    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
+    return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
   }
 
-  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
+  return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
 }
