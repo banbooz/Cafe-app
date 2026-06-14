@@ -16,6 +16,7 @@ import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentC
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 const MIN_SERVER_CHECK_MS = 900;
 const CUSTOMER_TABLE_STORAGE_KEY = getCafeStorageKey("cafeCustomerSelectedTable");
+const CUSTOMER_ORDER_STORAGE_KEY = getCafeStorageKey("cafeCurrentCustomerOrderId");
 const stripeCheckoutEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
 const upsellGroups = [["Drinks"], ["Pudding"], ["Main", "Starter"]];
 
@@ -29,6 +30,16 @@ function wait(ms: number) {
 function safeTableNumber(value: unknown) {
   const next = Number(value);
   return Number.isInteger(next) && next >= 1 && next <= 999 ? next : cafeConfig.tableNumber;
+}
+
+function cleanOrderId(value: unknown) {
+  const next = Number(value);
+  return Number.isFinite(next) && next > 0 ? next : null;
+}
+
+function rememberCustomerOrderId(orderId: number) {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(CUSTOMER_ORDER_STORAGE_KEY, String(orderId));
 }
 
 function cleanUrlTableNumber(value: string | null) {
@@ -91,7 +102,20 @@ function snapshot(item: MenuItem) {
 }
 
 function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
-  const status = order?.status || "new";
+  if (!order) {
+    return (
+      <div className="mt-5 w-full rounded-3xl bg-slate-50 p-4 text-left ring-1 ring-slate-200">
+        <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Payment confirmed</p>
+        <h2 className="mt-2 text-2xl font-black text-slate-950">Sending to kitchen</h2>
+        <p className="mt-2 text-sm font-bold text-slate-500">Stripe has sent the paid order. This screen will update when the kitchen receives it.</p>
+        <div className="mt-4 grid grid-cols-4 gap-2">
+          {orderSteps.map((step, index) => <div key={step} className={index === 0 ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
+        </div>
+      </div>
+    );
+  }
+
+  const status = order.status || "new";
   const activeStep = orderSteps.indexOf(status);
 
   return (
@@ -135,6 +159,35 @@ export default function CustomerApp() {
     setSelectedTable(nextTable);
     setTableLoaded(true);
     window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(nextTable));
+  }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const url = new URL(window.location.href);
+    const paymentStatus = url.searchParams.get("payment");
+    const paidOrderId = cleanOrderId(url.searchParams.get("order_id"));
+
+    if (paymentStatus === "success" && paidOrderId) {
+      rememberCustomerOrderId(paidOrderId);
+      setCurrentOrder(findKitchenOrder(paidOrderId));
+      setCart({});
+      setChefNotes("");
+      setTipPercentage(null);
+      setCartOpen(false);
+      setUpsellOpen(false);
+      setScreen("done");
+      url.searchParams.delete("payment");
+      url.searchParams.delete("order_id");
+      url.searchParams.delete("session_id");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
+
+    if (paymentStatus === "cancelled") {
+      setOrderError("Payment was cancelled. Your order has not been sent to the kitchen.");
+      url.searchParams.delete("payment");
+      url.searchParams.delete("order_id");
+      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+    }
   }, []);
 
   useEffect(() => {
@@ -228,6 +281,7 @@ export default function CustomerApp() {
     const response = await fetch("/api/checkout", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(orderRequestBody()) });
     const result = (await response.json()) as CheckoutApiResponse;
     if (!response.ok || !result.ok) throw new Error(!result.ok && result.error ? result.error : "Stripe checkout could not start.");
+    rememberCustomerOrderId(result.orderId);
     window.location.href = result.checkoutUrl;
   }
 
@@ -268,8 +322,8 @@ export default function CustomerApp() {
       <Phone>
         <Center>
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
-          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Server validated and sent to kitchen</p>
-          <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">{currentOrder ? "Paid and sent to kitchen" : "Payment confirmed"}</p>
+          <h1 className="mt-2 text-3xl font-black text-slate-950">{currentOrder ? "Order placed" : "Sending order"}</h1>
           <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {currentOrder?.table || selectedTable} order below.</p>
           <CustomerOrderStatus order={currentOrder} />
           <button onClick={() => { setCart({}); setChefNotes(""); setTipPercentage(null); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
