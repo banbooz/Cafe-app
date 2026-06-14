@@ -107,7 +107,7 @@ function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
       <div className="mt-5 w-full rounded-3xl bg-slate-50 p-4 text-left ring-1 ring-slate-200">
         <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Payment confirmed</p>
         <h2 className="mt-2 text-2xl font-black text-slate-950">Sending to kitchen</h2>
-        <p className="mt-2 text-sm font-bold text-slate-500">Stripe has sent the paid order. This screen will update when the kitchen receives it.</p>
+        <p className="mt-2 text-sm font-bold text-slate-500">Stripe has confirmed the payment. The kitchen order will appear shortly.</p>
         <div className="mt-4 grid grid-cols-4 gap-2">
           {orderSteps.map((step, index) => <div key={step} className={index === 0 ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
         </div>
@@ -166,6 +166,7 @@ export default function CustomerApp() {
     const url = new URL(window.location.href);
     const paymentStatus = url.searchParams.get("payment");
     const paidOrderId = cleanOrderId(url.searchParams.get("order_id"));
+    const sessionId = url.searchParams.get("session_id") || "";
 
     if (paymentStatus === "success" && paidOrderId) {
       rememberCustomerOrderId(paidOrderId);
@@ -176,6 +177,13 @@ export default function CustomerApp() {
       setCartOpen(false);
       setUpsellOpen(false);
       setScreen("done");
+
+      if (sessionId.startsWith("cs_")) {
+        void fetch(`/api/checkout/confirm?session_id=${encodeURIComponent(sessionId)}`).then(() => {
+          setCurrentOrder(findKitchenOrder(paidOrderId));
+        });
+      }
+
       url.searchParams.delete("payment");
       url.searchParams.delete("order_id");
       url.searchParams.delete("session_id");
