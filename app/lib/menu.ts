@@ -13,12 +13,40 @@ export type MenuItem = {
   available?: boolean;
 };
 
+export type MenuExperienceId = "restaurant" | "cafe" | "drinks";
+
+export type MenuExperience = {
+  id: MenuExperienceId;
+  label: string;
+  name: string;
+  eyebrow: string;
+  tagline: string;
+  menuLabel: string;
+  menuTitle: string;
+  searchPlaceholder: string;
+  featuredLabel: string;
+  featuredCta: string;
+  emptyText: string;
+  categories: readonly string[];
+  categoryIcons: Record<string, string>;
+  theme: {
+    background: string;
+    panel: string;
+    soft: string;
+    ink: string;
+    muted: string;
+    accent: string;
+    deep: string;
+  };
+  items: MenuItem[];
+};
+
 export const productCategories = ["Starter", "Main", "Pudding", "Drinks"] as const;
 export type ProductCategory = (typeof productCategories)[number];
 
-export const categories = ["All", ...productCategories];
+export const categories = ["All", ...productCategories] as const;
 
-export const menuItems: MenuItem[] = [
+const restaurantItems: MenuItem[] = [
   { id: 1, name: "Smashed Avocado Toast", category: "Main", description: "Sourdough, chilli, lemon", price: 6.9, prep: "7 min", allergens: ["Gluten"], image: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true, vegan: true },
   { id: 2, name: "Turkish Eggs", category: "Main", description: "Garlic yoghurt, paprika butter", price: 8.4, prep: "10 min", allergens: ["Egg", "Milk", "Gluten"], image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=80", vegetarian: true },
   { id: 3, name: "Roast Chicken Ciabatta", category: "Main", description: "Leaves, tomato, house aioli", price: 7.8, prep: "8 min", allergens: ["Gluten", "Egg"], image: "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=900&q=80", popular: true },
@@ -30,6 +58,96 @@ export const menuItems: MenuItem[] = [
   { id: 9, name: "Garlic Dough Bites", category: "Starter", description: "Garlic butter, parmesan", price: 4.8, prep: "6 min", allergens: ["Gluten", "Milk"], image: "https://www.bbcgoodfoodme.com/assets/legacy/recipe/recipe-image/2019/02/dough%2Dballs-with-garlic-butter.jpg", vegetarian: true },
   { id: 10, name: "Rosemary Fries", category: "Starter", description: "Sea salt, rosemary", price: 4.2, prep: "6 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80", vegetarian: true, vegan: true }
 ];
+
+const cafeCategories = ["All", "Coffee", "Tea", "Pastries", "Breakfast", "Cold Drinks"] as const;
+
+const cafeItems: MenuItem[] = [
+  { id: 101, name: "House Flat White", category: "Coffee", description: "Double espresso, silky steamed milk", price: 3.6, prep: "3 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
+  { id: 102, name: "Caramel Oat Latte", category: "Coffee", description: "Espresso, oat milk, caramel drizzle", price: 4.25, prep: "4 min", allergens: ["Oats"], image: "https://images.unsplash.com/photo-1570968915860-54d5c301fa9f?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true, vegan: true },
+  { id: 103, name: "Iced Vanilla Latte", category: "Cold Drinks", description: "Espresso, vanilla, cold milk, ice", price: 4.45, prep: "3 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
+  { id: 104, name: "English Breakfast Tea", category: "Tea", description: "Classic black tea with milk option", price: 2.7, prep: "3 min", allergens: ["Milk optional"], image: "https://images.unsplash.com/photo-1544787219-7f47ccb76574?auto=format&fit=crop&w=900&q=80", vegetarian: true, vegan: true },
+  { id: 105, name: "Iced Matcha", category: "Cold Drinks", description: "Matcha, milk, ice, light vanilla", price: 4.8, prep: "4 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1515823662972-da6a2e4d3002?auto=format&fit=crop&w=900&q=80", vegetarian: true },
+  { id: 106, name: "Almond Croissant", category: "Pastries", description: "Baked daily with almond cream", price: 3.9, prep: "2 min", allergens: ["Gluten", "Milk", "Nuts"], image: "https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
+  { id: 107, name: "Cinnamon Bun", category: "Pastries", description: "Soft roll, cinnamon sugar, glaze", price: 3.5, prep: "2 min", allergens: ["Gluten", "Milk"], image: "https://images.unsplash.com/photo-1509365465985-25d11c17e812?auto=format&fit=crop&w=900&q=80", vegetarian: true },
+  { id: 108, name: "Blueberry Muffin", category: "Pastries", description: "Buttery muffin, blueberry compote", price: 3.2, prep: "2 min", allergens: ["Gluten", "Milk", "Egg"], image: "https://images.unsplash.com/photo-1607958996333-41aef7caefaa?auto=format&fit=crop&w=900&q=80", vegetarian: true },
+  { id: 109, name: "Breakfast Brioche", category: "Breakfast", description: "Egg, cheese, tomato relish", price: 5.9, prep: "7 min", allergens: ["Gluten", "Egg", "Milk"], image: "https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
+  { id: 110, name: "Granola Pot", category: "Breakfast", description: "Greek yoghurt, berries, honey", price: 4.6, prep: "2 min", allergens: ["Milk", "Nuts"], image: "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80", vegetarian: true }
+];
+
+const drinkCategories = ["All", "Mocktails", "Soft Drinks", "Specials", "Hot Drinks", "Snacks"] as const;
+
+const drinkItems: MenuItem[] = [
+  { id: 201, name: "Berry Nojito", category: "Mocktails", description: "Mint, lime, berries, soda", price: 5.2, prep: "4 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
+  { id: 202, name: "Sunset Spritz", category: "Mocktails", description: "Orange, passion fruit, soda", price: 5.4, prep: "4 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1563223771-375783ee91ad?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
+  { id: 203, name: "Ginger Lime Fizz", category: "Mocktails", description: "Ginger, lime, mint, crushed ice", price: 4.9, prep: "3 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
+  { id: 204, name: "Cloudy Lemonade", category: "Soft Drinks", description: "Fresh lemon, sugar, sparkling water", price: 3.6, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9e?auto=format&fit=crop&w=900&q=80", vegan: true },
+  { id: 205, name: "Cola Float", category: "Specials", description: "Cola, vanilla ice cream, cherry", price: 4.7, prep: "3 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?auto=format&fit=crop&w=900&q=80", vegetarian: true },
+  { id: 206, name: "Sparkling Apple", category: "Soft Drinks", description: "Apple press, soda, lime", price: 3.9, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1575596510825-f748919a2bf7?auto=format&fit=crop&w=900&q=80", vegan: true },
+  { id: 207, name: "Late Espresso", category: "Hot Drinks", description: "Short coffee for evening service", price: 2.8, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?auto=format&fit=crop&w=900&q=80", vegan: true },
+  { id: 208, name: "Salted Pretzels", category: "Snacks", description: "Warm pretzels with mustard dip", price: 3.8, prep: "4 min", allergens: ["Gluten", "Mustard"], image: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=900&q=80", vegetarian: true },
+  { id: 209, name: "Loaded Nachos", category: "Snacks", description: "Cheese, salsa, jalapenos, sour cream", price: 6.5, prep: "6 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
+  { id: 210, name: "Sharing Fries", category: "Snacks", description: "Crispy fries, house seasoning", price: 4.4, prep: "5 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80", vegan: true }
+];
+
+export const menuItems = restaurantItems;
+
+export const defaultExperienceId: MenuExperienceId = "restaurant";
+
+export const menuExperiences: Record<MenuExperienceId, MenuExperience> = {
+  restaurant: {
+    id: "restaurant",
+    label: "Restaurant Demo",
+    name: "The Corner Cafe",
+    eyebrow: "Restaurant demo",
+    tagline: "Full table ordering for cafes, restaurants, drinks venues and lunch spots.",
+    menuLabel: "Menu",
+    menuTitle: "Explore menu",
+    searchPlaceholder: "Search dishes, drinks, allergens...",
+    featuredLabel: "Featured today",
+    featuredCta: "View popular",
+    emptyText: "No matching items. Try another search or category.",
+    categories,
+    categoryIcons: { All: "⌂", Starter: "✦", Main: "◉", Pudding: "◆", Drinks: "◌" },
+    theme: { background: "#f7f7f5", panel: "#ffffff", soft: "#f1f4f4", ink: "#111517", muted: "#617174", accent: "#ff385c", deep: "#263238" },
+    items: restaurantItems
+  },
+  cafe: {
+    id: "cafe",
+    label: "Cafe",
+    name: "Bean & Table",
+    eyebrow: "Cafe mode",
+    tagline: "Fast coffee, pastry and breakfast ordering with a warmer cafe feel.",
+    menuLabel: "Cafe menu",
+    menuTitle: "Order coffee",
+    searchPlaceholder: "Search coffee, pastries, breakfast...",
+    featuredLabel: "Cafe favourite",
+    featuredCta: "Order favourite",
+    emptyText: "No cafe items found. Try coffee, pastries or breakfast.",
+    categories: cafeCategories,
+    categoryIcons: { All: "⌂", Coffee: "☕", Tea: "◌", Pastries: "◇", Breakfast: "☀", "Cold Drinks": "❄" },
+    theme: { background: "#f6efe7", panel: "#fffaf3", soft: "#eee0d0", ink: "#2c1c12", muted: "#80624b", accent: "#b66a2c", deep: "#4d2f1e" },
+    items: cafeItems
+  },
+  drinks: {
+    id: "drinks",
+    label: "Drinks",
+    name: "After Hours Drinks",
+    eyebrow: "Drinks mode",
+    tagline: "Simple drinks-first ordering for venues with a darker evening theme.",
+    menuLabel: "Drinks menu",
+    menuTitle: "Choose a drink",
+    searchPlaceholder: "Search drinks, specials or snacks...",
+    featuredLabel: "Choose a drink",
+    featuredCta: "Open drinks menu",
+    emptyText: "No drinks found. Try mocktails, soft drinks or snacks.",
+    categories: drinkCategories,
+    categoryIcons: { All: "⌂", Mocktails: "◆", "Soft Drinks": "◌", Specials: "◇", "Hot Drinks": "☕", Snacks: "✦" },
+    theme: { background: "#171312", panel: "#241c1a", soft: "#322623", ink: "#fff8f0", muted: "#c9b2a2", accent: "#d7a048", deep: "#0f0b0a" },
+    items: drinkItems
+  }
+};
+
+export const experienceOptions = Object.values(menuExperiences);
 
 export function money(value: number) {
   return `£${value.toFixed(2)}`;
