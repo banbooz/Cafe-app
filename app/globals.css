@@ -123,6 +123,14 @@ a[role="button"]:focus-visible {
   opacity: 0;
   transform-origin: center top;
   animation: card-rise 560ms cubic-bezier(.16, 1, .3, 1) both;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: 118px;
+  overflow: hidden;
+}
+
+.food-card-motion > div {
+  min-height: 0 !important;
 }
 
 .food-card-motion:active {
