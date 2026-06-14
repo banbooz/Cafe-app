@@ -31,6 +31,12 @@ function getCafeStateRef() {
   return db.collection(stateCollectionName()).doc(cafeConfig.id);
 }
 
+function findPendingOrder(pendingOrders: Record<string, PendingOrder>, orderId?: string, sessionId?: string) {
+  if (orderId && pendingOrders[orderId]) return { key: orderId, order: pendingOrders[orderId] };
+  const match = Object.entries(pendingOrders).find(([, order]) => order.payment?.checkoutSessionId && order.payment.checkoutSessionId === sessionId);
+  return match ? { key: match[0], order: match[1] } : null;
+}
+
 export function isProductionPaymentStoreConfigured() {
   return isFirebaseAdminConfigured();
 }
@@ -63,17 +69,28 @@ export async function attachStripeSessionToPendingOrder(orderId: number, checkou
   const stateRef = getCafeStateRef();
   if (!stateRef) throw new Error("Firebase Admin is not configured.");
 
-  await stateRef.set({
-    cafeId: cafeConfig.id,
-    pendingOrders: {
-      [String(orderId)]: {
-        payment: {
-          checkoutSessionId,
+  await stateRef.firestore.runTransaction(async (transaction) => {
+    const snapshot = await transaction.get(stateRef);
+    const data = snapshot.data() || {};
+    const pendingOrders = { ...(data.pendingOrders || {}) } as Record<string, PendingOrder>;
+    const pendingOrder = pendingOrders[String(orderId)];
+
+    if (!pendingOrder) throw new Error("Pending Stripe order was not found before checkout session attach.");
+
+    transaction.set(stateRef, {
+      cafeId: cafeConfig.id,
+      pendingOrders: {
+        [String(orderId)]: {
+          ...pendingOrder,
+          payment: {
+            ...pendingOrder.payment,
+            checkoutSessionId,
+          },
         },
       },
-    },
-    updatedAt: Date.now(),
-  }, { merge: true });
+      updatedAt: Date.now(),
+    }, { merge: true });
+  });
 }
 
 export async function confirmPaidStripeOrder(session: StripePaidSession) {
@@ -83,7 +100,7 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
   const orderId = session.metadata?.orderId || session.client_reference_id;
   const sessionCafeId = session.metadata?.cafeId;
 
-  if (!orderId) throw new Error("Stripe session is missing orderId metadata.");
+  if (!orderId && !session.id) throw new Error("Stripe session is missing order identifiers.");
   if (sessionCafeId !== cafeConfig.id) throw new Error("Stripe session cafeId does not match this deployment.");
   if (session.payment_status !== "paid") throw new Error("Stripe session is not paid.");
 
@@ -91,17 +108,18 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
     const snapshot = await transaction.get(stateRef);
     const data = snapshot.data() || {};
     const pendingOrders = { ...(data.pendingOrders || {}) } as Record<string, PendingOrder>;
-    const pendingOrder = pendingOrders[String(orderId)];
+    const match = findPendingOrder(pendingOrders, orderId, session.id);
 
-    if (!pendingOrder) throw new Error("Paid Stripe order was not found in pendingOrders.");
+    if (!match) throw new Error("Paid Stripe order was not found in pendingOrders.");
 
+    const pendingOrder = match.order;
     const expectedTotal = Math.round(Number(pendingOrder.total) * 100);
     if (typeof session.amount_total === "number" && session.amount_total !== expectedTotal) {
       throw new Error("Paid amount does not match the server-calculated order total.");
     }
 
     const existingOrders = Array.isArray(data.orders) ? data.orders as KitchenOrder[] : [];
-    const alreadyAdded = existingOrders.some((order) => String(order.id) === String(orderId));
+    const alreadyAdded = existingOrders.some((order) => String(order.id) === String(pendingOrder.id));
     const paidOrder: KitchenOrder = {
       ...pendingOrder,
       payment: {
@@ -113,7 +131,7 @@ export async function confirmPaidStripeOrder(session: StripePaidSession) {
       },
     };
 
-    delete pendingOrders[String(orderId)];
+    delete pendingOrders[match.key];
 
     transaction.set(stateRef, {
       cafeId: cafeConfig.id,
