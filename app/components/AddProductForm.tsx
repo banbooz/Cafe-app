@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { productCategories } from "../lib/menu";
+import { money, productCategories } from "../lib/menu";
 import { blankNewMenuProduct, type NewMenuProduct } from "../lib/menuCatalog";
 import { cleanAllergenList } from "../lib/menuSettings";
 
@@ -12,18 +12,49 @@ type Props = {
 function cleanPriceInput(value: string) {
   const decimalCleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
   const [wholeRaw, decimalRaw] = decimalCleaned.split(".");
-  const whole = wholeRaw.replace(/^0+(?=\d)/, "") || "0";
-  return decimalRaw === undefined ? whole : `${whole}.${decimalRaw.slice(0, 2)}`;
+  const whole = wholeRaw.replace(/^0+(?=\d)/, "") || "";
+  return decimalRaw === undefined ? whole : `${whole || "0"}.${decimalRaw.slice(0, 2)}`;
+}
+
+function priceFromInput(value: string) {
+  const cleaned = cleanPriceInput(value);
+  if (!cleaned) return 0;
+  const number = Number.parseFloat(cleaned);
+  if (!Number.isFinite(number)) return 0;
+
+  const looksLikePence = !cleaned.includes(".") && number >= 100;
+  return Number((looksLikePence ? number / 100 : number).toFixed(2));
+}
+
+function formattedPriceInput(value: string) {
+  return priceFromInput(value).toFixed(2);
 }
 
 export default function AddProductForm({ onCreate }: Props) {
   const [product, setProduct] = useState<NewMenuProduct>(() => blankNewMenuProduct());
+  const [priceDraft, setPriceDraft] = useState("");
+  const [allergenDraft, setAllergenDraft] = useState("");
   const [available, setAvailable] = useState(true);
   const [open, setOpen] = useState(false);
-  const canCreate = product.name.trim().length > 1 && product.description.trim().length > 1 && product.price >= 0;
+  const customerPrice = priceFromInput(priceDraft);
+  const canCreate = product.name.trim().length > 1 && product.description.trim().length > 1 && customerPrice >= 0;
 
   function update(changes: Partial<NewMenuProduct>) {
     setProduct((current) => ({ ...current, ...changes }));
+  }
+
+  function resetDraftForm() {
+    setProduct(blankNewMenuProduct());
+    setPriceDraft("");
+    setAllergenDraft("");
+    setAvailable(true);
+  }
+
+  function toggleOpen() {
+    setOpen((current) => {
+      if (current) resetDraftForm();
+      return !current;
+    });
   }
 
   function handleImageUpload(file?: File) {
@@ -37,15 +68,14 @@ export default function AddProductForm({ onCreate }: Props) {
 
   function createProduct() {
     if (!canCreate) return;
-    onCreate(product, available);
-    setProduct(blankNewMenuProduct());
-    setAvailable(true);
+    onCreate({ ...product, price: customerPrice, allergens: cleanAllergenList(allergenDraft) }, available);
+    resetDraftForm();
     setOpen(false);
   }
 
   return (
     <section className="mt-4 rounded-[1.75rem] bg-slate-50 p-4 ring-1 ring-slate-200">
-      <button onClick={() => setOpen((current) => !current)} className="flex w-full items-center justify-between gap-3 text-left">
+      <button onClick={toggleOpen} className="flex w-full items-center justify-between gap-3 text-left">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Add product</p>
           <h3 className="mt-1 text-lg font-black text-slate-950">Create a new menu item</h3>
@@ -71,8 +101,18 @@ export default function AddProductForm({ onCreate }: Props) {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
-              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price</span>
-              <input type="text" inputMode="decimal" value={String(product.price)} onChange={(event) => { const next = cleanPriceInput(event.target.value); update({ price: Number.parseFloat(next || "0") }); }} className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+              <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Price (£)</span>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={priceDraft}
+                onChange={(event) => setPriceDraft(cleanPriceInput(event.target.value))}
+                onBlur={() => setPriceDraft((current) => current ? formattedPriceInput(current) : "")}
+                className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200"
+                placeholder="7.99"
+              />
+              <div className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-black text-slate-700 ring-1 ring-slate-200">Customer price: {money(customerPrice)}</div>
+              <p className="mt-2 text-[11px] font-bold leading-5 text-slate-500">Example: type 7.99 for £7.99. If you type 799, it formats as £7.99.</p>
             </label>
             <label className="block">
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Prep time</span>
@@ -87,7 +127,14 @@ export default function AddProductForm({ onCreate }: Props) {
 
           <label className="block">
             <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Allergens</span>
-            <input value={product.allergens.join(", ")} onChange={(event) => update({ allergens: cleanAllergenList(event.target.value) })} className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" placeholder="Gluten, Milk" />
+            <textarea
+              value={allergenDraft}
+              onChange={(event) => setAllergenDraft(event.target.value)}
+              onBlur={() => setAllergenDraft((current) => cleanAllergenList(current).join(", "))}
+              className="mt-2 min-h-20 w-full resize-none rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200"
+              placeholder="Type allergens separated by commas, e.g. Gluten, Milk, Nuts"
+            />
+            <p className="mt-2 text-[11px] font-bold leading-5 text-slate-500">Use commas to separate allergens. Leave blank for “None listed”.</p>
           </label>
 
           <label className="block">
@@ -95,7 +142,7 @@ export default function AddProductForm({ onCreate }: Props) {
             <div className="mt-2 flex items-center gap-3">
               <div className="h-16 w-16 shrink-0 rounded-2xl bg-cover bg-center ring-1 ring-slate-200" style={{ backgroundImage: `url(${product.image})` }} />
               <div className="grid flex-1 gap-2">
-                <input value={product.image} onChange={(event) => update({ image: event.target.value })} className="w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
+                <input value={product.image} onChange={(event) => update({ image: event.target.value })} className="w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" placeholder="Paste image URL" />
                 <input type="file" accept="image/*" onChange={(event) => handleImageUpload(event.target.files?.[0])} className="w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" />
               </div>
             </div>
@@ -108,7 +155,10 @@ export default function AddProductForm({ onCreate }: Props) {
             <button onClick={() => update({ vegan: !product.vegan })} className={product.vegan ? "min-h-11 rounded-full bg-[#16803a] px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-white px-4 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>VG</button>
           </div>
 
-          <button onClick={createProduct} disabled={!canCreate} className="min-h-14 rounded-2xl bg-slate-900 px-5 text-sm font-black text-white disabled:bg-slate-300 disabled:text-slate-500">Create product</button>
+          <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
+            <button onClick={createProduct} disabled={!canCreate} className="min-h-14 rounded-2xl bg-slate-900 px-5 text-sm font-black text-white disabled:bg-slate-300 disabled:text-slate-500">Create product</button>
+            <button onClick={() => { resetDraftForm(); setOpen(false); }} className="min-h-14 rounded-2xl bg-white px-5 text-sm font-black text-slate-700 ring-1 ring-slate-200">Cancel</button>
+          </div>
         </div>
       )}
     </section>
