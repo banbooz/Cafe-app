@@ -3,6 +3,7 @@
 import { initializeApp, getApps, type FirebaseApp, type FirebaseOptions } from "firebase/app";
 import { getAuth, signInAnonymously } from "firebase/auth";
 import { doc, getFirestore, type DocumentData, type DocumentReference } from "firebase/firestore";
+import { cafeConfig } from "./cafeConfig";
 
 const firebaseConfig: FirebaseOptions = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -36,9 +37,10 @@ export function getFirebaseStateDoc(): DocumentReference<DocumentData> | null {
   if (!app) return null;
 
   const collectionName = process.env.NEXT_PUBLIC_FIREBASE_STATE_COLLECTION || "cafes";
-  const cafeId = process.env.NEXT_PUBLIC_FIREBASE_CAFE_ID || "default-cafe";
 
-  return doc(getFirestore(app), collectionName, cafeId);
+  // Important: this cafe ID comes only from the deployed app configuration.
+  // Do not read cafeId from the URL or browser input for protected staff data.
+  return doc(getFirestore(app), collectionName, cafeConfig.id);
 }
 
 export async function ensureFirebaseSignedIn() {
