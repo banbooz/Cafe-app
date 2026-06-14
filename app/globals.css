@@ -84,7 +84,6 @@ a[role="button"]:focus-visible {
 /* App motion system */
 .page-enter {
   animation: page-enter 520ms cubic-bezier(.16, 1, .3, 1) both;
-  transform: none !important;
 }
 
 .motion-header {
@@ -125,7 +124,7 @@ a[role="button"]:focus-visible {
   animation: card-rise 560ms cubic-bezier(.16, 1, .3, 1) both;
   height: auto !important;
   min-height: 0 !important;
-  max-height: 118px;
+  max-height: 152px;
   overflow: hidden;
 }
 
