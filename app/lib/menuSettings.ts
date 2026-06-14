@@ -8,10 +8,13 @@ import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type MenuItemSetting = {
   name?: string;
+  category?: string;
   image?: string;
   description?: string;
   price?: number;
+  prep?: string;
   allergens?: string[];
+  popular?: boolean;
   vegetarian?: boolean;
   vegan?: boolean;
 };
@@ -26,10 +29,13 @@ function defaults(): MenuSettingsMap {
       item.id,
       {
         name: item.name,
+        category: item.category,
         image: item.image,
         description: item.description,
         price: item.price,
+        prep: item.prep,
         allergens: item.allergens,
+        popular: Boolean(item.popular),
         vegetarian: Boolean(item.vegetarian),
         vegan: Boolean(item.vegan),
       },
@@ -80,10 +86,13 @@ export function applyMenuSettings<T extends MenuItem>(item: T, settings: MenuSet
   return {
     ...item,
     name: saved.name ?? item.name,
+    category: saved.category ?? item.category,
     image: saved.image ?? item.image,
     description: saved.description ?? item.description,
     price: saved.price ?? item.price,
+    prep: saved.prep ?? item.prep,
     allergens: saved.allergens ?? item.allergens,
+    popular: saved.popular ?? Boolean(item.popular),
     vegetarian: saved.vegetarian ?? Boolean(item.vegetarian),
     vegan: saved.vegan ?? Boolean(item.vegan),
   };
