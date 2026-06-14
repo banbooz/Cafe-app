@@ -14,6 +14,7 @@ export type OrderRequestBody = {
   items?: OrderRequestItem[];
   notes?: string;
   table?: number;
+  tipPercentage?: number;
 };
 
 const MAX_TOTAL_ITEMS = 30;
@@ -22,6 +23,7 @@ const MAX_NOTES = 180;
 const MIN_TABLE_NUMBER = 1;
 const MAX_TABLE_NUMBER = 999;
 const CUSTOM_ITEM_ID_START = 10000;
+const ALLOWED_TIP_PERCENTAGES = [0, 5, 10, 20];
 
 function cleanText(value: unknown, fallback: string) {
   return typeof value === "string" && value.trim() ? value.trim().slice(0, 180) : fallback;
@@ -45,6 +47,15 @@ function cleanAllergens(value: unknown) {
 function cleanTableNumber(value: unknown) {
   const next = Number(value);
   return Number.isInteger(next) && next >= MIN_TABLE_NUMBER && next <= MAX_TABLE_NUMBER ? next : cafeConfig.tableNumber;
+}
+
+function cleanTipPercentage(value: unknown) {
+  const next = Number(value || 0);
+  return ALLOWED_TIP_PERCENTAGES.includes(next) ? next : 0;
+}
+
+function moneyValue(value: number) {
+  return Number(value.toFixed(2));
 }
 
 function resolveOrderItem(requested: OrderRequestItem, id: number): MenuItem | null {
@@ -118,7 +129,10 @@ export function validateAndBuildOrder(body: OrderRequestBody): { ok: true; order
     };
   });
 
-  const total = items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
+  const subtotal = moneyValue(items.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0));
+  const tipPercentage = cleanTipPercentage(body.tipPercentage);
+  const tipAmount = moneyValue((subtotal * tipPercentage) / 100);
+  const total = moneyValue(subtotal + tipAmount);
 
   return {
     ok: true,
@@ -129,7 +143,10 @@ export function validateAndBuildOrder(body: OrderRequestBody): { ok: true; order
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "new",
       notes: typeof body.notes === "string" ? body.notes.trim().slice(0, MAX_NOTES) : "",
-      total: Number(total.toFixed(2)),
+      subtotal,
+      tipPercentage,
+      tipAmount,
+      total,
       items,
     } as KitchenOrder,
   };
