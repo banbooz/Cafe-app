@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { menuItems, type MenuItem } from "./menu";
+import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type MenuItemSetting = {
@@ -17,7 +18,7 @@ export type MenuItemSetting = {
 
 export type MenuSettingsMap = Record<number, MenuItemSetting>;
 
-export const MENU_SETTINGS_STORAGE_KEY = "cafeMenuItemSettings";
+export const MENU_SETTINGS_STORAGE_KEY = getCafeStorageKey("cafeMenuItemSettings");
 
 function defaults(): MenuSettingsMap {
   return Object.fromEntries(
@@ -66,7 +67,7 @@ async function writeMenuSettingsToFirebase(settings: MenuSettingsMap) {
   if (!signedIn) return;
 
   try {
-    await setDoc(stateDoc, { menuSettings: settings, updatedAt: Date.now() }, { merge: true });
+    await setDoc(stateDoc, { cafeId: cafeConfig.id, menuSettings: settings, updatedAt: Date.now() }, { merge: true });
   } catch (error) {
     console.warn("Could not sync menu settings to Firebase. Local storage still works.", error);
   }
@@ -111,7 +112,10 @@ export function useMenuSettings() {
         unsubscribeFromFirebase = onSnapshot(
           stateDoc,
           (snapshot) => {
-            const cloudSettings = snapshot.data()?.menuSettings;
+            const data = snapshot.data();
+            if (data?.cafeId && data.cafeId !== cafeConfig.id) return;
+
+            const cloudSettings = data?.menuSettings;
             if (!cloudSettings || Array.isArray(cloudSettings) || typeof cloudSettings !== "object") return;
 
             const next = { ...defaults(), ...cloudSettings } as MenuSettingsMap;
