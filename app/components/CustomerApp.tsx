@@ -6,7 +6,7 @@ import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
 import UpsellSheet from "./UpsellSheet";
 import { Center, Phone } from "./AppShell";
-import { cafeConfig } from "../lib/cafeConfig";
+import { cafeConfig, getCafeStorageKey } from "../lib/cafeConfig";
 import { menuItems, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { useMenuCatalogue } from "../lib/menuCatalog";
@@ -15,6 +15,7 @@ import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentC
 
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 const MIN_SERVER_CHECK_MS = 900;
+const CUSTOMER_TABLE_STORAGE_KEY = getCafeStorageKey("cafeCustomerSelectedTable");
 const stripeCheckoutEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
 const upsellGroups = [["Drinks"], ["Pudding"], ["Main", "Starter"]];
 
@@ -23,6 +24,17 @@ type CheckoutApiResponse = { ok: true; checkoutUrl: string; orderId: number } | 
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function safeTableNumber(value: unknown) {
+  const next = Number(value);
+  return Number.isInteger(next) && next >= 1 && next <= 999 ? next : cafeConfig.tableNumber;
+}
+
+function readSelectedTableNumber() {
+  if (typeof window === "undefined") return cafeConfig.tableNumber;
+  const saved = window.localStorage.getItem(CUSTOMER_TABLE_STORAGE_KEY);
+  return saved ? safeTableNumber(saved) : cafeConfig.tableNumber;
 }
 
 function pickUpsells(items: MenuItem[], cart: Record<number, number>) {
@@ -66,7 +78,7 @@ function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
       <div className="mt-4 grid grid-cols-4 gap-2">
         {orderSteps.map((step, index) => <div key={step} className={index <= activeStep ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
       </div>
-      {order && <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Order #{order.id}</p>}
+      {order && <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Table {order.table} - Order #{order.id}</p>}
     </div>
   );
 }
@@ -82,11 +94,20 @@ export default function CustomerApp() {
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
+  const [selectedTable, setSelectedTable] = useState(() => cafeConfig.tableNumber);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const { availability } = useMenuAvailability();
   const { settings } = useMenuSettings();
   const { visibleItems } = useMenuCatalogue(settings);
+
+  useEffect(() => {
+    setSelectedTable(readSelectedTableNumber());
+  }, []);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(selectedTable));
+  }, [selectedTable]);
 
   useEffect(() => {
     function refreshCurrentOrder() {
@@ -115,6 +136,10 @@ export default function CustomerApp() {
   const total = cartItems.reduce((sum, item) => sum + item.qty * item.price, 0);
   const upsellRecommendations = useMemo(() => pickUpsells(itemsWithAvailability, cart), [cart, itemsWithAvailability]);
 
+  function updateSelectedTable(table: number) {
+    setSelectedTable(safeTableNumber(table));
+  }
+
   function add(id: number) {
     setOrderError("");
     if (!isItemAvailable(id, availability)) return;
@@ -133,7 +158,7 @@ export default function CustomerApp() {
   }
 
   function orderRequestBody() {
-    return { items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
+    return { table: selectedTable, items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
   }
 
   async function validateOrderOnServer() {
@@ -189,7 +214,7 @@ export default function CustomerApp() {
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
           <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Server validated and sent to kitchen</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
-          <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {cafeConfig.tableNumber} order below.</p>
+          <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {currentOrder?.table || selectedTable} order below.</p>
           <CustomerOrderStatus order={currentOrder} />
           <button onClick={() => { setCart({}); setChefNotes(""); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
         </Center>
@@ -201,5 +226,5 @@ export default function CustomerApp() {
     return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
   }
 
-  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={(item) => { setSelected(item); setScreen("detail"); }} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
+  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={(item) => { setSelected(item); setScreen("detail"); }} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
 }
