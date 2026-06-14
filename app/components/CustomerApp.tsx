@@ -13,9 +13,14 @@ import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentC
 
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 const MIN_SERVER_CHECK_MS = 900;
+const stripeCheckoutEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
 
 type OrderApiResponse =
   | { ok: true; order: KitchenOrder }
+  | { ok: false; error?: string };
+
+type CheckoutApiResponse =
+  | { ok: true; checkoutUrl: string; orderId: number }
   | { ok: false; error?: string };
 
 function orderStepIndex(status: OrderStatus) {
@@ -121,14 +126,18 @@ export default function CustomerApp() {
     setScreen("detail");
   }
 
+  function orderRequestBody() {
+    return {
+      items: cartItems.map((item) => ({ id: item.id, quantity: item.qty })),
+      notes: chefNotes,
+    };
+  }
+
   async function validateOrderOnServer() {
     const response = await fetch("/api/orders", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        items: cartItems.map((item) => ({ id: item.id, quantity: item.qty })),
-        notes: chefNotes,
-      }),
+      body: JSON.stringify(orderRequestBody()),
     });
 
     const result = (await response.json()) as OrderApiResponse;
@@ -139,6 +148,21 @@ export default function CustomerApp() {
     return result.order;
   }
 
+  async function startStripeCheckout() {
+    const response = await fetch("/api/checkout", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(orderRequestBody()),
+    });
+
+    const result = (await response.json()) as CheckoutApiResponse;
+    if (!response.ok || !result.ok) {
+      throw new Error(!result.ok && result.error ? result.error : "Stripe checkout could not start.");
+    }
+
+    window.location.href = result.checkoutUrl;
+  }
+
   async function sendOrder() {
     if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
 
@@ -146,6 +170,11 @@ export default function CustomerApp() {
     setOrderError("");
 
     try {
+      if (stripeCheckoutEnabled) {
+        await Promise.all([startStripeCheckout(), wait(MIN_SERVER_CHECK_MS)]);
+        return;
+      }
+
       const [order] = await Promise.all([validateOrderOnServer(), wait(MIN_SERVER_CHECK_MS)]);
       prependKitchenOrder(order);
       setCurrentOrder(order);
