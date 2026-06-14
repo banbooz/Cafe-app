@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cafeConfig } from "../../lib/cafeConfig";
 import { menuItems } from "../../lib/menu";
 import type { KitchenOrder } from "../../lib/orders";
+import { attachStripeSessionToPendingOrder, isProductionPaymentStoreConfigured, savePendingStripeOrder } from "../../lib/paymentOrders";
 import { isStripeServerConfigured, stripeConfig } from "../../lib/stripeConfig";
 import { validateAndBuildOrder, type OrderRequestBody } from "../../lib/serverOrderValidation";
 
@@ -40,6 +41,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Stripe checkout is not configured yet." }, { status: 501 });
   }
 
+  if (!isProductionPaymentStoreConfigured()) {
+    return NextResponse.json({ ok: false, error: "Firebase Admin payment store is not configured yet." }, { status: 501 });
+  }
+
+  await savePendingStripeOrder(result.order);
+
   const appUrl = getAppUrl();
   const form = new URLSearchParams();
   form.append("mode", "payment");
@@ -65,6 +72,10 @@ export async function POST(request: Request) {
   const session = await stripeResponse.json();
   if (!stripeResponse.ok || !session?.url) {
     return NextResponse.json({ ok: false, error: "Could not create Stripe checkout session." }, { status: 502 });
+  }
+
+  if (session.id) {
+    await attachStripeSessionToPendingOrder(result.order.id, session.id);
   }
 
   return NextResponse.json({ ok: true, checkoutUrl: session.url, orderId: result.order.id });
