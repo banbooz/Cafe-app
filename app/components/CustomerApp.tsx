@@ -95,6 +95,7 @@ export default function CustomerApp() {
   const [chefNotes, setChefNotes] = useState("");
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
   const [selectedTable, setSelectedTable] = useState(() => cafeConfig.tableNumber);
+  const [tableLoaded, setTableLoaded] = useState(false);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const { availability } = useMenuAvailability();
@@ -103,11 +104,12 @@ export default function CustomerApp() {
 
   useEffect(() => {
     setSelectedTable(readSelectedTableNumber());
+    setTableLoaded(true);
   }, []);
 
   useEffect(() => {
-    if (typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(selectedTable));
-  }, [selectedTable]);
+    if (tableLoaded && typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(selectedTable));
+  }, [selectedTable, tableLoaded]);
 
   useEffect(() => {
     function refreshCurrentOrder() {
