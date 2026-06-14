@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import HomeView from "./HomeView";
 import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
@@ -31,18 +32,13 @@ function safeTableNumber(value: unknown) {
   return Number.isInteger(next) && next >= 1 && next <= 999 ? next : cafeConfig.tableNumber;
 }
 
-function readTableNumberFromUrl() {
-  if (typeof window === "undefined") return null;
-  const tableParam = new URLSearchParams(window.location.search).get("table");
-  if (!tableParam) return null;
-  const next = Number(tableParam);
-  return Number.isInteger(next) && next >= 1 && next <= 999 ? next : null;
+function cleanUrlTableNumber(value: string | null) {
+  const next = Number(value);
+  return value && Number.isInteger(next) && next >= 1 && next <= 999 ? next : null;
 }
 
-function readSelectedTableNumber() {
+function readSavedTableNumber() {
   if (typeof window === "undefined") return cafeConfig.tableNumber;
-  const tableFromUrl = readTableNumberFromUrl();
-  if (tableFromUrl) return tableFromUrl;
   const saved = window.localStorage.getItem(CUSTOMER_TABLE_STORAGE_KEY);
   return saved ? safeTableNumber(saved) : cafeConfig.tableNumber;
 }
@@ -104,6 +100,8 @@ function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
 }
 
 export default function CustomerApp() {
+  const searchParams = useSearchParams();
+  const tableFromUrl = cleanUrlTableNumber(searchParams.get("table"));
   const [screen, setScreen] = useState<"home" | "detail" | "done">("home");
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
@@ -114,7 +112,7 @@ export default function CustomerApp() {
   const [upsellOpen, setUpsellOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
-  const [selectedTable, setSelectedTable] = useState(() => cafeConfig.tableNumber);
+  const [selectedTable, setSelectedTable] = useState(() => tableFromUrl || cafeConfig.tableNumber);
   const [tableLoaded, setTableLoaded] = useState(false);
   const [tipPercentage, setTipPercentage] = useState<number | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -126,9 +124,11 @@ export default function CustomerApp() {
   const { visibleItems } = useMenuCatalogue(settings);
 
   useEffect(() => {
-    setSelectedTable(readSelectedTableNumber());
+    const nextTable = tableFromUrl || readSavedTableNumber();
+    setSelectedTable(nextTable);
     setTableLoaded(true);
-  }, []);
+    if (typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(nextTable));
+  }, [tableFromUrl]);
 
   useEffect(() => {
     if (tableLoaded && typeof window !== "undefined") window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(selectedTable));
