@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { cafeConfig } from "../../lib/cafeConfig";
 import { menuItems } from "../../lib/menu";
+import type { KitchenOrder } from "../../lib/orders";
 import { isStripeServerConfigured, stripeConfig } from "../../lib/stripeConfig";
 import { validateAndBuildOrder, type OrderRequestBody } from "../../lib/serverOrderValidation";
 
@@ -10,7 +11,7 @@ function getAppUrl() {
   return raw.startsWith("http") ? raw.replace(/\/$/, "") : `https://${raw.replace(/\/$/, "")}`;
 }
 
-function appendLineItems(form: URLSearchParams, order: ReturnType<typeof validateAndBuildOrder> extends { ok: true; order: infer T } ? T : never) {
+function appendLineItems(form: URLSearchParams, order: KitchenOrder) {
   order.items.forEach((item, index) => {
     const menuItem = menuItems.find((entry) => entry.id === item.id)!;
     form.append(`line_items[${index}][quantity]`, String(item.quantity));
@@ -51,12 +52,13 @@ export async function POST(request: Request) {
   form.append("metadata[orderTotal]", String(result.order.total));
   appendLineItems(form, result.order);
 
+  const headers = new Headers();
+  headers.set("Authorization", "Bearer " + stripeConfig.secretKey);
+  headers.set("Content-Type", "application/x-www-form-urlencoded");
+
   const stripeResponse = await fetch("https://api.stripe.com/v1/checkout/sessions", {
     method: "POST",
-    headers: {
-      Authorization: `Bearer ${stripeConfig.secretKey}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
+    headers,
     body: form,
   });
 
