@@ -13,7 +13,10 @@ export type MenuItem = {
   available?: boolean;
 };
 
-export const categories = ["All", "Starter", "Main", "Pudding", "Drinks"];
+export const productCategories = ["Starter", "Main", "Pudding", "Drinks"] as const;
+export type ProductCategory = (typeof productCategories)[number];
+
+export const categories = ["All", ...productCategories];
 
 export const menuItems: MenuItem[] = [
   { id: 1, name: "Smashed Avocado Toast", category: "Main", description: "Sourdough, chilli, lemon", price: 6.9, prep: "7 min", allergens: ["Gluten"], image: "https://images.unsplash.com/photo-1541519227354-08fa5d50c44d?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true, vegan: true },
