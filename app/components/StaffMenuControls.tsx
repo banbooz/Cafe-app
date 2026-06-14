@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { setDoc } from "firebase/firestore";
 import AddProductForm from "./AddProductForm";
 import DietaryBadges from "./DietaryBadges";
 import { money, menuItems, productCategories, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { applyMenuSettings, cleanAllergenList, useMenuSettings } from "../lib/menuSettings";
 import { useMenuCatalogue, type NewMenuProduct } from "../lib/menuCatalog";
-import { getCafeStorageKey } from "../lib/cafeConfig";
+import { cafeConfig, getCafeStorageKey } from "../lib/cafeConfig";
+import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "../lib/firebase";
 
 type Props = { section: "Kitchen" | "Business"; compact?: boolean };
 type MenuView = "active" | "inactive";
@@ -40,6 +42,18 @@ function saveInactiveIds(ids: number[]) {
   if (typeof window === "undefined") return;
   window.localStorage.setItem(inactiveStorageKey, JSON.stringify(ids));
   window.dispatchEvent(new StorageEvent("storage", { key: inactiveStorageKey }));
+}
+
+async function syncInactiveIds(ids: number[], staffItems: MenuItem[]) {
+  const stateDoc = getFirebaseStateDoc();
+  if (!stateDoc) return;
+  const signedIn = await ensureFirebaseSignedIn();
+  if (!signedIn) return;
+  try {
+    await setDoc(stateDoc, { cafeId: cafeConfig.id, staffMenuItems: staffItems, hiddenMenuItemIds: ids, updatedAt: Date.now() }, { merge: true });
+  } catch (error) {
+    console.warn("Could not sync inactive items. Local storage still works.", error);
+  }
 }
 
 export default function StaffMenuControls({ section, compact = false }: Props) {
@@ -91,7 +105,9 @@ export default function StaffMenuControls({ section, compact = false }: Props) {
   }
 
   function setItemActive(id: number) {
-    saveInactiveIds(hiddenIds.filter((entry) => entry !== id));
+    const nextInactiveIds = hiddenIds.filter((entry) => entry !== id);
+    saveInactiveIds(nextInactiveIds);
+    void syncInactiveIds(nextInactiveIds, staffItems);
     setItemAvailability(id, true);
     setMenuView("active");
   }
