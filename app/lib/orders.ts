@@ -5,6 +5,7 @@ import { getCafeStorageKey, cafeConfig } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "served";
+export type PaymentStatus = "demo" | "pending" | "paid" | "failed";
 
 export type KitchenOrderItem = {
   id?: number;
@@ -16,6 +17,14 @@ export type KitchenOrderItem = {
   vegan?: boolean;
 };
 
+export type KitchenOrderPayment = {
+  provider: "demo" | "stripe";
+  status: PaymentStatus;
+  checkoutSessionId?: string;
+  paidAt?: number;
+  amountPaid?: number;
+};
+
 export type KitchenOrder = {
   id: number;
   cafeId: string;
@@ -25,6 +34,7 @@ export type KitchenOrder = {
   notes?: string;
   total: number;
   items: KitchenOrderItem[];
+  payment?: KitchenOrderPayment;
 };
 
 const BASE_KITCHEN_ORDERS_STORAGE_KEY = "cafeKitchenOrders";
@@ -91,7 +101,7 @@ export function writeKitchenOrders(orders: KitchenOrder[]) {
 }
 
 export function prependKitchenOrder(order: KitchenOrder) {
-  writeKitchenOrders([{ ...order, cafeId: cafeConfig.id }, ...readKitchenOrders()]);
+  writeKitchenOrders([{ ...order, cafeId: cafeConfig.id, payment: order.payment || { provider: "demo", status: "demo" } }, ...readKitchenOrders()]);
   window.localStorage.setItem(CURRENT_CUSTOMER_ORDER_STORAGE_KEY, String(order.id));
 }
 
