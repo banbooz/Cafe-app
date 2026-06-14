@@ -12,6 +12,7 @@ import { applyMenuSettings, useMenuSettings } from "../lib/menuSettings";
 import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentCustomerOrderId, subscribeToKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
+const MIN_SERVER_CHECK_MS = 900;
 
 type OrderApiResponse =
   | { ok: true; order: KitchenOrder }
@@ -19,6 +20,10 @@ type OrderApiResponse =
 
 function orderStepIndex(status: OrderStatus) {
   return orderSteps.indexOf(status);
+}
+
+function wait(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
@@ -141,7 +146,7 @@ export default function CustomerApp() {
     setOrderError("");
 
     try {
-      const order = await validateOrderOnServer();
+      const [order] = await Promise.all([validateOrderOnServer(), wait(MIN_SERVER_CHECK_MS)]);
       prependKitchenOrder(order);
       setCurrentOrder(order);
       setCartOpen(false);
@@ -158,7 +163,7 @@ export default function CustomerApp() {
       <Phone>
         <Center>
           <div className="mx-auto grid h-24 w-24 place-items-center rounded-full bg-slate-900 text-3xl font-black text-white">OK</div>
-          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Sent to kitchen</p>
+          <p className="mt-6 text-xs font-black uppercase tracking-[0.18em] text-orange-600">Server validated and sent to kitchen</p>
           <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
           <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {cafeConfig.tableNumber} order below.</p>
           <CustomerOrderStatus order={currentOrder} />
