@@ -179,7 +179,7 @@ function CafeReferenceHome({ experience, items, feature, category, setCategory, 
   const spotlight = experience.items[2] || hero;
   const visible = items.length ? items : experience.items;
 
-  return <main className="page-enter min-h-screen overflow-hidden px-4 pb-28 pt-3 text-[#2d1609]" style={{ background: "radial-gradient(circle at 18% 0%, #ffe8bf 0, transparent 30%), radial-gradient(circle at 90% 12%, #f0bd73 0, transparent 28%), #f5d49a" }}>
+  return <main className="min-h-screen overflow-hidden px-4 pb-28 pt-3 text-[#2d1609]" style={{ background: "radial-gradient(circle at 18% 0%, #ffe8bf 0, transparent 30%), radial-gradient(circle at 90% 12%, #f0bd73 0, transparent 28%), #f5d49a" }}>
     <div className="mx-auto max-w-[430px]">
       <header className="flex items-center justify-between pt-2">
         <div>
