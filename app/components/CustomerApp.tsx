@@ -16,11 +16,13 @@ const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 const MIN_SERVER_CHECK_MS = 900;
 const stripeCheckoutEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
 
-const upsellGroups = [
+type UpsellGroup = { name: string; categories: string[] };
+
+const upsellGroups: UpsellGroup[] = [
   { name: "drink", categories: ["Drinks"] },
   { name: "dessert", categories: ["Pudding"] },
   { name: "mainOrStarter", categories: ["Main", "Starter"] },
-] as const;
+];
 
 type OrderApiResponse =
   | { ok: true; order: KitchenOrder }
@@ -49,7 +51,7 @@ function chooseUpsellRecommendations(items: MenuItem[], cart: Record<number, num
 
   return upsellGroups
     .map((group) => {
-      const recommendation = availableOptions.find((item) => group.categories.includes(item.category as never) && !usedRecommendationIds.has(item.id));
+      const recommendation = availableOptions.find((item) => group.categories.includes(item.category) && !usedRecommendationIds.has(item.id));
       if (recommendation) usedRecommendationIds.add(recommendation.id);
       return recommendation;
     })
