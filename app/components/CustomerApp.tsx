@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import HomeView from "./HomeView";
 import DetailView from "./DetailView";
 import CartSheet from "./CartSheet";
+import UpsellSheet from "./UpsellSheet";
 import { Center, Phone } from "./AppShell";
 import { cafeConfig } from "../lib/cafeConfig";
 import { menuItems, type MenuItem } from "../lib/menu";
@@ -14,6 +15,12 @@ import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentC
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 const MIN_SERVER_CHECK_MS = 900;
 const stripeCheckoutEnabled = process.env.NEXT_PUBLIC_STRIPE_CHECKOUT_ENABLED === "true";
+
+const upsellGroups = [
+  { name: "drink", categories: ["Drinks"] },
+  { name: "dessert", categories: ["Pudding"] },
+  { name: "mainOrStarter", categories: ["Main", "Starter"] },
+] as const;
 
 type OrderApiResponse =
   | { ok: true; order: KitchenOrder }
@@ -29,6 +36,24 @@ function orderStepIndex(status: OrderStatus) {
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function getCartItemIds(cart: Record<number, number>) {
+  return new Set(Object.entries(cart).filter(([, qty]) => qty > 0).map(([id]) => Number(id)));
+}
+
+function chooseUpsellRecommendations(items: MenuItem[], cart: Record<number, number>) {
+  const cartIds = getCartItemIds(cart);
+  const usedRecommendationIds = new Set<number>();
+  const availableOptions = items.filter((item) => item.available !== false && !cartIds.has(item.id));
+
+  return upsellGroups
+    .map((group) => {
+      const recommendation = availableOptions.find((item) => group.categories.includes(item.category as never) && !usedRecommendationIds.has(item.id));
+      if (recommendation) usedRecommendationIds.add(recommendation.id);
+      return recommendation;
+    })
+    .filter((item): item is MenuItem => Boolean(item));
 }
 
 function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
@@ -58,6 +83,7 @@ export default function CustomerApp() {
   const [selected, setSelected] = useState<MenuItem>(menuItems[0]);
   const [cart, setCart] = useState<Record<number, number>>({});
   const [cartOpen, setCartOpen] = useState(false);
+  const [upsellOpen, setUpsellOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
@@ -103,6 +129,7 @@ export default function CustomerApp() {
   const unavailableCartItems = cartItems.filter((item) => item.available === false);
   const count = cartItems.reduce((sum, item) => sum + item.qty, 0);
   const total = cartItems.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const upsellRecommendations = useMemo(() => chooseUpsellRecommendations(itemsWithAvailability, cart), [cart, itemsWithAvailability]);
 
   function add(id: number) {
     setOrderError("");
@@ -124,6 +151,11 @@ export default function CustomerApp() {
   function openItem(item: MenuItem) {
     setSelected(item);
     setScreen("detail");
+  }
+
+  function closeCart() {
+    setUpsellOpen(false);
+    setCartOpen(false);
   }
 
   function orderRequestBody() {
@@ -179,6 +211,7 @@ export default function CustomerApp() {
       prependKitchenOrder(order);
       setCurrentOrder(order);
       setCartOpen(false);
+      setUpsellOpen(false);
       setScreen("done");
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : "The order could not be checked.");
@@ -186,6 +219,48 @@ export default function CustomerApp() {
       setIsSubmittingOrder(false);
     }
   }
+
+  function requestCheckout() {
+    if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
+    setOrderError("");
+
+    if (upsellRecommendations.length) {
+      setUpsellOpen(true);
+      return;
+    }
+
+    void sendOrder();
+  }
+
+  function continueAfterUpsell() {
+    setUpsellOpen(false);
+    void sendOrder();
+  }
+
+  const cartSheet = cartOpen && (
+    <CartSheet
+      items={cartItems}
+      total={total}
+      chefNotes={chefNotes}
+      setChefNotes={setChefNotes}
+      close={closeCart}
+      add={add}
+      remove={remove}
+      send={requestCheckout}
+      isSubmitting={isSubmittingOrder}
+      orderError={orderError}
+    />
+  );
+
+  const upsellSheet = upsellOpen && (
+    <UpsellSheet
+      recommendations={upsellRecommendations}
+      add={add}
+      close={() => setUpsellOpen(false)}
+      continueToCheckout={continueAfterUpsell}
+      isSubmitting={isSubmittingOrder}
+    />
+  );
 
   if (screen === "done") {
     return (
@@ -203,8 +278,36 @@ export default function CustomerApp() {
   }
 
   if (screen === "detail") {
-    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} isSubmitting={isSubmittingOrder} orderError={orderError} />}</Phone>;
+    return (
+      <Phone>
+        <DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />
+        {cartSheet}
+        {upsellSheet}
+      </Phone>
+    );
   }
 
-  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openItem} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} isSubmitting={isSubmittingOrder} orderError={orderError} />}</Phone>;
+  return (
+    <Phone>
+      <HomeView
+        category={category}
+        setCategory={setCategory}
+        query={query}
+        setQuery={setQuery}
+        filtered={filtered}
+        cart={cart}
+        count={count}
+        total={total}
+        popularOnly={popularOnly}
+        showPopular={() => { setPopularOnly(true); setCategory("All"); }}
+        showAll={() => setPopularOnly(false)}
+        add={add}
+        remove={remove}
+        openItem={openItem}
+        openCart={() => setCartOpen(true)}
+      />
+      {cartSheet}
+      {upsellSheet}
+    </Phone>
+  );
 }
