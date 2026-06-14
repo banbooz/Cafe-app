@@ -7,7 +7,7 @@ import CartSheet from "./CartSheet";
 import UpsellSheet from "./UpsellSheet";
 import { Center, Phone } from "./AppShell";
 import { cafeConfig, getCafeStorageKey } from "../lib/cafeConfig";
-import { menuItems, type MenuItem } from "../lib/menu";
+import { menuItems, money, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { useMenuCatalogue } from "../lib/menuCatalog";
 import { useMenuSettings } from "../lib/menuSettings";
@@ -35,6 +35,10 @@ function readSelectedTableNumber() {
   if (typeof window === "undefined") return cafeConfig.tableNumber;
   const saved = window.localStorage.getItem(CUSTOMER_TABLE_STORAGE_KEY);
   return saved ? safeTableNumber(saved) : cafeConfig.tableNumber;
+}
+
+function moneyValue(value: number) {
+  return Number(value.toFixed(2));
 }
 
 function pickUpsells(items: MenuItem[], cart: Record<number, number>) {
@@ -79,6 +83,7 @@ function CustomerOrderStatus({ order }: { order: KitchenOrder | null }) {
         {orderSteps.map((step, index) => <div key={step} className={index <= activeStep ? "h-2 rounded-full bg-slate-900" : "h-2 rounded-full bg-slate-200"} />)}
       </div>
       {order && <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Table {order.table} - Order #{order.id}</p>}
+      {order?.tipAmount ? <p className="mt-2 text-xs font-black text-[#617174]">Tip added: {money(order.tipAmount)}</p> : null}
     </div>
   );
 }
@@ -96,6 +101,7 @@ export default function CustomerApp() {
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
   const [selectedTable, setSelectedTable] = useState(() => cafeConfig.tableNumber);
   const [tableLoaded, setTableLoaded] = useState(false);
+  const [tipPercentage, setTipPercentage] = useState<number | null>(null);
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
   const [orderError, setOrderError] = useState("");
   const { availability } = useMenuAvailability();
@@ -135,7 +141,9 @@ export default function CustomerApp() {
   const cartItems = itemsWithAvailability.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
   const unavailableCartItems = cartItems.filter((item) => item.available === false);
   const count = cartItems.reduce((sum, item) => sum + item.qty, 0);
-  const total = cartItems.reduce((sum, item) => sum + item.qty * item.price, 0);
+  const subtotal = moneyValue(cartItems.reduce((sum, item) => sum + item.qty * item.price, 0));
+  const tipAmount = moneyValue(tipPercentage ? (subtotal * tipPercentage) / 100 : 0);
+  const total = moneyValue(subtotal + tipAmount);
   const upsellRecommendations = useMemo(() => pickUpsells(itemsWithAvailability, cart), [cart, itemsWithAvailability]);
 
   function updateSelectedTable(table: number) {
@@ -160,7 +168,7 @@ export default function CustomerApp() {
   }
 
   function orderRequestBody() {
-    return { table: selectedTable, items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
+    return { table: selectedTable, tipPercentage: tipPercentage || 0, items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
   }
 
   async function validateOrderOnServer() {
@@ -206,7 +214,7 @@ export default function CustomerApp() {
     else void sendOrder();
   }
 
-  const cartSheet = cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => { setUpsellOpen(false); setCartOpen(false); }} add={add} remove={remove} send={requestCheckout} isSubmitting={isSubmittingOrder} orderError={orderError} />;
+  const cartSheet = cartOpen && <CartSheet items={cartItems} subtotal={subtotal} tipPercentage={tipPercentage} tipAmount={tipAmount} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} setTipPercentage={setTipPercentage} close={() => { setUpsellOpen(false); setCartOpen(false); }} add={add} remove={remove} send={requestCheckout} isSubmitting={isSubmittingOrder} orderError={orderError} />;
   const upsellSheet = upsellOpen && <UpsellSheet recommendations={upsellRecommendations} add={add} close={() => setUpsellOpen(false)} continueToCheckout={() => { setUpsellOpen(false); void sendOrder(); }} isSubmitting={isSubmittingOrder} />;
 
   if (screen === "done") {
@@ -218,7 +226,7 @@ export default function CustomerApp() {
           <h1 className="mt-2 text-3xl font-black text-slate-950">Order placed</h1>
           <p className="mt-3 text-sm font-bold text-slate-500">Track your {cafeConfig.name} table {currentOrder?.table || selectedTable} order below.</p>
           <CustomerOrderStatus order={currentOrder} />
-          <button onClick={() => { setCart({}); setChefNotes(""); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
+          <button onClick={() => { setCart({}); setChefNotes(""); setTipPercentage(null); setCurrentOrder(null); setScreen("home"); }} className="primary mt-6">Order more</button>
         </Center>
       </Phone>
     );
