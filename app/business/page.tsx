@@ -8,45 +8,145 @@ import { useMenuCatalogue } from "../lib/menuCatalog";
 import { useMenuSettings } from "../lib/menuSettings";
 import { readKitchenOrders, subscribeToKitchenOrders, type KitchenOrder, type KitchenOrderItem } from "../lib/orders";
 
-type OrderItemWithCategory = KitchenOrderItem & { category?: string };
+type PerformanceTab = "top" | "daily";
 
-function getItemCategory(item: OrderItemWithCategory, currentMenu: { id: number; name: string; category: string }[]) {
-  return item.category || currentMenu.find((menuItem) => menuItem.id === item.id || menuItem.name === item.name)?.category || menuItems.find((menuItem) => menuItem.id === item.id || menuItem.name === item.name)?.category || "Other";
+type MenuLookupItem = {
+  id: number;
+  name: string;
+  category: string;
+  price: number;
+};
+
+type SalesOrderItem = KitchenOrderItem & {
+  category?: string;
+  unitPrice?: number;
+  price?: number;
+};
+
+type ProductSales = {
+  key: string;
+  name: string;
+  category: string;
+  quantity: number;
+  revenue: number;
+};
+
+const NO_PRODUCT: ProductSales = {
+  key: "none",
+  name: "No orders",
+  category: "Other",
+  quantity: 0,
+  revenue: 0,
+};
+
+function findMenuItem(item: SalesOrderItem, currentMenu: MenuLookupItem[]) {
+  return currentMenu.find((menuItem) => (typeof item.id === "number" && menuItem.id === item.id) || menuItem.name === item.name) || menuItems.find((menuItem) => (typeof item.id === "number" && menuItem.id === item.id) || menuItem.name === item.name);
 }
 
-function getAnalytics(orders: KitchenOrder[], currentMenu: { id: number; name: string; category: string }[]) {
-  const itemTotals: Record<string, number> = {};
+function getProductKey(item: SalesOrderItem) {
+  if (typeof item.id === "number") return String(item.id);
+  return item.name.trim().toLowerCase();
+}
+
+function getItemCategory(item: SalesOrderItem, currentMenu: MenuLookupItem[]) {
+  return item.category || findMenuItem(item, currentMenu)?.category || "Other";
+}
+
+function getItemUnitPrice(item: SalesOrderItem, currentMenu: MenuLookupItem[]) {
+  const fallbackPrice = findMenuItem(item, currentMenu)?.price;
+  const unitPrice = item.unitPrice ?? item.price ?? fallbackPrice ?? 0;
+  return Number.isFinite(unitPrice) ? Number(unitPrice) : 0;
+}
+
+function orderTimestamp(order: KitchenOrder) {
+  const idTimestamp = Number(order.id);
+  if (Number.isFinite(idTimestamp) && idTimestamp > 946684800000) return idTimestamp;
+
+  const paidTimestamp = Number(order.payment?.paidAt);
+  if (Number.isFinite(paidTimestamp) && paidTimestamp > 946684800000) return paidTimestamp;
+
+  return null;
+}
+
+function isSameLocalDay(order: KitchenOrder, day: Date) {
+  const timestamp = orderTimestamp(order);
+  if (!timestamp) return false;
+
+  const orderDate = new Date(timestamp);
+  return orderDate.getFullYear() === day.getFullYear() && orderDate.getMonth() === day.getMonth() && orderDate.getDate() === day.getDate();
+}
+
+function buildProductSales(orders: KitchenOrder[], currentMenu: MenuLookupItem[]) {
+  const products = new Map<string, ProductSales>();
+
+  orders.forEach((order) => {
+    order.items.forEach((rawItem) => {
+      const item = rawItem as SalesOrderItem;
+      const key = getProductKey(item);
+      const category = getItemCategory(item, currentMenu);
+      const quantity = Number.isFinite(item.quantity) ? item.quantity : 0;
+      const revenue = getItemUnitPrice(item, currentMenu) * quantity;
+      const existing = products.get(key);
+
+      if (existing) {
+        products.set(key, {
+          ...existing,
+          category: existing.category === "Other" && category !== "Other" ? category : existing.category,
+          quantity: existing.quantity + quantity,
+          revenue: existing.revenue + revenue,
+        });
+        return;
+      }
+
+      products.set(key, {
+        key,
+        name: item.name || "Unknown product",
+        category,
+        quantity,
+        revenue,
+      });
+    });
+  });
+
+  return Array.from(products.values()).sort((a, b) => b.quantity - a.quantity || b.revenue - a.revenue || a.name.localeCompare(b.name));
+}
+
+function getAnalytics(orders: KitchenOrder[], currentMenu: MenuLookupItem[]) {
   const categoryTotals: Record<string, number> = {};
   let itemCount = 0;
   let revenue = 0;
 
   orders.forEach((order) => {
     revenue += order.total;
-    order.items.forEach((item) => {
-      const category = getItemCategory(item as OrderItemWithCategory, currentMenu);
-      itemTotals[item.name] = (itemTotals[item.name] || 0) + item.quantity;
+    order.items.forEach((rawItem) => {
+      const item = rawItem as SalesOrderItem;
+      const category = getItemCategory(item, currentMenu);
       categoryTotals[category] = (categoryTotals[category] || 0) + item.quantity;
       itemCount += item.quantity;
     });
   });
 
-  const itemsRanked = Object.entries(itemTotals).map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty);
+  const productSales = buildProductSales(orders, currentMenu);
+  const dailyProductSales = buildProductSales(orders.filter((order) => isSameLocalDay(order, new Date())), currentMenu);
   const categoriesRanked = Object.entries(categoryTotals).map(([name, qty]) => ({ name, qty })).sort((a, b) => b.qty - a.qty);
+  const topProduct = productSales[0] || NO_PRODUCT;
 
   return {
     orderCount: orders.length,
     itemCount,
     revenue,
     averageOrder: orders.length ? revenue / orders.length : 0,
-    topItem: itemsRanked[0] || { name: "No orders", qty: 0 },
+    topProduct,
     topCategory: categoriesRanked[0] || { name: "No data", qty: 0 },
-    itemsRanked,
+    productSales,
+    dailyProductSales,
     categoriesRanked,
   };
 }
 
 export default function BusinessDashboard() {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
+  const [performanceTab, setPerformanceTab] = useState<PerformanceTab>("top");
   const { settings } = useMenuSettings();
   const { visibleItems } = useMenuCatalogue(settings);
 
@@ -60,6 +160,9 @@ export default function BusinessDashboard() {
   }, []);
 
   const analytics = useMemo(() => getAnalytics(orders, visibleItems), [orders, visibleItems]);
+  const topSoldProducts = analytics.productSales.slice(0, 5);
+  const topMaxQuantity = topSoldProducts[0]?.quantity || 1;
+  const dailyMaxQuantity = analytics.dailyProductSales[0]?.quantity || 1;
 
   return (
     <main className="min-h-screen bg-[#eef1f3] px-4 py-5 text-slate-900 sm:px-6 lg:px-8">
@@ -79,9 +182,9 @@ export default function BusinessDashboard() {
         </header>
 
         <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          <Metric label="Orders today" value={String(analytics.orderCount)} detail={`${analytics.itemCount} items sold`} />
+          <Metric label="Orders tracked" value={String(analytics.orderCount)} detail={`${analytics.itemCount} items sold`} />
           <Metric label="App revenue" value={money(analytics.revenue)} detail={`${money(analytics.averageOrder)} average order`} />
-          <Metric label="Most ordered item" value={analytics.topItem.name} detail={`${analytics.topItem.qty} sold today`} />
+          <Metric label="Top sold product" value={analytics.topProduct.name} detail={`${analytics.topProduct.quantity} sold · ${money(analytics.topProduct.revenue)}`} />
           <Metric label="Best category" value={analytics.topCategory.name} detail={`${analytics.topCategory.qty} items ordered`} />
         </div>
 
@@ -89,8 +192,33 @@ export default function BusinessDashboard() {
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Menu performance</p><h2 className="mt-1 text-xl font-black">Most ordered items</h2></div><span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Live</span></div>
-            {analytics.itemsRanked.length ? <div className="mt-5 space-y-3">{analytics.itemsRanked.slice(0, 6).map((item, index) => <div key={item.name} className="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-center justify-between gap-4"><div className="min-w-0"><p className="text-xs font-black text-slate-400">#{index + 1}</p><h3 className="truncate font-black">{item.name}</h3></div><p className="shrink-0 text-sm font-black">{item.qty} sold</p></div><div className="mt-3 h-2 rounded-full bg-white"><div className="h-2 rounded-full bg-slate-900" style={{ width: `${Math.max(12, (item.qty / Math.max(1, analytics.topItem.qty)) * 100)}%` }} /></div></div>)}</div> : <EmptyState title="No item data" text={`Most ordered items for ${cafeConfig.name} will appear here.`} />}
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Menu performance</p>
+                <h2 className="mt-1 text-xl font-black">{performanceTab === "top" ? "Most Sold Products" : "Daily Sales by Item"}</h2>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-500">Based on real order item snapshots, including custom and removed products when they exist in orders.</p>
+              </div>
+              <span className="w-fit rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Live</span>
+            </div>
+
+            <div className="mt-5 grid gap-2 rounded-3xl bg-slate-100 p-2 sm:grid-cols-2">
+              <button type="button" onClick={() => setPerformanceTab("top")} className={performanceTab === "top" ? "min-h-11 rounded-2xl bg-slate-900 px-4 text-sm font-black text-white" : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Most Sold Products</button>
+              <button type="button" onClick={() => setPerformanceTab("daily")} className={performanceTab === "daily" ? "min-h-11 rounded-2xl bg-slate-900 px-4 text-sm font-black text-white" : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Daily Sales by Item</button>
+            </div>
+
+            {performanceTab === "top" ? (
+              topSoldProducts.length ? (
+                <div className="mt-5 space-y-3">
+                  {topSoldProducts.map((product, index) => <ProductSalesCard key={product.key} product={product} rank={index + 1} maxQuantity={topMaxQuantity} />)}
+                </div>
+              ) : <EmptyState title="No sold products" text={`Most sold products for ${cafeConfig.name} will appear here after orders are placed.`} />
+            ) : (
+              analytics.dailyProductSales.length ? (
+                <div className="mt-5 space-y-3">
+                  {analytics.dailyProductSales.map((product) => <ProductSalesCard key={product.key} product={product} maxQuantity={dailyMaxQuantity} />)}
+                </div>
+              ) : <EmptyState title="No items sold today" text={`Daily item sales for ${cafeConfig.name} will appear here when products sell today.`} />
+            )}
           </section>
 
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
@@ -110,6 +238,31 @@ export default function BusinessDashboard() {
 
 function Metric({ label, value, detail }: { label: string; value: string; detail: string }) {
   return <article className="rounded-[1.7rem] bg-white p-5 shadow-sm ring-1 ring-slate-200"><p className="text-xs font-black uppercase tracking-[0.16em] text-slate-400">{label}</p><h2 className="mt-3 truncate text-2xl font-black text-slate-950">{value}</h2><p className="mt-2 text-sm font-bold text-slate-500">{detail}</p></article>;
+}
+
+function ProductSalesCard({ product, rank, maxQuantity }: { product: ProductSales; rank?: number; maxQuantity: number }) {
+  const progress = Math.max(10, (product.quantity / Math.max(1, maxQuantity)) * 100);
+
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div className="flex min-w-0 gap-3">
+          {rank && <div className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-slate-900 text-sm font-black text-white">{rank}</div>}
+          <div className="min-w-0">
+            <h3 className="truncate font-black">{product.name}</h3>
+            <p className="mt-1 text-xs font-black uppercase tracking-[0.14em] text-slate-400">{product.category}</p>
+          </div>
+        </div>
+        <div className="grid gap-2 sm:min-w-36 sm:text-right">
+          <p className="text-sm font-black text-slate-950">{product.quantity} sold</p>
+          <p className="text-sm font-black text-orange-600">{money(product.revenue)}</p>
+        </div>
+      </div>
+      <div className="mt-4 h-2 rounded-full bg-white">
+        <div className="h-2 rounded-full bg-slate-900" style={{ width: `${progress}%` }} />
+      </div>
+    </article>
+  );
 }
 
 function EmptyState({ title, text }: { title: string; text: string }) {
