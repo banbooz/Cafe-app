@@ -13,6 +13,10 @@ import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentC
 
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
 
+type OrderApiResponse =
+  | { ok: true; order: KitchenOrder }
+  | { ok: false; error?: string };
+
 function orderStepIndex(status: OrderStatus) {
   return orderSteps.indexOf(status);
 }
@@ -46,6 +50,8 @@ export default function CustomerApp() {
   const [cartOpen, setCartOpen] = useState(false);
   const [chefNotes, setChefNotes] = useState("");
   const [currentOrder, setCurrentOrder] = useState<KitchenOrder | null>(null);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
+  const [orderError, setOrderError] = useState("");
   const { availability } = useMenuAvailability();
   const { settings } = useMenuSettings();
 
@@ -89,11 +95,13 @@ export default function CustomerApp() {
   const total = cartItems.reduce((sum, item) => sum + item.qty * item.price, 0);
 
   function add(id: number) {
+    setOrderError("");
     if (!isItemAvailable(id, availability)) return;
     setCart((old) => ({ ...old, [id]: (old[id] || 0) + 1 }));
   }
 
   function remove(id: number) {
+    setOrderError("");
     setCart((old) => {
       const next = { ...old };
       const qty = (next[id] || 0) - 1;
@@ -108,36 +116,41 @@ export default function CustomerApp() {
     setScreen("detail");
   }
 
-  function saveOrderForKitchen() {
-    const order: KitchenOrder = {
-      id: Date.now(),
-      cafeId: cafeConfig.id,
-      table: cafeConfig.tableNumber,
-      time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      status: "new",
-      notes: chefNotes.trim(),
-      total,
-      items: cartItems.map((item) => ({
-        id: item.id,
-        name: item.name,
-        quantity: item.qty,
-        description: item.description,
-        allergens: item.allergens,
-        vegetarian: Boolean(item.vegetarian),
-        vegan: Boolean(item.vegan)
-      }))
-    };
+  async function validateOrderOnServer() {
+    const response = await fetch("/api/orders", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        items: cartItems.map((item) => ({ id: item.id, quantity: item.qty })),
+        notes: chefNotes,
+      }),
+    });
 
-    prependKitchenOrder(order);
-    return order;
+    const result = (await response.json()) as OrderApiResponse;
+    if (!response.ok || !result.ok) {
+      throw new Error(!result.ok && result.error ? result.error : "The order could not be checked.");
+    }
+
+    return result.order;
   }
 
-  function sendOrder() {
-    if (!cartItems.length || unavailableCartItems.length) return;
-    const order = saveOrderForKitchen();
-    setCurrentOrder(order);
-    setCartOpen(false);
-    setScreen("done");
+  async function sendOrder() {
+    if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
+
+    setIsSubmittingOrder(true);
+    setOrderError("");
+
+    try {
+      const order = await validateOrderOnServer();
+      prependKitchenOrder(order);
+      setCurrentOrder(order);
+      setCartOpen(false);
+      setScreen("done");
+    } catch (error) {
+      setOrderError(error instanceof Error ? error.message : "The order could not be checked.");
+    } finally {
+      setIsSubmittingOrder(false);
+    }
   }
 
   if (screen === "done") {
@@ -156,8 +169,8 @@ export default function CustomerApp() {
   }
 
   if (screen === "detail") {
-    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} />}</Phone>;
+    return <Phone><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={() => setScreen("home")} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} isSubmitting={isSubmittingOrder} orderError={orderError} />}</Phone>;
   }
 
-  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openItem} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} />}</Phone>;
+  return <Phone><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openItem} openCart={() => setCartOpen(true)} />{cartOpen && <CartSheet items={cartItems} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} close={() => setCartOpen(false)} add={add} remove={remove} send={sendOrder} isSubmitting={isSubmittingOrder} orderError={orderError} />}</Phone>;
 }
