@@ -74,19 +74,19 @@ const cafeItems: MenuItem[] = [
   { id: 110, name: "Granola Pot", category: "Breakfast", description: "Greek yoghurt, berries, honey", price: 4.6, prep: "2 min", allergens: ["Milk", "Nuts"], image: "https://images.unsplash.com/photo-1511690656952-34342bb7c2f2?auto=format&fit=crop&w=900&q=80", vegetarian: true }
 ];
 
-const drinkCategories = ["All", "Mocktails", "Soft Drinks", "Specials", "Hot Drinks", "Snacks"] as const;
+const drinkCategories = ["All", "Beer", "Wine", "Cocktails", "Spirits", "Cider", "Soft Drinks"] as const;
 
 const drinkItems: MenuItem[] = [
-  { id: 201, name: "Berry Nojito", category: "Mocktails", description: "Mint, lime, berries, soda", price: 5.2, prep: "4 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
-  { id: 202, name: "Sunset Spritz", category: "Mocktails", description: "Orange, passion fruit, soda", price: 5.4, prep: "4 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1563223771-375783ee91ad?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
-  { id: 203, name: "Ginger Lime Fizz", category: "Mocktails", description: "Ginger, lime, mint, crushed ice", price: 4.9, prep: "3 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
-  { id: 204, name: "Cloudy Lemonade", category: "Soft Drinks", description: "Fresh lemon, sugar, sparkling water", price: 3.6, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9e?auto=format&fit=crop&w=900&q=80", vegan: true },
-  { id: 205, name: "Cola Float", category: "Specials", description: "Cola, vanilla ice cream, cherry", price: 4.7, prep: "3 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1581636625402-29b2a704ef13?auto=format&fit=crop&w=900&q=80", vegetarian: true },
-  { id: 206, name: "Sparkling Apple", category: "Soft Drinks", description: "Apple press, soda, lime", price: 3.9, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1575596510825-f748919a2bf7?auto=format&fit=crop&w=900&q=80", vegan: true },
-  { id: 207, name: "Late Espresso", category: "Hot Drinks", description: "Short coffee for evening service", price: 2.8, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?auto=format&fit=crop&w=900&q=80", vegan: true },
-  { id: 208, name: "Salted Pretzels", category: "Snacks", description: "Warm pretzels with mustard dip", price: 3.8, prep: "4 min", allergens: ["Gluten", "Mustard"], image: "https://images.unsplash.com/photo-1586444248902-2f64eddc13df?auto=format&fit=crop&w=900&q=80", vegetarian: true },
-  { id: 209, name: "Loaded Nachos", category: "Snacks", description: "Cheese, salsa, jalapenos, sour cream", price: 6.5, prep: "6 min", allergens: ["Milk"], image: "https://images.unsplash.com/photo-1513456852971-30c0b8199d4d?auto=format&fit=crop&w=900&q=80", popular: true, vegetarian: true },
-  { id: 210, name: "Sharing Fries", category: "Snacks", description: "Crispy fries, house seasoning", price: 4.4, prep: "5 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=900&q=80", vegan: true }
+  { id: 201, name: "House Lager", category: "Beer", description: "Cold draught lager, crisp finish", price: 5.1, prep: "2 min", allergens: ["Gluten"], image: "https://images.unsplash.com/photo-1608270586620-248524c67de9?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
+  { id: 202, name: "Craft Pale Ale", category: "Beer", description: "Citrus hops, smooth malt", price: 5.6, prep: "2 min", allergens: ["Gluten"], image: "https://images.unsplash.com/photo-1535958636474-b021ee887b13?auto=format&fit=crop&w=900&q=80", popular: true, vegan: true },
+  { id: 203, name: "Pinot Grigio", category: "Wine", description: "Dry white wine, light citrus", price: 6.2, prep: "2 min", allergens: ["Sulphites"], image: "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&w=900&q=80", popular: true },
+  { id: 204, name: "Malbec Red", category: "Wine", description: "Soft red wine, dark fruit", price: 6.4, prep: "2 min", allergens: ["Sulphites"], image: "https://images.unsplash.com/photo-1506377247377-2a5b3b417ebb?auto=format&fit=crop&w=900&q=80" },
+  { id: 205, name: "Espresso Martini", category: "Cocktails", description: "Vodka, coffee, vanilla, foam", price: 8.9, prep: "5 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1551538827-9c037cb4f32a?auto=format&fit=crop&w=900&q=80", popular: true },
+  { id: 206, name: "Berry Mojito", category: "Cocktails", description: "Rum, lime, mint, berries", price: 8.4, prep: "5 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=900&q=80" },
+  { id: 207, name: "Single Gin & Tonic", category: "Spirits", description: "House gin, tonic, fresh lime", price: 6.8, prep: "3 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?auto=format&fit=crop&w=900&q=80", popular: true },
+  { id: 208, name: "Whisky Serve", category: "Spirits", description: "House whisky over ice", price: 7.2, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1527281400683-1aae777175f8?auto=format&fit=crop&w=900&q=80" },
+  { id: 209, name: "Apple Cider", category: "Cider", description: "Chilled apple cider, medium dry", price: 5.3, prep: "2 min", allergens: ["Sulphites"], image: "https://images.unsplash.com/photo-1575596510825-f748919a2bf7?auto=format&fit=crop&w=900&q=80" },
+  { id: 210, name: "Cloudy Lemonade", category: "Soft Drinks", description: "Fresh lemon, sugar, sparkling water", price: 3.6, prep: "2 min", allergens: ["None listed"], image: "https://images.unsplash.com/photo-1523677011781-c91d1bbe2f9e?auto=format&fit=crop&w=900&q=80", vegan: true }
 ];
 
 export const menuItems = restaurantItems;
@@ -133,15 +133,15 @@ export const menuExperiences: Record<MenuExperienceId, MenuExperience> = {
     label: "Drinks",
     name: "After Hours Drinks",
     eyebrow: "Drinks mode",
-    tagline: "Simple drinks-first ordering for venues with a darker evening theme.",
+    tagline: "Simple drinks-first ordering for bars, venues and evening service.",
     menuLabel: "Drinks menu",
     menuTitle: "Choose a drink",
-    searchPlaceholder: "Search drinks, specials or snacks...",
+    searchPlaceholder: "Search beer, wine, cocktails...",
     featuredLabel: "Choose a drink",
     featuredCta: "Open drinks menu",
-    emptyText: "No drinks found. Try mocktails, soft drinks or snacks.",
+    emptyText: "No drinks found. Try another type.",
     categories: drinkCategories,
-    categoryIcons: { All: "⌂", Mocktails: "◆", "Soft Drinks": "◌", Specials: "◇", "Hot Drinks": "☕", Snacks: "✦" },
+    categoryIcons: { All: "⌂", Beer: "🍺", Wine: "🍷", Cocktails: "🍸", Spirits: "🥃", Cider: "●", "Soft Drinks": "◌" },
     theme: { background: "#171312", panel: "#241c1a", soft: "#322623", ink: "#fff8f0", muted: "#c9b2a2", accent: "#d7a048", deep: "#0f0b0a" },
     items: drinkItems
   }
