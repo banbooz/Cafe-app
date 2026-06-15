@@ -196,16 +196,67 @@ export default function CustomerApp() {
   const [paymentNotice, setPaymentNotice] = useState<PaymentNotice | null>(null);
   const homeScrollYRef = useRef(0);
   const shouldRestoreHomeScrollRef = useRef(false);
+  const appHistoryDepthRef = useRef(0);
   const { availability } = useMenuAvailability();
   const { settings } = useMenuSettings();
   const { visibleItems } = useMenuCatalogue(settings);
+
+  function pushAppHistoryStep(step: string) {
+    if (typeof window === "undefined") return;
+    appHistoryDepthRef.current += 1;
+    window.history.pushState({ cafeAppStep: step, depth: appHistoryDepthRef.current }, "", window.location.href);
+  }
+
+  function goBackOr(fallback: () => void) {
+    if (typeof window !== "undefined" && appHistoryDepthRef.current > 0) window.history.back();
+    else fallback();
+  }
+
+  function returnToMenu() {
+    shouldRestoreHomeScrollRef.current = true;
+    setScreen("home");
+  }
+
+  function resetOrderAndReturnHome() {
+    setCart({});
+    setChefNotes("");
+    setTipPercentage(null);
+    setCurrentOrder(null);
+    setPaymentNotice(null);
+    setScreen("home");
+  }
 
   useLayoutEffect(() => {
     const nextTable = readInitialTableNumber();
     setSelectedTable(nextTable);
     setTableLoaded(true);
     window.localStorage.setItem(CUSTOMER_TABLE_STORAGE_KEY, String(nextTable));
+    window.history.replaceState({ ...(window.history.state || {}), cafeAppStep: "home", depth: 0 }, "", window.location.href);
   }, []);
+
+  useEffect(() => {
+    function handlePopState() {
+      if (appHistoryDepthRef.current > 0) appHistoryDepthRef.current -= 1;
+      if (upsellOpen) {
+        setUpsellOpen(false);
+        return;
+      }
+      if (cartOpen) {
+        setCartOpen(false);
+        return;
+      }
+      if (screen === "detail") {
+        returnToMenu();
+        return;
+      }
+      if (screen === "done") {
+        resetOrderAndReturnHome();
+      }
+    }
+
+    window.addEventListener("popstate", handlePopState);
+    return () => window.removeEventListener("popstate", handlePopState);
+  }, [cartOpen, upsellOpen, screen]);
 
   async function findOrderWithRetry(orderId: number) {
     for (let attempt = 0; attempt < 10; attempt += 1) {
@@ -253,13 +304,14 @@ export default function CustomerApp() {
       setTipPercentage(null);
       setCartOpen(false);
       setUpsellOpen(false);
+      pushAppHistoryStep("done");
       setScreen("done");
       setPaymentNotice({ type: "info", title: "Checking payment", text: "We are confirming the Stripe payment and sending your order to the kitchen." });
       void confirmPaidStripeReturn(paidOrderId, sessionId);
       url.searchParams.delete("payment");
       url.searchParams.delete("order_id");
       url.searchParams.delete("session_id");
-      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+      window.history.replaceState({ ...(window.history.state || {}), cafeAppStep: "done" }, "", url.pathname + (url.search ? url.search : ""));
     }
 
     if (paymentStatus === "cancelled") {
@@ -267,7 +319,7 @@ export default function CustomerApp() {
       setOrderError("Payment was cancelled. Your order has not been sent to the kitchen.");
       url.searchParams.delete("payment");
       url.searchParams.delete("order_id");
-      window.history.replaceState({}, "", url.pathname + (url.search ? url.search : ""));
+      window.history.replaceState({ ...(window.history.state || {}), cafeAppStep: "home" }, "", url.pathname + (url.search ? url.search : ""));
     }
   }, []);
 
@@ -338,15 +390,36 @@ export default function CustomerApp() {
     });
   }
 
+  function openCartSheet() {
+    if (!cartOpen) pushAppHistoryStep("cart");
+    setCartOpen(true);
+  }
+
+  function closeCartSheet() {
+    goBackOr(() => {
+      setUpsellOpen(false);
+      setCartOpen(false);
+    });
+  }
+
+  function openUpsellSheet() {
+    if (!upsellOpen) pushAppHistoryStep("upsell");
+    setUpsellOpen(true);
+  }
+
+  function closeUpsellSheet() {
+    goBackOr(() => setUpsellOpen(false));
+  }
+
   function openMenuItem(item: MenuItem) {
     homeScrollYRef.current = readWindowScrollY();
+    pushAppHistoryStep("detail");
     setSelected(item);
     setScreen("detail");
   }
 
   function backToMenu() {
-    shouldRestoreHomeScrollRef.current = true;
-    setScreen("home");
+    goBackOr(returnToMenu);
   }
 
   function orderRequestBody() {
@@ -384,6 +457,7 @@ export default function CustomerApp() {
       setPaymentNotice({ type: "success", title: "Order sent", text: "Demo order sent to the kitchen." });
       setCartOpen(false);
       setUpsellOpen(false);
+      pushAppHistoryStep("done");
       setScreen("done");
     } catch (error) {
       setOrderError(error instanceof Error ? error.message : "The order could not be checked.");
@@ -397,12 +471,12 @@ export default function CustomerApp() {
     if (!cartItems.length || unavailableCartItems.length || isSubmittingOrder) return;
     setOrderError("");
     setPaymentNotice(null);
-    if (upsellRecommendations.length) setUpsellOpen(true);
+    if (upsellRecommendations.length) openUpsellSheet();
     else void sendOrder();
   }
 
-  const cartSheet = cartOpen && <CartSheet items={cartItems} subtotal={subtotal} tipPercentage={tipPercentage} tipAmount={tipAmount} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} setTipPercentage={setTipPercentage} close={() => { setUpsellOpen(false); setCartOpen(false); }} add={add} remove={remove} send={requestCheckout} isSubmitting={isSubmittingOrder} orderError={orderError} />;
-  const upsellSheet = upsellOpen && <UpsellSheet recommendations={upsellRecommendations} add={add} close={() => setUpsellOpen(false)} continueToCheckout={() => { setUpsellOpen(false); void sendOrder(); }} isSubmitting={isSubmittingOrder} />;
+  const cartSheet = cartOpen && <CartSheet items={cartItems} subtotal={subtotal} tipPercentage={tipPercentage} tipAmount={tipAmount} total={total} chefNotes={chefNotes} setChefNotes={setChefNotes} setTipPercentage={setTipPercentage} close={closeCartSheet} add={add} remove={remove} send={requestCheckout} isSubmitting={isSubmittingOrder} orderError={orderError} />;
+  const upsellSheet = upsellOpen && <UpsellSheet recommendations={upsellRecommendations} add={add} close={closeUpsellSheet} continueToCheckout={() => { setUpsellOpen(false); void sendOrder(); }} isSubmitting={isSubmittingOrder} />;
 
   if (screen === "done") {
     return (
@@ -415,15 +489,15 @@ export default function CustomerApp() {
           <PaymentBanner notice={paymentNotice} />
           <CustomerOrderStatus order={currentOrder} confirming={isConfirmingPayment} />
           <OrderReceipt order={currentOrder} />
-          <button onClick={() => { setCart({}); setChefNotes(""); setTipPercentage(null); setCurrentOrder(null); setPaymentNotice(null); setScreen("home"); }} className="primary mt-6">Order more</button>
+          <button onClick={resetOrderAndReturnHome} className="primary mt-6">Order more</button>
         </Center>
       </Phone>
     );
   }
 
   if (screen === "detail") {
-    return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={() => setCartOpen(true)} />{cartSheet}{upsellSheet}</Phone>;
+    return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={openCartSheet} />{cartSheet}{upsellSheet}</Phone>;
   }
 
-  return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={() => setCartOpen(true)} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
+  return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={openCartSheet} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
 }
