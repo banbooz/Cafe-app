@@ -3,18 +3,25 @@
 import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
 import { cafeConfig } from "../lib/cafeConfig";
-import { menuItems, money } from "../lib/menu";
+import { allMenuItems, menuExperiences, money, staffRoute, type MenuExperienceId } from "../lib/menu";
 import { useMenuCatalogue } from "../lib/menuCatalog";
 import { useMenuSettings } from "../lib/menuSettings";
-import { readKitchenOrders, subscribeToKitchenOrders, type KitchenOrder, type KitchenOrderItem } from "../lib/orders";
+import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, type KitchenOrder, type KitchenOrderItem } from "../lib/orders";
 
 type Tab = "top" | "daily";
 type MenuLookup = { id: number; name: string; category: string; price: number };
 type SoldItem = KitchenOrderItem & { category?: string; unitPrice?: number; price?: number };
 type ProductSale = { key: string; name: string; category: string; quantity: number; revenue: number };
+type Props = { experienceMode?: MenuExperienceId };
+
+const pageThemes: Record<MenuExperienceId, { shell: string; header: string; accent: string; dark: string }> = {
+  restaurant: { shell: "bg-[#eef1f3]", header: "bg-[#111827]", accent: "text-orange-600", dark: "bg-slate-900" },
+  cafe: { shell: "bg-[#f5d49a]", header: "bg-[#4d2f1e]", accent: "text-[#b66a2c]", dark: "bg-[#4d2f1e]" },
+  drinks: { shell: "bg-[#171312]", header: "bg-[#0f0b0a]", accent: "text-[#d7a048]", dark: "bg-[#0f0b0a]" },
+};
 
 function findMenuItem(item: SoldItem, menu: MenuLookup[]) {
-  return menu.find((product) => product.id === item.id || product.name === item.name) || menuItems.find((product) => product.id === item.id || product.name === item.name);
+  return menu.find((product) => product.id === item.id || product.name === item.name) || allMenuItems.find((product) => product.id === item.id || product.name === item.name);
 }
 
 function itemCategory(item: SoldItem, menu: MenuLookup[]) {
@@ -32,6 +39,10 @@ function isToday(order: KitchenOrder) {
   const date = new Date(timestamp);
   const today = new Date();
   return date.getFullYear() === today.getFullYear() && date.getMonth() === today.getMonth() && date.getDate() === today.getDate();
+}
+
+function orderMatchesModel(order: KitchenOrder, experienceMode: MenuExperienceId) {
+  return (order.orderType || "restaurant") === experienceMode;
 }
 
 function productSales(orders: KitchenOrder[], menu: MenuLookup[]) {
@@ -100,11 +111,13 @@ function analyticsFor(orders: KitchenOrder[], menu: MenuLookup[]) {
   };
 }
 
-export default function BusinessDashboard() {
+export default function BusinessDashboard({ experienceMode = "restaurant" }: Props) {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [tab, setTab] = useState<Tab>("top");
   const { settings } = useMenuSettings();
-  const { visibleItems } = useMenuCatalogue(settings);
+  const { visibleItems } = useMenuCatalogue(settings, experienceMode);
+  const experience = menuExperiences[experienceMode];
+  const pageTheme = pageThemes[experienceMode];
 
   useEffect(() => {
     function refreshOrders() {
@@ -115,23 +128,25 @@ export default function BusinessDashboard() {
     return subscribeToKitchenOrders(refreshOrders);
   }, []);
 
-  const analytics = useMemo(() => analyticsFor(orders, visibleItems), [orders, visibleItems]);
+  const scopedOrders = useMemo(() => orders.filter((order) => orderMatchesModel(order, experienceMode)), [experienceMode, orders]);
+  const analytics = useMemo(() => analyticsFor(scopedOrders, visibleItems), [scopedOrders, visibleItems]);
   const topFive = analytics.soldProducts.slice(0, 5);
   const shownProducts = tab === "top" ? topFive : analytics.dailyProducts;
   const maxQuantity = shownProducts[0]?.quantity || 1;
 
   return (
-    <main className="min-h-screen bg-[#eef1f3] px-4 py-5 text-slate-900 sm:px-6 lg:px-8">
+    <main className={`min-h-screen ${pageTheme.shell} px-4 py-5 text-slate-900 sm:px-6 lg:px-8`}>
       <section className="mx-auto max-w-6xl">
-        <header className="rounded-[2rem] bg-[#111827] p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7">
+        <header className={`rounded-[2rem] ${pageTheme.header} p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7`}>
           <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard - {cafeConfig.id}</p>
           <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{cafeConfig.name}</h1>
-              <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">Track live orders, sales, menu performance and item availability for this cafe only.</p>
+              <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{experience.label} business</h1>
+              <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">Track live {orderTypeText[experienceMode].toLowerCase()} orders, sales, menu performance and item availability for this model only.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href="/kitchen" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-5 text-sm font-black text-white">Open kitchen view</a>
+              {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("business", mode)} className={mode === experienceMode ? "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 text-xs font-black text-slate-950" : "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-4 text-xs font-black text-white"}>{menuExperiences[mode].label}</a>)}
+              <a href={staffRoute("kitchen", experienceMode)} className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-5 text-sm font-black text-white">Open kitchen view</a>
               <a href="/" className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">Open customer view</a>
             </div>
           </div>
@@ -144,37 +159,37 @@ export default function BusinessDashboard() {
           <Metric label="Top sold product" value={analytics.topProduct.name} detail={`${analytics.topProduct.quantity} sold - ${money(analytics.topProduct.revenue)}`} />
         </div>
 
-        <div className="mt-5"><AvailabilityControls section="Business" /></div>
+        <div className="mt-5"><AvailabilityControls section="Business" experienceMode={experienceMode} /></div>
 
         <div className="mt-5 grid gap-5 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Menu performance</p>
+                <p className={`text-xs font-black uppercase tracking-[0.18em] ${pageTheme.accent}`}>Menu performance</p>
                 <h2 className="mt-1 text-xl font-black">{tab === "top" ? "Most Sold Products" : "Daily Sales by Item"}</h2>
-                <p className="mt-2 text-sm font-bold leading-6 text-slate-500">Uses real order item snapshots, including custom and removed products when they exist in orders.</p>
+                <p className="mt-2 text-sm font-bold leading-6 text-slate-500">Uses {experience.label} order item snapshots, including custom and removed products when they exist in orders.</p>
               </div>
               <span className="w-fit rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Live</span>
             </div>
 
             <div className="mt-5 grid gap-2 rounded-3xl bg-slate-100 p-2 sm:grid-cols-2">
-              <button type="button" onClick={() => setTab("top")} className={tab === "top" ? "min-h-11 rounded-2xl bg-slate-900 px-4 text-sm font-black text-white" : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Most Sold Products</button>
-              <button type="button" onClick={() => setTab("daily")} className={tab === "daily" ? "min-h-11 rounded-2xl bg-slate-900 px-4 text-sm font-black text-white" : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Daily Sales by Item</button>
+              <button type="button" onClick={() => setTab("top")} className={tab === "top" ? `min-h-11 rounded-2xl ${pageTheme.dark} px-4 text-sm font-black text-white` : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Most Sold Products</button>
+              <button type="button" onClick={() => setTab("daily")} className={tab === "daily" ? `min-h-11 rounded-2xl ${pageTheme.dark} px-4 text-sm font-black text-white` : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Daily Sales by Item</button>
             </div>
 
-            {shownProducts.length ? <div className="mt-5 space-y-3">{shownProducts.map((product, index) => <ProductCard key={product.key} product={product} rank={tab === "top" ? index + 1 : undefined} maxQuantity={maxQuantity} />)}</div> : <EmptyState title={tab === "top" ? "No sold products" : "No items sold today"} text={tab === "top" ? `Most sold products for ${cafeConfig.name} will appear here after orders are placed.` : `Daily item sales for ${cafeConfig.name} will appear here when products sell today.`} />}
+            {shownProducts.length ? <div className="mt-5 space-y-3">{shownProducts.map((product, index) => <ProductCard key={product.key} product={product} rank={tab === "top" ? index + 1 : undefined} maxQuantity={maxQuantity} />)}</div> : <EmptyState title={tab === "top" ? "No sold products" : "No items sold today"} text={tab === "top" ? `Most sold products for ${experience.label} will appear here after orders are placed.` : `Daily item sales for ${experience.label} will appear here when products sell today.`} />}
           </section>
 
           <section className="rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-            <p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Order split</p>
+            <p className={`text-xs font-black uppercase tracking-[0.18em] ${pageTheme.accent}`}>Order split</p>
             <h2 className="mt-1 text-xl font-black">Categories</h2>
-            {analytics.categoriesRanked.length ? <div className="mt-5 space-y-3">{analytics.categoriesRanked.map((category) => <div key={category.name} className="flex items-center justify-between rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200"><span className="font-black">{category.name}</span><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{category.qty} items</span></div>)}</div> : <EmptyState title="No category data" text={`Category performance for ${cafeConfig.name} will appear here.`} />}
+            {analytics.categoriesRanked.length ? <div className="mt-5 space-y-3">{analytics.categoriesRanked.map((category) => <div key={category.name} className="flex items-center justify-between rounded-3xl bg-slate-50 p-4 ring-1 ring-slate-200"><span className="font-black">{category.name}</span><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{category.qty} items</span></div>)}</div> : <EmptyState title="No category data" text={`Category performance for ${experience.label} will appear here.`} />}
           </section>
         </div>
 
         <section className="mt-5 rounded-[2rem] bg-white p-5 shadow-sm ring-1 ring-slate-200">
-          <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-black uppercase tracking-[0.18em] text-orange-600">Orders</p><h2 className="mt-1 text-xl font-black">Recent orders</h2></div><span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{orders.length ? "Live orders" : "No orders"}</span></div>
-          {orders.length ? <div className="mt-5 grid gap-3 lg:grid-cols-4">{orders.map((order) => <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-400">Order #{order.id}</p><h3 className="mt-1 font-black">Table {order.table}</h3></div><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.status}</span></div><p className="mt-3 text-sm font-bold leading-6 text-slate-500">{order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}</p><div className="mt-4 space-y-2"><div className="flex items-center justify-between text-xs font-black text-slate-400"><span>{order.time}</span><span>Subtotal {money(order.subtotal ?? order.total - Number(order.tipAmount || 0))}</span></div>{order.tipAmount ? <div className="flex items-center justify-between text-xs font-black text-orange-600"><span>Tip {order.tipPercentage || 0}%</span><span>{money(order.tipAmount)}</span></div> : null}<div className="flex items-center justify-between"><span className="text-xs font-black text-slate-400">Total</span><span className="font-black">{money(order.total)}</span></div></div></article>)}</div> : <EmptyState title="No orders" text={`Orders for ${cafeConfig.name} will appear here when they are placed.`} />}
+          <div className="flex items-center justify-between gap-3"><div><p className={`text-xs font-black uppercase tracking-[0.18em] ${pageTheme.accent}`}>Orders</p><h2 className="mt-1 text-xl font-black">Recent orders</h2></div><span className="rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">{scopedOrders.length ? "Live orders" : "No orders"}</span></div>
+          {scopedOrders.length ? <div className="mt-5 grid gap-3 lg:grid-cols-4">{scopedOrders.map((order) => <article key={order.id} className="rounded-3xl border border-slate-200 bg-slate-50 p-4"><div className="flex items-start justify-between gap-3"><div><p className="text-xs font-black text-slate-400">Order #{order.id}</p><h3 className="mt-1 font-black">Table {order.table}</h3></div><span className="rounded-full bg-white px-3 py-2 text-xs font-black text-slate-600">{order.status}</span></div><p className="mt-3 text-sm font-bold leading-6 text-slate-500">{order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ")}</p><div className="mt-4 space-y-2"><div className="flex items-center justify-between text-xs font-black text-slate-400"><span>{order.time}</span><span>Subtotal {money(order.subtotal ?? order.total - Number(order.tipAmount || 0))}</span></div>{order.tipAmount ? <div className="flex items-center justify-between text-xs font-black text-orange-600"><span>Tip {order.tipPercentage || 0}%</span><span>{money(order.tipAmount)}</span></div> : null}<div className="flex items-center justify-between"><span className="text-xs font-black text-slate-400">Total</span><span className="font-black">{money(order.total)}</span></div></div></article>)}</div> : <EmptyState title="No orders" text={`Orders for ${experience.label} will appear here when they are placed.`} />}
         </section>
       </section>
     </main>
@@ -191,5 +206,5 @@ function ProductCard({ product, rank, maxQuantity }: { product: ProductSale; ran
 }
 
 function EmptyState({ title, text }: { title: string; text: string }) {
-  return <div className="mt-5 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center"><h3 className="font-black text-slate-950">{title}</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-500">{text}</p></div>;
+  return <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-center"><h3 className="font-black text-slate-950">{title}</h3><p className="mt-2 text-sm font-bold leading-6 text-slate-500">{text}</p></div>;
 }
