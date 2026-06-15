@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
-import { allMenuItems, menuItems, productCategories, type MenuItem } from "./menu";
+import { allMenuItems, cleanExperienceMode, itemMatchesExperience, menuItemsForExperience, type MenuExperienceId, type MenuItem } from "./menu";
 import { applyMenuSettings, type MenuSettingsMap } from "./menuSettings";
 
 const STAFF_ITEMS_KEY = getCafeStorageKey("cafeStaffMenuItems");
@@ -23,6 +23,7 @@ export type NewMenuProduct = {
   popular: boolean;
   vegetarian: boolean;
   vegan: boolean;
+  experienceMode: MenuExperienceId;
 };
 
 type CatalogueState = {
@@ -39,8 +40,8 @@ function safeMoney(value: unknown) {
   return Number.isFinite(next) && next >= 0 ? Number(next.toFixed(2)) : 0;
 }
 
-function safeCategory(value: unknown) {
-  return productCategories.includes(value as never) ? String(value) : "Main";
+function safeCategory(value: unknown, fallback = "Main") {
+  return typeof value === "string" && value.trim() ? value.trim() : fallback;
 }
 
 function safeList(value: unknown) {
@@ -55,10 +56,14 @@ function normaliseStaffItem(value: unknown): MenuItem | null {
   const id = Number(raw.id);
   if (!Number.isInteger(id) || id < STAFF_ID_START) return null;
 
+  const experienceMode = cleanExperienceMode(raw.experienceMode);
+  const fallbackCategory = menuItemsForExperience(experienceMode)[0]?.category || "Main";
+
   return {
     id,
+    experienceMode,
     name: safeText(raw.name, "New product"),
-    category: safeCategory(raw.category),
+    category: safeCategory(raw.category, fallbackCategory),
     description: safeText(raw.description, "New menu item"),
     price: safeMoney(raw.price),
     image: safeText(raw.image, FALLBACK_IMAGE),
@@ -116,10 +121,10 @@ function nextStaffId(staffItems: MenuItem[]) {
   return Math.max(STAFF_ID_START - 1, ...allMenuItems.map((item) => item.id), ...staffItems.map((item) => item.id)) + 1;
 }
 
-export function blankNewMenuProduct(): NewMenuProduct {
+export function blankNewMenuProduct(experienceMode: MenuExperienceId = "restaurant", category?: string): NewMenuProduct {
   return {
     name: "",
-    category: "Main",
+    category: category || menuItemsForExperience(experienceMode)[0]?.category || "Main",
     price: 0,
     image: FALLBACK_IMAGE,
     description: "",
@@ -128,15 +133,19 @@ export function blankNewMenuProduct(): NewMenuProduct {
     popular: false,
     vegetarian: false,
     vegan: false,
+    experienceMode,
   };
 }
 
-export function buildMenuCatalogue(settings: MenuSettingsMap, staffItems: MenuItem[], hiddenIds: number[]) {
+export function buildMenuCatalogue(settings: MenuSettingsMap, staffItems: MenuItem[], hiddenIds: number[], experienceMode: MenuExperienceId = "restaurant") {
   const hidden = new Set(hiddenIds);
-  return [...menuItems, ...staffItems].filter((item) => !hidden.has(item.id)).map((item) => applyMenuSettings(item, settings));
+  const scopedStaffItems = staffItems.filter((item) => itemMatchesExperience(item, experienceMode));
+  return [...menuItemsForExperience(experienceMode), ...scopedStaffItems]
+    .filter((item) => !hidden.has(item.id))
+    .map((item) => applyMenuSettings(item, settings));
 }
 
-export function useMenuCatalogue(settings: MenuSettingsMap) {
+export function useMenuCatalogue(settings: MenuSettingsMap, experienceMode: MenuExperienceId = "restaurant") {
   const [catalogue, setCatalogue] = useState<CatalogueState>(() => ({ staffItems: [], hiddenIds: [] }));
 
   useEffect(() => {
@@ -175,14 +184,16 @@ export function useMenuCatalogue(settings: MenuSettingsMap) {
     };
   }, []);
 
-  const visibleItems = useMemo(() => buildMenuCatalogue(settings, catalogue.staffItems, catalogue.hiddenIds), [settings, catalogue]);
+  const visibleItems = useMemo(() => buildMenuCatalogue(settings, catalogue.staffItems, catalogue.hiddenIds, experienceMode), [settings, catalogue, experienceMode]);
+  const scopedStaffItems = useMemo(() => catalogue.staffItems.filter((item) => itemMatchesExperience(item, experienceMode)), [catalogue.staffItems, experienceMode]);
 
   function addStaffProduct(product: NewMenuProduct) {
     const id = nextStaffId(catalogue.staffItems);
     const item: MenuItem = {
       id,
+      experienceMode: product.experienceMode,
       name: safeText(product.name, "New product"),
-      category: safeCategory(product.category),
+      category: safeCategory(product.category, menuItemsForExperience(product.experienceMode)[0]?.category || "Main"),
       description: safeText(product.description, "New menu item"),
       price: safeMoney(product.price),
       image: safeText(product.image, FALLBACK_IMAGE),
@@ -210,5 +221,5 @@ export function useMenuCatalogue(settings: MenuSettingsMap) {
     });
   }
 
-  return { staffItems: catalogue.staffItems, hiddenIds: catalogue.hiddenIds, visibleItems, addStaffProduct, hideStaffProduct };
+  return { staffItems: catalogue.staffItems, scopedStaffItems, hiddenIds: catalogue.hiddenIds, visibleItems, addStaffProduct, hideStaffProduct };
 }
