@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, type TouchEvent } from "react";
 import { money, type MenuItem } from "../lib/menu";
 import DietaryBadges from "./DietaryBadges";
 
@@ -27,15 +28,34 @@ const tipOptions = [5, 10, 20];
 export default function CartSheet({ items, subtotal, tipPercentage, tipAmount, total, chefNotes, setChefNotes, setTipPercentage, close, add, remove, send, isSubmitting = false, orderError }: Props) {
   const unavailableItems = items.filter((item) => item.available === false);
   const hasUnavailable = unavailableItems.length > 0;
+  const touchStartY = useRef<number | null>(null);
+  const [dragY, setDragY] = useState(0);
 
   function toggleTip(nextTip: number) {
     setTipPercentage(tipPercentage === nextTip ? null : nextTip);
   }
 
+  function startSwipe(event: TouchEvent<HTMLDivElement>) {
+    touchStartY.current = event.touches[0]?.clientY ?? null;
+    setDragY(0);
+  }
+
+  function moveSwipe(event: TouchEvent<HTMLDivElement>) {
+    if (touchStartY.current === null) return;
+    const nextDrag = Math.max(0, (event.touches[0]?.clientY ?? touchStartY.current) - touchStartY.current);
+    setDragY(Math.min(nextDrag, 160));
+  }
+
+  function endSwipe() {
+    if (dragY > 70) close();
+    touchStartY.current = null;
+    setDragY(0);
+  }
+
   return (
     <div className="sheet-backdrop-enter fixed inset-0 z-[90] flex items-end justify-center bg-[#111517]/45 p-3 backdrop-blur-sm">
-      <div className="sheet-panel-enter w-full max-w-[430px] overflow-hidden rounded-[2rem] bg-[#f7f7f5] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.32)] ring-1 ring-white/80">
-        <div className="mx-auto mb-4 h-1.5 w-12 rounded-full bg-slate-300" />
+      <div onTouchStart={startSwipe} onTouchMove={moveSwipe} onTouchEnd={endSwipe} className="sheet-panel-enter w-full max-w-[430px] overflow-hidden rounded-[2rem] bg-[#f7f7f5] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.32)] ring-1 ring-white/80" style={{ transform: dragY ? `translateY(${dragY}px)` : undefined, transition: dragY ? "none" : "transform 180ms ease" }}>
+        <button type="button" aria-label="Swipe down or tap to close basket" onClick={close} className="mx-auto mb-4 block h-1.5 w-12 rounded-full bg-slate-300" />
         <div className="flex items-center justify-between">
           <div>
             <p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#5f7f80]">Checkout</p>
