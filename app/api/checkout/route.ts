@@ -11,6 +11,31 @@ function getAppUrl() {
   return raw.startsWith("http") ? raw.replace(/\/$/, "") : `https://${raw.replace(/\/$/, "")}`;
 }
 
+function moneyValue(value: number | undefined) {
+  return Number(value || 0).toFixed(2);
+}
+
+function orderItemSummary(order: KitchenOrder) {
+  return order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ").slice(0, 480);
+}
+
+function appendOrderMetadata(form: URLSearchParams, prefix: "metadata" | "payment_intent_data[metadata]", order: KitchenOrder) {
+  const metadata = {
+    cafeId: cafeConfig.id,
+    cafeName: cafeConfig.name,
+    table: String(order.table),
+    orderId: String(order.id),
+    orderType: order.orderType || "restaurant",
+    orderItems: orderItemSummary(order),
+    orderSubtotal: moneyValue(order.subtotal || order.total),
+    tipPercentage: String(order.tipPercentage || 0),
+    tipAmount: moneyValue(order.tipAmount),
+    orderTotal: moneyValue(order.total),
+  };
+
+  Object.entries(metadata).forEach(([key, value]) => form.append(`${prefix}[${key}]`, value));
+}
+
 function appendLineItems(form: URLSearchParams, order: KitchenOrder) {
   order.items.forEach((item, index) => {
     form.append(`line_items[${index}][quantity]`, String(item.quantity));
@@ -57,16 +82,13 @@ export async function POST(request: Request) {
   const appUrl = getAppUrl();
   const form = new URLSearchParams();
   form.append("mode", "payment");
+  form.append("customer_creation", "always");
   form.append("success_url", `${appUrl}/?payment=success&order_id=${result.order.id}&session_id={CHECKOUT_SESSION_ID}`);
   form.append("cancel_url", `${appUrl}/?payment=cancelled&order_id=${result.order.id}`);
   form.append("client_reference_id", String(result.order.id));
-  form.append("metadata[cafeId]", cafeConfig.id);
-  form.append("metadata[table]", String(result.order.table));
-  form.append("metadata[orderId]", String(result.order.id));
-  form.append("metadata[orderSubtotal]", String(result.order.subtotal || result.order.total));
-  form.append("metadata[tipPercentage]", String(result.order.tipPercentage || 0));
-  form.append("metadata[tipAmount]", String(result.order.tipAmount || 0));
-  form.append("metadata[orderTotal]", String(result.order.total));
+  form.append("payment_intent_data[description]", `${cafeConfig.name} table ${result.order.table} order #${result.order.id}`);
+  appendOrderMetadata(form, "metadata", result.order);
+  appendOrderMetadata(form, "payment_intent_data[metadata]", result.order);
   appendLineItems(form, result.order);
 
   const headers = new Headers();
