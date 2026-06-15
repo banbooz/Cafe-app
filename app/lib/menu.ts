@@ -90,6 +90,7 @@ const drinkItems: MenuItem[] = [
 ];
 
 export const menuItems = restaurantItems;
+export const allMenuItems = [...restaurantItems, ...cafeItems, ...drinkItems];
 
 export const defaultExperienceId: MenuExperienceId = "restaurant";
 
