@@ -77,6 +77,7 @@ function pickUpsells(items: MenuItem[], cart: Record<number, number>) {
   const inCart = new Set(Object.entries(cart).filter(([, qty]) => qty > 0).map(([id]) => Number(id)));
   const used = new Set<number>();
   const options = items.filter((item) => item.available !== false && !inCart.has(item.id));
+
   return upsellGroups
     .map((group) => {
       const item = options.find((option) => group.includes(option.category) && !used.has(option.id));
@@ -105,6 +106,7 @@ function snapshot(item: MenuItem) {
 function PaymentBanner({ notice, close }: { notice: PaymentNotice | null; close?: () => void }) {
   if (!notice) return null;
   const style = notice.type === "error" ? "bg-rose-50 text-rose-900 ring-rose-200" : notice.type === "success" ? "bg-emerald-50 text-emerald-900 ring-emerald-200" : "bg-sky-50 text-sky-900 ring-sky-200";
+
   return (
     <div className={`mx-4 mb-4 rounded-3xl p-4 text-left ring-1 ${style}`}>
       <div className="flex items-start justify-between gap-3">
@@ -156,6 +158,7 @@ function CustomerOrderStatus({ order, confirming }: { order: KitchenOrder | null
 
 function OrderReceipt({ order }: { order: KitchenOrder | null }) {
   if (!order) return null;
+
   return (
     <div className="mt-5 w-full rounded-3xl bg-white p-4 text-left shadow-sm ring-1 ring-slate-200">
       <p className="text-xs font-black uppercase tracking-[0.18em] text-emerald-700">Receipt</p>
@@ -207,9 +210,15 @@ export default function CustomerApp() {
     window.history.pushState({ cafeAppStep: step, depth: appHistoryDepthRef.current }, "", window.location.href);
   }
 
+  function stepBrowserHistoryBack() {
+    if (typeof window === "undefined" || appHistoryDepthRef.current <= 0) return false;
+    appHistoryDepthRef.current -= 1;
+    window.history.back();
+    return true;
+  }
+
   function goBackOr(fallback: () => void) {
-    if (typeof window !== "undefined" && appHistoryDepthRef.current > 0) window.history.back();
-    else fallback();
+    if (!stepBrowserHistoryBack()) fallback();
   }
 
   function returnToMenu() {
@@ -223,6 +232,8 @@ export default function CustomerApp() {
     setTipPercentage(null);
     setCurrentOrder(null);
     setPaymentNotice(null);
+    setCartOpen(false);
+    setUpsellOpen(false);
     setScreen("home");
   }
 
@@ -249,9 +260,7 @@ export default function CustomerApp() {
         returnToMenu();
         return;
       }
-      if (screen === "done") {
-        resetOrderAndReturnHome();
-      }
+      if (screen === "done") resetOrderAndReturnHome();
     }
 
     window.addEventListener("popstate", handlePopState);
@@ -332,12 +341,14 @@ export default function CustomerApp() {
       const orderId = currentOrder?.id || readCurrentCustomerOrderId();
       if (orderId) setCurrentOrder(findKitchenOrder(orderId));
     }
+
     refreshCurrentOrder();
     return subscribeToKitchenOrders(refreshCurrentOrder);
   }, [currentOrder?.id]);
 
   const itemsWithAvailability = useMemo(() => visibleItems.map((item) => ({ ...item, available: isItemAvailable(item.id, availability) })), [availability, visibleItems]);
   const selectedWithAvailability = useMemo(() => itemsWithAvailability.find((item) => item.id === selected.id) || itemsWithAvailability[0] || selected, [itemsWithAvailability, selected]);
+
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return itemsWithAvailability.filter((item) => {
@@ -396,10 +407,9 @@ export default function CustomerApp() {
   }
 
   function closeCartSheet() {
-    goBackOr(() => {
-      setUpsellOpen(false);
-      setCartOpen(false);
-    });
+    setUpsellOpen(false);
+    setCartOpen(false);
+    stepBrowserHistoryBack();
   }
 
   function openUpsellSheet() {
@@ -408,7 +418,8 @@ export default function CustomerApp() {
   }
 
   function closeUpsellSheet() {
-    goBackOr(() => setUpsellOpen(false));
+    setUpsellOpen(false);
+    stepBrowserHistoryBack();
   }
 
   function openMenuItem(item: MenuItem) {
@@ -446,15 +457,17 @@ export default function CustomerApp() {
     setIsSubmittingOrder(true);
     setOrderError("");
     setPaymentNotice(null);
+
     try {
       if (stripeCheckoutEnabled) {
         await Promise.all([startStripeCheckout(), wait(MIN_SERVER_CHECK_MS)]);
         return;
       }
+
       const [order] = await Promise.all([validateOrderOnServer(), wait(MIN_SERVER_CHECK_MS)]);
       prependKitchenOrder(order);
       setCurrentOrder(order);
-      setPaymentNotice({ type: "success", title: "Order sent", text: "Demo order sent to the kitchen." });
+      setPaymentNotice({ type: "success", title: "Order sent", text: "Your order has been sent to the kitchen." });
       setCartOpen(false);
       setUpsellOpen(false);
       pushAppHistoryStep("done");
