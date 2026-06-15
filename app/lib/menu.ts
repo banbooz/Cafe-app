@@ -1,3 +1,5 @@
+export type MenuExperienceId = "restaurant" | "cafe" | "drinks";
+
 export type MenuItem = {
   id: number;
   name: string;
@@ -11,9 +13,8 @@ export type MenuItem = {
   vegetarian?: boolean;
   vegan?: boolean;
   available?: boolean;
+  experienceMode?: MenuExperienceId;
 };
-
-export type MenuExperienceId = "restaurant" | "cafe" | "drinks";
 
 export type MenuExperience = {
   id: MenuExperienceId;
@@ -149,6 +150,27 @@ export const menuExperiences: Record<MenuExperienceId, MenuExperience> = {
 };
 
 export const experienceOptions = Object.values(menuExperiences);
+
+export function menuItemsForExperience(experienceMode: MenuExperienceId = defaultExperienceId) {
+  return menuExperiences[experienceMode].items;
+}
+
+export function menuCategoriesForExperience(experienceMode: MenuExperienceId = defaultExperienceId) {
+  return menuExperiences[experienceMode].categories.filter((entry) => entry !== "All");
+}
+
+export function itemMatchesExperience(item: Pick<MenuItem, "id" | "experienceMode">, experienceMode: MenuExperienceId = defaultExperienceId) {
+  if (item.experienceMode) return item.experienceMode === experienceMode;
+  return menuExperiences[experienceMode].items.some((entry) => entry.id === item.id);
+}
+
+export function cleanExperienceMode(value: unknown): MenuExperienceId {
+  return value === "cafe" || value === "drinks" || value === "restaurant" ? value : defaultExperienceId;
+}
+
+export function staffRoute(base: "kitchen" | "business", experienceMode: MenuExperienceId) {
+  return experienceMode === "restaurant" ? `/${base}` : `/${base}/${experienceMode}`;
+}
 
 export function money(value: number) {
   return `£${value.toFixed(2)}`;
