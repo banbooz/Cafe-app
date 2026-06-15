@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
-import { menuItems, type MenuItem } from "./menu";
+import { allMenuItems, type MenuItem } from "./menu";
 import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
@@ -25,7 +25,7 @@ export const MENU_SETTINGS_STORAGE_KEY = getCafeStorageKey("cafeMenuItemSettings
 
 function defaults(): MenuSettingsMap {
   return Object.fromEntries(
-    menuItems.map((item) => [
+    allMenuItems.map((item) => [
       item.id,
       {
         name: item.name,
