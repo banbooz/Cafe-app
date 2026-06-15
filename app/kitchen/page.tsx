@@ -4,7 +4,8 @@ import { useEffect, useMemo, useState } from "react";
 import AvailabilityControls from "../components/AvailabilityControls";
 import DietaryBadges from "../components/DietaryBadges";
 import { cafeConfig } from "../lib/cafeConfig";
-import { readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
+import { menuExperiences, staffRoute, type MenuExperienceId } from "../lib/menu";
+import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 const statusText: Record<OrderStatus, string> = {
   new: "New",
@@ -20,6 +21,14 @@ const statusStyles: Record<OrderStatus, string> = {
   served: "bg-stone-100 text-stone-500 ring-stone-200",
 };
 
+const pageThemes: Record<MenuExperienceId, { shell: string; panel: string; header: string; button: string; text: string }> = {
+  restaurant: { shell: "bg-[#f6f1ea]", panel: "bg-[#fbfaf7]", header: "bg-[#fbfaf7]/95", button: "bg-[#20160f] text-white", text: "text-[#20160f]" },
+  cafe: { shell: "bg-[#f5d49a]", panel: "bg-[#fff8ec]", header: "bg-[#fff8ec]/95", button: "bg-[#4d2f1e] text-white", text: "text-[#2c1c12]" },
+  drinks: { shell: "bg-[#171312]", panel: "bg-[#241c1a]", header: "bg-[#241c1a]/95", button: "bg-[#d7a048] text-[#111]", text: "text-[#fff8f0]" },
+};
+
+type Props = { experienceMode?: MenuExperienceId };
+
 function nextStatus(status: OrderStatus): OrderStatus {
   if (status === "new") return "preparing";
   if (status === "preparing") return "ready";
@@ -34,9 +43,15 @@ function actionText(status: OrderStatus) {
   return "Completed";
 }
 
-export default function KitchenScreen() {
+function orderMatchesModel(order: KitchenOrder, experienceMode: MenuExperienceId) {
+  return (order.orderType || "restaurant") === experienceMode;
+}
+
+export default function KitchenScreen({ experienceMode = "restaurant" }: Props) {
   const [orders, setOrders] = useState<KitchenOrder[]>([]);
   const [filter, setFilter] = useState<OrderStatus | "active">("active");
+  const experience = menuExperiences[experienceMode];
+  const pageTheme = pageThemes[experienceMode];
 
   useEffect(() => {
     function refreshOrders() {
@@ -47,16 +62,18 @@ export default function KitchenScreen() {
     return subscribeToKitchenOrders(refreshOrders);
   }, []);
 
+  const scopedOrders = useMemo(() => orders.filter((order) => orderMatchesModel(order, experienceMode)), [experienceMode, orders]);
+
   const visibleOrders = useMemo(() => {
-    if (filter === "active") return orders.filter((order) => order.status !== "served");
-    return orders.filter((order) => order.status === filter);
-  }, [filter, orders]);
+    if (filter === "active") return scopedOrders.filter((order) => order.status !== "served");
+    return scopedOrders.filter((order) => order.status === filter);
+  }, [filter, scopedOrders]);
 
   const counts = {
-    active: orders.filter((order) => order.status !== "served").length,
-    new: orders.filter((order) => order.status === "new").length,
-    preparing: orders.filter((order) => order.status === "preparing").length,
-    ready: orders.filter((order) => order.status === "ready").length,
+    active: scopedOrders.filter((order) => order.status !== "served").length,
+    new: scopedOrders.filter((order) => order.status === "new").length,
+    preparing: scopedOrders.filter((order) => order.status === "preparing").length,
+    ready: scopedOrders.filter((order) => order.status === "ready").length,
   };
 
   function updateOrder(id: number) {
@@ -68,17 +85,19 @@ export default function KitchenScreen() {
   }
 
   return (
-    <main className="min-h-screen bg-[#f6f1ea] text-[#20160f]">
-      <div className="mx-auto min-h-screen w-full max-w-5xl bg-[#fbfaf7] shadow-2xl shadow-stone-950/10">
-        <header className="sticky top-0 z-20 border-b border-stone-200 bg-[#fbfaf7]/95 px-4 py-4 backdrop-blur sm:px-6">
+    <main className={`min-h-screen ${pageTheme.shell} ${pageTheme.text}`}>
+      <div className={`mx-auto min-h-screen w-full max-w-5xl ${pageTheme.panel} shadow-2xl shadow-stone-950/10`}>
+        <header className={`sticky top-0 z-20 border-b border-stone-200/60 ${pageTheme.header} px-4 py-4 backdrop-blur sm:px-6`}>
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs font-black uppercase tracking-[0.18em] text-stone-500">{cafeConfig.name} · {cafeConfig.id}</p>
-              <h1 className="text-2xl font-black sm:text-3xl">Kitchen orders</h1>
+              <p className="text-xs font-black uppercase tracking-[0.18em] opacity-60">{cafeConfig.name} · {cafeConfig.id}</p>
+              <h1 className="text-2xl font-black sm:text-3xl">{experience.label} kitchen</h1>
+              <p className="mt-2 text-sm font-bold opacity-70">Only showing {orderTypeText[experienceMode]} orders.</p>
             </div>
             <div className="flex flex-wrap gap-2">
-              <a href="/business" className="rounded-2xl bg-stone-100 px-5 py-4 text-center text-sm font-black text-stone-800">Business view</a>
-              <a href="/" className="rounded-2xl bg-[#20160f] px-5 py-4 text-center text-sm font-black text-white shadow-lg shadow-stone-950/20">Customer view</a>
+              {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("kitchen", mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${pageTheme.button}` : "rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5"}>{menuExperiences[mode].label}</a>)}
+              <a href={staffRoute("business", experienceMode)} className="rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5">Business view</a>
+              <a href="/" className={`rounded-2xl px-4 py-3 text-center text-xs font-black shadow-lg shadow-stone-950/20 ${pageTheme.button}`}>Customer view</a>
             </div>
           </div>
         </header>
@@ -90,7 +109,7 @@ export default function KitchenScreen() {
             ["preparing", "Preparing", counts.preparing],
             ["ready", "Ready", counts.ready],
           ].map(([key, label, count]) => (
-            <button key={key} onClick={() => setFilter(key as OrderStatus | "active")} className={`rounded-3xl p-4 text-left shadow-sm ring-1 transition active:scale-[0.98] ${filter === key ? "bg-[#20160f] text-white ring-[#20160f]" : "bg-white text-[#20160f] ring-stone-200"}`}>
+            <button key={key} onClick={() => setFilter(key as OrderStatus | "active")} className={`rounded-3xl p-4 text-left shadow-sm ring-1 transition active:scale-[0.98] ${filter === key ? `${pageTheme.button} ring-current` : "bg-white text-[#20160f] ring-stone-200"}`}>
               <p className="text-3xl font-black">{count}</p>
               <p className="mt-1 text-sm font-black">{label}</p>
             </button>
@@ -98,17 +117,18 @@ export default function KitchenScreen() {
         </section>
 
         <section className="px-4 pb-5 sm:px-6">
-          <AvailabilityControls section="Kitchen" />
+          <AvailabilityControls section="Kitchen" experienceMode={experienceMode} />
         </section>
 
         <section className="grid gap-4 px-4 pb-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
           {visibleOrders.map((order) => (
-            <article key={order.id} className="rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-stone-200">
+            <article key={order.id} className="rounded-[1.5rem] bg-white p-4 text-[#20160f] shadow-sm ring-1 ring-stone-200">
               <div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-4">
                 <div>
                   <p className="text-xs font-black uppercase tracking-[0.14em] text-stone-500">Order #{order.id}</p>
                   <h2 className="mt-1 text-3xl font-black">Table {order.table}</h2>
                   <p className="mt-1 text-sm font-bold text-stone-500">{order.time}</p>
+                  {order.payment?.status === "paid" ? <p className="mt-2 text-xs font-black text-emerald-700">Paid by Stripe</p> : null}
                 </div>
                 <span className={`inline-flex rounded-full px-3 py-2 text-xs font-black ring-1 ${statusStyles[order.status]}`}>{statusText[order.status]}</span>
               </div>
@@ -140,9 +160,9 @@ export default function KitchenScreen() {
           ))}
 
           {visibleOrders.length === 0 && (
-            <div className="col-span-full rounded-[1.5rem] bg-white p-8 text-center shadow-sm ring-1 ring-stone-200">
-              <h2 className="text-2xl font-black">No orders</h2>
-              <p className="mt-2 text-sm font-semibold text-stone-500">Orders for {cafeConfig.name} will appear here.</p>
+            <div className="col-span-full rounded-[1.5rem] bg-white p-8 text-center text-[#20160f] shadow-sm ring-1 ring-stone-200">
+              <h2 className="text-2xl font-black">No {experience.label.toLowerCase()} orders</h2>
+              <p className="mt-2 text-sm font-semibold text-stone-500">Orders for this model will appear here.</p>
             </div>
           )}
         </section>
