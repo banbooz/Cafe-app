@@ -28,24 +28,22 @@ type Props = {
 };
 
 const restaurantTabs = [
-  { label: "Varieties", value: "All" },
-  { label: "Thai", value: "Main" },
-  { label: "Snacks", value: "Starter" },
-  { label: "Pizza", value: "Pudding" },
-  { label: "Pasta", value: "Drinks" },
+  { label: "All", value: "All" },
+  { label: "Main", value: "Main" },
+  { label: "Sides", value: "Starter" },
+  { label: "Desserts", value: "Pudding" },
+  { label: "Drinks", value: "Drinks" },
 ];
 
 export default function HomeView(props: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef<HTMLElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
-  const repeatRef = useRef<HTMLElement | null>(null);
   const experience = menuExperiences[props.experienceMode];
   const isRestaurant = props.experienceMode === "restaurant";
   const theme = experience.theme;
   const visible = props.filtered.length ? props.filtered : props.allItems;
   const hero = visible.find((item) => item.popular) || visible[0] || props.allItems[0] || experience.items[0];
-  const accent = isRestaurant ? "#ffc21a" : theme.accent;
 
   function chooseCategory(category: string) {
     props.setCategory(category);
@@ -65,57 +63,61 @@ export default function HomeView(props: Props) {
   }
 
   if (isRestaurant) {
-    const popular = (visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible).slice(0, 5);
-    const offers = visible.slice(0, 4);
-    const repeat = visible.slice(0, 4);
+    const trusted = (visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible).slice(0, 2);
+    const recommended = visible.slice(0, 6);
+    const orderAgain = visible.slice(0, 4);
 
-    return <main className="min-h-screen bg-[#fff8ef] pb-32 text-[#111111]">
-      <div className="mx-auto max-w-[430px] px-4 pt-4">
-        <header className="flex items-center gap-3">
-          <button onClick={() => setMenuOpen(true)} className="min-w-0 flex-1 truncate text-left text-[11px] font-semibold text-[#5f584f]">
-            Table {props.tableNumber}, customer location
-          </button>
-          <button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-white text-xl font-black text-[#111] shadow-sm ring-1 ring-black/5">☰</button>
+    return <main className="min-h-screen bg-[#eaf6ec] pb-28 text-[#102117]">
+      <div className="mx-auto w-full max-w-[480px] px-2 pt-3">
+        <header className="rounded-[1.6rem] bg-[#0f5132] px-4 py-4 text-white shadow-lg shadow-green-900/15">
+          <div className="flex items-center gap-3">
+            <button onClick={() => setMenuOpen(true)} className="min-w-0 flex-1 truncate text-left text-[12px] font-black text-white/85">Table {props.tableNumber}, cafe location</button>
+            <button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-white text-xl font-black text-[#0f5132] shadow-sm">☰</button>
+          </div>
+          <label className="mt-4 flex min-h-14 items-center gap-3 rounded-[1.35rem] bg-white px-4 shadow-sm">
+            <span className="text-xs font-black text-[#6c8777]">Search</span>
+            <input ref={searchRef} value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-sm font-bold text-[#102117] outline-none placeholder:text-[#86a391]" placeholder="Search menu items" />
+            <button type="button" onClick={() => setMenuOpen(true)} className="border-l border-green-900/10 pl-3 text-xs font-black text-[#0f5132]">Menu</button>
+          </label>
         </header>
 
-        <label className="mt-4 flex min-h-12 items-center gap-3 rounded-[1.45rem] bg-white px-4 shadow-sm ring-1 ring-black/5">
-          <span className="text-[11px] font-black text-slate-400">Search</span>
-          <input ref={searchRef} value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="min-w-0 flex-1 bg-transparent text-xs font-bold text-slate-700 outline-none placeholder:text-slate-400" placeholder="Search your desired foods or restaurants" />
-        </label>
-
-        <button onClick={() => props.openItem(hero)} className="mt-4 block h-[155px] w-full overflow-hidden rounded-[1.35rem] bg-cover bg-center shadow-sm ring-1 ring-black/5" style={{ backgroundImage: `url(${hero.image})` }} aria-label={`Open ${hero.name}`} />
-        <div className="mt-2 flex justify-center gap-1.5"><span className="h-1.5 w-1.5 rounded-full bg-[#c7c0b8]" /><span className="h-1.5 w-1.5 rounded-full bg-[#c7c0b8]" /><span className="h-1.5 w-1.5 rounded-full bg-[#111]" /></div>
-
         <section className="mt-4">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-base font-black">Categories</h2><button onClick={() => chooseCategory("All")} className="text-[11px] font-black text-[#111]">View all categories</button></div>
-          <div className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+          <div className="mb-2 px-1"><h2 className="text-lg font-black">Categories</h2></div>
+          <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-2">
             {restaurantTabs.map((tab) => {
               const selected = props.category === tab.value;
               const image = tab.value === "All" ? hero.image : props.allItems.find((item) => item.category === tab.value)?.image || hero.image;
-              return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[78px] shrink-0 overflow-hidden rounded-lg bg-white text-left shadow-sm ring-1 ring-black/5">
-                <span className="block h-[54px] bg-cover bg-center" style={{ backgroundImage: `url(${image})` }} />
-                <span className="block truncate px-1.5 py-1.5 text-center text-[10px] font-black" style={{ background: selected ? "#f0a900" : accent, color: "#211900" }}>{tab.label}</span>
+              return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[84px] shrink-0 text-center">
+                <span className={selected ? "mx-auto block h-[74px] w-[74px] rounded-full bg-cover bg-center shadow-lg ring-4 ring-[#0f8a4b]" : "mx-auto block h-[74px] w-[74px] rounded-full bg-cover bg-center shadow-sm ring-2 ring-white"} style={{ backgroundImage: `url(${image})` }} />
+                <span className={selected ? "mt-2 block truncate text-[12px] font-black text-[#0f5132]" : "mt-2 block truncate text-[12px] font-black text-[#5d7565]"}>{tab.label}</span>
               </button>;
             })}
           </div>
         </section>
 
-        <section ref={menuRef} className="mt-4 scroll-mt-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-base font-black">Trending Food Offers</h2><button onClick={() => chooseCategory("All")} className="text-[11px] font-black text-[#111]">View all offers</button></div>
+        <section className="-mx-1 mt-4 rounded-[1.8rem] bg-[#0f5132] p-3 text-white shadow-lg shadow-green-900/10">
+          <div className="mb-3 px-1"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/55">Fresh picks</p><h2 className="text-xl font-black">Your trusted picks</h2></div>
           <div className="grid grid-cols-2 gap-3">
-            {offers.slice(0, 2).map((item) => <OfferCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
+            {trusted.map((item) => <TrustedCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
           </div>
         </section>
 
-        <section ref={repeatRef} className="mt-5 scroll-mt-5">
-          <div className="mb-3 flex items-center justify-between"><h2 className="text-base font-black">Order Again</h2><button onClick={props.openCart} className="text-[11px] font-black text-[#111]">Open basket</button></div>
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-2">
-            {repeat.map((item) => <RepeatCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
+        <section ref={menuRef} className="mt-5 scroll-mt-5">
+          <div className="mb-3 px-1"><h2 className="text-xl font-black">Menu</h2></div>
+          <div className="grid gap-3">
+            {recommended.map((item) => <RecommendedCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
+          </div>
+        </section>
+
+        <section className="mt-5">
+          <div className="mb-3 px-1"><h2 className="text-xl font-black">Order again</h2></div>
+          <div className="no-scrollbar -mx-2 flex gap-3 overflow-x-auto px-2 pb-2">
+            {orderAgain.map((item) => <OrderAgainCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
           </div>
         </section>
       </div>
 
-      <RestaurantBottomBar focusSearch={() => searchRef.current?.focus()} scrollRepeat={() => repeatRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })} count={props.count} openCart={props.openCart} openMenu={() => setMenuOpen(true)} />
+      <RestaurantBottomBar focusSearch={() => searchRef.current?.focus()} count={props.count} openCart={props.openCart} openMenu={() => setMenuOpen(true)} />
       {menuOpen && <MenuSheet count={props.count} total={props.total} tableNumber={props.tableNumber} changeTable={props.changeTable} close={() => setMenuOpen(false)} goHome={() => { chooseCategory("All"); setMenuOpen(false); }} openCart={props.openCart} experience={experience} mode={props.experienceMode} switchMode={switchMode} />}
     </main>;
   }
@@ -133,12 +135,16 @@ export default function HomeView(props: Props) {
   </main>;
 }
 
-function OfferCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
-  return <article className="overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5"><button onClick={open} className="block h-[150px] w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-2"><h3 className="line-clamp-1 text-xs font-black">{item.name}</h3><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
+function TrustedCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
+  return <article className="rounded-[1.35rem] bg-white p-2.5 text-[#102117] shadow-sm"><button onClick={open} className="block h-[140px] w-full rounded-[1.05rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="mt-3"><h3 className="line-clamp-1 text-base font-black">{item.name}</h3><p className="mt-1 line-clamp-1 text-xs font-bold text-[#678574]">Kitchen favourite</p><DietaryBadges item={item} className="mt-1" /><div className="mt-3 flex items-center justify-between"><span className="text-base font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
 }
 
-function RepeatCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
-  return <article className="w-[150px] shrink-0 overflow-hidden rounded-lg bg-white shadow-sm ring-1 ring-black/5"><button onClick={open} className="block h-[88px] w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-2"><h3 className="line-clamp-1 text-xs font-black">{item.name}</h3><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-[11px] font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
+function RecommendedCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
+  return <article className="flex gap-3 rounded-[1.35rem] bg-white p-2.5 shadow-sm ring-1 ring-green-900/5"><button onClick={open} className="h-[112px] w-[112px] shrink-0 rounded-[1rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="min-w-0 flex-1 py-1"><h3 className="line-clamp-1 text-base font-black">{item.name}</h3><p className="mt-1 line-clamp-1 text-xs font-bold text-[#678574]">Recommended by kitchen</p><p className="mt-1 line-clamp-1 text-[11px] font-semibold text-[#8da293]">Table ordering menu</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-base font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
+}
+
+function OrderAgainCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
+  return <article className="w-[172px] shrink-0 overflow-hidden rounded-[1.2rem] bg-white shadow-sm ring-1 ring-green-900/5"><button onClick={open} className="block h-[105px] w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-2.5"><h3 className="line-clamp-1 text-sm font-black">{item.name}</h3><div className="mt-2 flex items-center justify-between"><span className="text-sm font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
 }
 
 function CafeCard({ item, qty, add, remove }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void }) {
@@ -150,12 +156,12 @@ function SimpleRow({ item, qty, theme, add, remove }: { item: MenuItem; qty: num
 }
 
 function Qty({ qty, add, remove, disabled = false }: { qty: number; add: () => void; remove: () => void; disabled?: boolean }) {
-  if (!qty) return <button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="rounded-full bg-black px-3 py-1.5 text-[11px] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">Add</button>;
-  return <div className="flex items-center rounded-full bg-black/10 p-0.5"><button onClick={(event) => { event.stopPropagation(); remove(); }} className="grid h-7 w-7 place-items-center rounded-full bg-white font-black shadow-sm">-</button><span className="min-w-7 text-center text-xs font-black">{qty}</span><button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="grid h-7 w-7 place-items-center rounded-full bg-black font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">+</button></div>;
+  if (!qty) return <button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="rounded-full bg-[#0f5132] px-3 py-2 text-[11px] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">Add</button>;
+  return <div className="flex items-center rounded-full bg-[#d7eadc] p-0.5"><button onClick={(event) => { event.stopPropagation(); remove(); }} className="grid h-8 w-8 place-items-center rounded-full bg-white font-black text-[#0f5132] shadow-sm">-</button><span className="min-w-8 text-center text-xs font-black text-[#0f5132]">{qty}</span><button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="grid h-8 w-8 place-items-center rounded-full bg-[#0f5132] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">+</button></div>;
 }
 
-function RestaurantBottomBar({ count, focusSearch, scrollRepeat, openCart, openMenu }: { count: number; focusSearch: () => void; scrollRepeat: () => void; openCart: () => void; openMenu: () => void }) {
-  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="relative flex h-16 items-center justify-around rounded-[1.6rem] bg-white text-slate-500 shadow-[0_18px_45px_rgba(15,23,42,0.16)] ring-1 ring-black/5"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="text-xs font-black text-[#f3a800]">Home</button><button onClick={focusSearch} className="text-xs font-black">Search</button><button onClick={openCart} className="absolute left-1/2 top-1/2 grid h-14 min-w-14 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white px-3 text-xs font-black text-slate-500 shadow-xl ring-1 ring-black/10">{count || "Cart"}</button><button onClick={scrollRepeat} className="text-xs font-black">Repeat</button><button onClick={openMenu} className="text-xs font-black">Switch</button></div></nav>;
+function RestaurantBottomBar({ count, focusSearch, openCart, openMenu }: { count: number; focusSearch: () => void; openCart: () => void; openMenu: () => void }) {
+  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-4 items-center rounded-[1.6rem] bg-white text-[#678574] shadow-[0_18px_45px_rgba(15,23,42,0.16)] ring-1 ring-green-900/10"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black text-[#167044]">Home</button><button onClick={focusSearch} className="h-full text-xs font-black">Search</button><button onClick={openCart} className="mx-auto grid h-12 min-w-12 place-items-center rounded-full bg-[#0f5132] px-3 text-xs font-black text-white shadow-lg">{count || "Cart"}</button><button onClick={openMenu} className="h-full text-xs font-black">Switch</button></div></nav>;
 }
 
 function BottomBar({ count, total, openCart, openMenu, accent }: { count: number; total: number; openCart: () => void; openMenu: () => void; accent: string }) {
