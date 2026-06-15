@@ -7,10 +7,10 @@ import CartSheet from "./CartSheet";
 import UpsellSheet from "./UpsellSheet";
 import { Center, Phone } from "./AppShell";
 import { cafeConfig, getCafeStorageKey } from "../lib/cafeConfig";
-import { menuItems, money, type MenuItem } from "../lib/menu";
+import { menuExperiences, menuItems, money, type MenuExperienceId, type MenuItem } from "../lib/menu";
 import { isItemAvailable, useMenuAvailability } from "../lib/availability";
 import { useMenuCatalogue } from "../lib/menuCatalog";
-import { useMenuSettings } from "../lib/menuSettings";
+import { applyMenuSettings, useMenuSettings } from "../lib/menuSettings";
 import { customerStatusText, findKitchenOrder, prependKitchenOrder, readCurrentCustomerOrderId, subscribeToKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 const orderSteps: OrderStatus[] = ["new", "preparing", "ready", "served"];
@@ -71,6 +71,10 @@ function moneyValue(value: number) {
 function readWindowScrollY() {
   if (typeof window === "undefined") return 0;
   return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+}
+
+function itemWithAvailability(item: MenuItem, availability: Record<number, boolean>) {
+  return { ...item, available: isItemAvailable(item.id, availability) };
 }
 
 function pickUpsells(items: MenuItem[], cart: Record<number, number>) {
@@ -150,6 +154,7 @@ function CustomerOrderStatus({ order, confirming }: { order: KitchenOrder | null
         <span>Received</span><span>Preparing</span><span>Ready</span><span>Served</span>
       </div>
       <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-slate-400">Table {order.table} - Order #{order.id}</p>
+      {order.orderType ? <p className="mt-2 text-xs font-black capitalize text-[#617174]">Section: {order.orderType}</p> : null}
       {order.payment?.status === "paid" ? <p className="mt-2 text-xs font-black text-emerald-700">Paid by Stripe</p> : null}
       {order.tipAmount ? <p className="mt-2 text-xs font-black text-[#617174]">Tip added: {money(order.tipAmount)}</p> : null}
     </div>
@@ -181,6 +186,7 @@ function OrderReceipt({ order }: { order: KitchenOrder | null }) {
 
 export default function CustomerApp() {
   const [screen, setScreen] = useState<"home" | "detail" | "done">("home");
+  const [experienceMode, setExperienceMode] = useState<MenuExperienceId>("restaurant");
   const [category, setCategory] = useState("All");
   const [query, setQuery] = useState("");
   const [popularOnly, setPopularOnly] = useState(false);
@@ -346,7 +352,14 @@ export default function CustomerApp() {
     return subscribeToKitchenOrders(refreshCurrentOrder);
   }, [currentOrder?.id]);
 
-  const itemsWithAvailability = useMemo(() => visibleItems.map((item) => ({ ...item, available: isItemAvailable(item.id, availability) })), [availability, visibleItems]);
+  const demoItemsWithSettings = useMemo(() => [...menuExperiences.cafe.items, ...menuExperiences.drinks.items].map((item) => applyMenuSettings(item, settings)), [settings]);
+  const activeBaseItems = useMemo(() => experienceMode === "restaurant" ? visibleItems : menuExperiences[experienceMode].items.map((item) => applyMenuSettings(item, settings)), [experienceMode, settings, visibleItems]);
+  const allOrderItems = useMemo(() => {
+    const byId = new Map<number, MenuItem>();
+    [...visibleItems, ...demoItemsWithSettings].forEach((item) => byId.set(item.id, item));
+    return Array.from(byId.values()).map((item) => itemWithAvailability(item, availability));
+  }, [availability, demoItemsWithSettings, visibleItems]);
+  const itemsWithAvailability = useMemo(() => activeBaseItems.map((item) => itemWithAvailability(item, availability)), [activeBaseItems, availability]);
   const selectedWithAvailability = useMemo(() => itemsWithAvailability.find((item) => item.id === selected.id) || itemsWithAvailability[0] || selected, [itemsWithAvailability, selected]);
 
   const filtered = useMemo(() => {
@@ -354,7 +367,7 @@ export default function CustomerApp() {
     return itemsWithAvailability.filter((item) => {
       const byPopular = !popularOnly || item.popular;
       const byCategory = popularOnly || category === "All" || item.category === category;
-      const bySearch = !q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.description.toLowerCase().includes(q);
+      const bySearch = !q || item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.description.toLowerCase().includes(q) || item.allergens.some((allergen) => allergen.toLowerCase().includes(q));
       return byPopular && byCategory && bySearch;
     });
   }, [category, query, popularOnly, itemsWithAvailability]);
@@ -370,16 +383,31 @@ export default function CustomerApp() {
     });
   }, [screen, filtered.length, category, query, popularOnly]);
 
-  const cartItems = itemsWithAvailability.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
+  const cartItems = allOrderItems.map((item) => ({ ...item, qty: cart[item.id] || 0 })).filter((item) => item.qty > 0);
   const unavailableCartItems = cartItems.filter((item) => item.available === false);
   const count = cartItems.reduce((sum, item) => sum + item.qty, 0);
   const subtotal = moneyValue(cartItems.reduce((sum, item) => sum + item.qty * item.price, 0));
   const tipAmount = moneyValue(tipPercentage ? (subtotal * tipPercentage) / 100 : 0);
   const total = moneyValue(subtotal + tipAmount);
-  const upsellRecommendations = useMemo(() => pickUpsells(itemsWithAvailability, cart), [cart, itemsWithAvailability]);
+  const upsellRecommendations = useMemo(() => experienceMode === "restaurant" ? pickUpsells(itemsWithAvailability, cart) : [], [cart, experienceMode, itemsWithAvailability]);
 
   function updateSelectedTable(table: number) {
     setSelectedTable(safeTableNumber(table));
+  }
+
+  function changeExperienceMode(nextMode: MenuExperienceId) {
+    if (nextMode !== experienceMode) {
+      setCart({});
+      setChefNotes("");
+      setTipPercentage(null);
+      setCartOpen(false);
+      setUpsellOpen(false);
+      setScreen("home");
+    }
+    setExperienceMode(nextMode);
+    setCategory("All");
+    setQuery("");
+    setPopularOnly(false);
   }
 
   function add(id: number) {
@@ -434,7 +462,7 @@ export default function CustomerApp() {
   }
 
   function orderRequestBody() {
-    return { table: selectedTable, tipPercentage: tipPercentage || 0, items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
+    return { table: selectedTable, tipPercentage: tipPercentage || 0, experienceMode, items: cartItems.map((item) => ({ id: item.id, quantity: item.qty, item: snapshot(item) })), notes: chefNotes };
   }
 
   async function validateOrderOnServer() {
@@ -512,5 +540,5 @@ export default function CustomerApp() {
     return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><DetailView item={selectedWithAvailability} qty={cart[selected.id] || 0} add={add} remove={remove} back={backToMenu} openCart={openCartSheet} />{cartSheet}{upsellSheet}</Phone>;
   }
 
-  return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><HomeView category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={openCartSheet} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
+  return <Phone><PaymentBanner notice={paymentNotice} close={() => setPaymentNotice(null)} /><HomeView experienceMode={experienceMode} setExperienceMode={changeExperienceMode} category={category} setCategory={setCategory} query={query} setQuery={setQuery} filtered={filtered} allItems={itemsWithAvailability} cart={cart} count={count} total={total} popularOnly={popularOnly} showPopular={() => { setPopularOnly(true); setCategory("All"); }} showAll={() => setPopularOnly(false)} add={add} remove={remove} openItem={openMenuItem} openCart={openCartSheet} tableNumber={selectedTable} changeTable={updateSelectedTable} />{cartSheet}{upsellSheet}</Phone>;
 }
