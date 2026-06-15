@@ -1,5 +1,5 @@
 import { cafeConfig } from "./cafeConfig";
-import { menuItems, productCategories, type MenuItem } from "./menu";
+import { allMenuItems, type MenuExperienceId, type MenuItem } from "./menu";
 import type { KitchenOrder } from "./orders";
 
 export type OrderRequestItemSnapshot = Partial<MenuItem>;
@@ -15,6 +15,7 @@ export type OrderRequestBody = {
   notes?: string;
   table?: number;
   tipPercentage?: number;
+  experienceMode?: MenuExperienceId;
 };
 
 const MAX_TOTAL_ITEMS = 30;
@@ -30,7 +31,7 @@ function cleanText(value: unknown, fallback: string) {
 }
 
 function cleanCategory(value: unknown) {
-  return productCategories.includes(value as never) ? String(value) : "Other";
+  return cleanText(value, "Other");
 }
 
 function cleanPrice(value: unknown) {
@@ -54,12 +55,16 @@ function cleanTipPercentage(value: unknown) {
   return ALLOWED_TIP_PERCENTAGES.includes(next) ? next : 0;
 }
 
+function cleanExperienceMode(value: unknown): MenuExperienceId {
+  return value === "cafe" || value === "drinks" || value === "restaurant" ? value : "restaurant";
+}
+
 function moneyValue(value: number) {
   return Number(value.toFixed(2));
 }
 
 function resolveOrderItem(requested: OrderRequestItem, id: number): MenuItem | null {
-  const staticItem = menuItems.find((item) => item.id === id);
+  const staticItem = allMenuItems.find((item) => item.id === id);
   const snapshot = requested.item;
 
   if (!snapshot) return staticItem || null;
@@ -139,6 +144,7 @@ export function validateAndBuildOrder(body: OrderRequestBody): { ok: true; order
     order: {
       id: Date.now(),
       cafeId: cafeConfig.id,
+      orderType: cleanExperienceMode(body.experienceMode),
       table: cleanTableNumber(body.table),
       time: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       status: "new",
