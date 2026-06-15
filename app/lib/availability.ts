@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
-import { menuItems } from "./menu";
+import { allMenuItems } from "./menu";
 import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
@@ -15,7 +15,7 @@ export function isItemAvailable(id: number, availability: AvailabilityMap) {
 }
 
 function defaultAvailability() {
-  return Object.fromEntries(menuItems.map((item) => [item.id, true])) as AvailabilityMap;
+  return Object.fromEntries(allMenuItems.map((item) => [item.id, true])) as AvailabilityMap;
 }
 
 function readAvailability() {
