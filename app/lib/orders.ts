@@ -6,13 +6,16 @@ import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 
 export type OrderStatus = "new" | "preparing" | "ready" | "served";
 export type PaymentStatus = "demo" | "pending" | "paid" | "failed";
+export type OrderType = "restaurant" | "cafe" | "drinks";
 
 export type KitchenOrderItem = {
   id?: number;
   name: string;
+  category?: string;
   quantity: number;
   unitPrice?: number;
   description?: string;
+  prep?: string;
   allergens?: string[];
   vegetarian?: boolean;
   vegan?: boolean;
@@ -29,6 +32,7 @@ export type KitchenOrderPayment = {
 export type KitchenOrder = {
   id: number;
   cafeId: string;
+  orderType?: OrderType;
   table: number;
   time: string;
   status: OrderStatus;
@@ -55,12 +59,22 @@ export const customerStatusText: Record<OrderStatus, string> = {
   served: "Served / Completed",
 };
 
+export const orderTypeText: Record<OrderType, string> = {
+  restaurant: "Restaurant",
+  cafe: "Cafe",
+  drinks: "Drinks",
+};
+
+function cleanOrderType(value: unknown): OrderType {
+  return value === "cafe" || value === "drinks" || value === "restaurant" ? value : "restaurant";
+}
+
 function normaliseOrders(value: unknown): KitchenOrder[] {
   if (!Array.isArray(value)) return [];
 
   return value
     .filter((order): order is KitchenOrder => Boolean(order && typeof order === "object" && "id" in order))
-    .map((order) => ({ ...order, cafeId: order.cafeId || cafeConfig.id }))
+    .map((order) => ({ ...order, cafeId: order.cafeId || cafeConfig.id, orderType: cleanOrderType(order.orderType) }))
     .filter((order) => order.cafeId === cafeConfig.id);
 }
 
@@ -105,7 +119,7 @@ export function writeKitchenOrders(orders: KitchenOrder[]) {
 }
 
 export function prependKitchenOrder(order: KitchenOrder) {
-  writeKitchenOrders([{ ...order, cafeId: cafeConfig.id, payment: order.payment || { provider: "demo", status: "demo" } }, ...readKitchenOrders()]);
+  writeKitchenOrders([{ ...order, cafeId: cafeConfig.id, orderType: cleanOrderType(order.orderType), payment: order.payment || { provider: "demo", status: "demo" } }, ...readKitchenOrders()]);
   window.localStorage.setItem(CURRENT_CUSTOMER_ORDER_STORAGE_KEY, String(order.id));
 }
 
