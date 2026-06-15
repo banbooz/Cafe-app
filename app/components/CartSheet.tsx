@@ -44,8 +44,8 @@ export default function CartSheet({ items, subtotal, tipPercentage, tipAmount, t
           <button onClick={close} className="rounded-full bg-white px-4 py-3 text-xs font-black text-[#1d2528] shadow-sm ring-1 ring-black/5">Close</button>
         </div>
 
-        {isSubmitting && <div className="mt-4 rounded-[1.5rem] bg-slate-900 p-4 text-sm font-black text-white ring-1 ring-slate-800">Checking order with server...</div>}
-        {hasUnavailable && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">Some items are no longer available. Remove them before sending the order.</div>}
+        {isSubmitting && <div className="mt-4 rounded-[1.5rem] bg-slate-900 p-4 text-sm font-black text-white ring-1 ring-slate-800">Opening secure payment...</div>}
+        {hasUnavailable && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">Some items are no longer available. Remove them before checkout.</div>}
         {orderError && <div className="mt-4 rounded-[1.5rem] bg-rose-50 p-4 text-sm font-black text-rose-700 ring-1 ring-rose-100">{orderError}</div>}
 
         <div className="no-scrollbar mt-4 max-h-72 space-y-3 overflow-y-auto">
@@ -53,7 +53,7 @@ export default function CartSheet({ items, subtotal, tipPercentage, tipAmount, t
         </div>
 
         <label className="cart-row-enter mt-4 block rounded-[1.5rem] bg-white p-4 shadow-sm ring-1 ring-black/5" style={{ animationDelay: "120ms" }}>
-          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5f7f80]">Chef notes</span>
+          <span className="text-[11px] font-black uppercase tracking-[0.18em] text-[#5f7f80]">Kitchen notes</span>
           <textarea value={chefNotes} onChange={(event) => setChefNotes(event.target.value)} maxLength={180} className="mt-3 min-h-20 w-full resize-none rounded-[1.25rem] bg-[#f1f4f4] p-3 text-sm font-bold text-[#1d2528] outline-none placeholder:text-slate-400" placeholder="No onions, sauce on the side, allergy notes..." />
         </label>
 
@@ -78,7 +78,7 @@ export default function CartSheet({ items, subtotal, tipPercentage, tipAmount, t
             <span key={total} className="qty-pop text-2xl font-black text-[#111517]">{money(total)}</span>
           </div>
         </div>
-        <button onClick={() => { void send(); }} disabled={!items.length || hasUnavailable || isSubmitting} className="add-burst mt-4 min-h-16 w-full rounded-full bg-[#ff385c] px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(255,56,92,0.25)] disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">{isSubmitting ? "Checking order..." : hasUnavailable ? "Remove unavailable item(s)" : "Send order"}</button>
+        <button onClick={() => { void send(); }} disabled={!items.length || hasUnavailable || isSubmitting} className="add-burst mt-4 min-h-16 w-full rounded-full bg-[#ff385c] px-5 text-sm font-black text-white shadow-[0_18px_44px_rgba(255,56,92,0.25)] disabled:bg-slate-300 disabled:text-slate-500 disabled:shadow-none">{isSubmitting ? "Opening payment..." : hasUnavailable ? "Remove unavailable item(s)" : "Continue to secure payment"}</button>
       </div>
     </div>
   );
