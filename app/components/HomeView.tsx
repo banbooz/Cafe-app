@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useMemo, useState, type FormEvent, type MouseEvent } from "react";
 import { experienceOptions, menuExperiences, money, type MenuExperience, type MenuExperienceId, type MenuItem } from "../lib/menu";
 import DietaryBadges from "./DietaryBadges";
 
@@ -125,19 +125,21 @@ export default function HomeView(props: Props) {
   }
 
   return <>
-    <SimpleListHome experience={experience} items={visibleItems} category={props.category} setCategory={props.setCategory} query={props.query} setQuery={props.setQuery} tableNumber={props.tableNumber} cart={demoCart} count={demoCount} total={demoTotal} openMenu={() => setMenuOpen(true)} openCart={openBasket} add={addOnly} remove={removeOnly} />
+    <DrinksHome experience={experience} items={visibleItems} category={props.category} setCategory={props.setCategory} query={props.query} setQuery={props.setQuery} showAll={props.showAll} tableNumber={props.tableNumber} cart={demoCart} count={demoCount} total={demoTotal} openMenu={() => setMenuOpen(true)} openCart={openBasket} add={addOnly} remove={removeOnly} />
     {menuOpen && <MenuSheet count={basketCount} total={basketTotal} tableNumber={props.tableNumber} changeTable={props.changeTable} close={() => setMenuOpen(false)} goHome={goHomeFromMenu} openCart={openBasket} experience={experience} mode={mode} switchMode={switchMode} />}
-    {demoCartOpen && <DemoCart items={demoLines} total={demoTotal} close={() => setDemoCart({})} clear={() => setDemoCart({})} theme={theme} />}
+    {demoCartOpen && <DemoCart items={demoLines} total={demoTotal} close={() => setDemoCartOpen(false)} clear={() => setDemoCart({})} theme={theme} />}
   </>;
 }
 
-function RestaurantDeliveryHome({ items, allItems, feature, category, setCategory, query, setQuery, showAll, tableNumber, cart, count, total, openMenu, openCart, openItem, add, remove }: { items: MenuItem[]; allItems: MenuItem[]; feature: MenuItem; category: string; setCategory: (category: string) => void; query: string; setQuery: (query: string) => void; showAll: () => void; tableNumber: number; cart: Record<number, number>; count: number; total: number; openMenu: () => void; openCart: () => void; openItem: (item: MenuItem) => void; add: (event: MouseEvent, item: MenuItem) => void; remove: (event: MouseEvent, id: number) => void }) {
+function RestaurantDeliveryHome({ items, allItems, feature, category, setCategory, query, setQuery, showAll, tableNumber, cart, count, openMenu, openCart, openItem, add, remove }: { items: MenuItem[]; allItems: MenuItem[]; feature: MenuItem; category: string; setCategory: (category: string) => void; query: string; setQuery: (query: string) => void; showAll: () => void; tableNumber: number; cart: Record<number, number>; count: number; total: number; openMenu: () => void; openCart: () => void; openItem: (item: MenuItem) => void; add: (event: MouseEvent, item: MenuItem) => void; remove: (event: MouseEvent, id: number) => void }) {
   const [view, setView] = useState<"popular" | "all" | "category">("popular");
+  const [dealIndex, setDealIndex] = useState(0);
   const q = query.trim().toLowerCase();
   const baseItems = view === "popular" ? allItems.filter((item) => item.popular) : items.length ? items : allItems;
   const displayItems = q ? baseItems.filter((item) => item.name.toLowerCase().includes(q) || item.category.toLowerCase().includes(q) || item.description.toLowerCase().includes(q)) : baseItems;
   const sectionTitle = view === "popular" ? "Popular Food" : category === "All" ? "All Food" : category === "Main" ? "Food" : category;
-  const hero = feature || allItems[0];
+  const deals = allItems.filter((item) => item.popular);
+  const hero = deals.length ? deals[dealIndex % deals.length] : feature || allItems[0];
   const categoryTiles = [
     { value: "popular", label: "Popular Food", icon: "★" },
     { value: "Drinks", label: "Drinks", icon: "☕" },
@@ -145,6 +147,12 @@ function RestaurantDeliveryHome({ items, allItems, feature, category, setCategor
     { value: "Pudding", label: "Sweets", icon: "🍰" },
     { value: "Starter", label: "Bread", icon: "🥐" }
   ];
+
+  useEffect(() => {
+    if (deals.length <= 1) return undefined;
+    const timer = window.setInterval(() => setDealIndex((index) => (index + 1) % deals.length), 4200);
+    return () => window.clearInterval(timer);
+  }, [deals.length]);
 
   function chooseTile(value: string) {
     if (value === "popular") {
@@ -171,10 +179,7 @@ function RestaurantDeliveryHome({ items, allItems, feature, category, setCategor
           <p className="text-[10px] font-black text-white/55">Table Location</p>
           <p className="mt-1 truncate text-[11px] font-black text-white"><span className="text-[#f6c51b]">●</span> Table {tableNumber} · Restaurant Demo</p>
         </div>
-        <div className="flex gap-2">
-          <button onClick={openCart} className="relative grid h-9 w-9 place-items-center rounded-full bg-[#232323] text-sm shadow-lg ring-1 ring-white/10">🛒{count > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#f6c51b] px-1 text-[10px] font-black text-black">{count}</span>}</button>
-          <button onClick={openMenu} className="grid h-9 w-9 place-items-center rounded-full bg-[#232323] text-sm shadow-lg ring-1 ring-white/10">⚙</button>
-        </div>
+        <button onClick={openMenu} className="grid h-9 w-9 place-items-center rounded-full bg-[#232323] text-sm shadow-lg ring-1 ring-white/10">⚙</button>
       </header>
 
       <label className="mt-4 flex h-11 items-center gap-3 rounded-full bg-[#1c1c1f] px-4 ring-1 ring-white/10">
@@ -186,8 +191,8 @@ function RestaurantDeliveryHome({ items, allItems, feature, category, setCategor
       <div className="mt-4 overflow-hidden rounded-[1.8rem] bg-[#f7f7f5] shadow-[0_22px_50px_rgba(0,0,0,0.28)] ring-4 ring-white">
         <button onClick={(event) => add(event, hero)} className="grid h-[150px] w-full grid-cols-[1.08fr_0.92fr] overflow-hidden rounded-b-[2.5rem] bg-[#f5c116] text-left text-black">
           <div className="p-4">
-            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-black/55">Limited Discount</p>
-            <h1 className="mt-1 text-[23px] font-black leading-[0.9] tracking-[-0.06em]">Ramadhan<br />Special Deals</h1>
+            <p className="text-[9px] font-black uppercase tracking-[0.14em] text-black/55">Special deal</p>
+            <h1 className="mt-1 text-[23px] font-black leading-[0.9] tracking-[-0.06em]">{hero.name}<br />Deal</h1>
             <span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Order Now</span>
           </div>
           <div className="relative">
@@ -218,10 +223,9 @@ function RestaurantDeliveryHome({ items, allItems, feature, category, setCategor
     </div>
 
     <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
-      <div className="grid grid-cols-4 items-center rounded-[1.35rem] bg-[#111113]/95 p-2 shadow-[0_20px_48px_rgba(0,0,0,0.45)] ring-1 ring-white/10 backdrop-blur-xl">
+      <div className="grid grid-cols-3 items-center rounded-[1.35rem] bg-[#111113]/95 p-2 shadow-[0_20px_48px_rgba(0,0,0,0.45)] ring-1 ring-white/10 backdrop-blur-xl">
         <button onClick={() => chooseTile("popular")} className="rounded-2xl bg-[#f5c116] py-2 text-[11px] font-black text-black">Home</button>
-        <button onClick={showEverything} className="py-2 text-[11px] font-black text-white/70">Menu</button>
-        <button onClick={openCart} className="py-2 text-[11px] font-black text-white/70">Basket</button>
+        <button onClick={openCart} className="py-2 text-[11px] font-black text-white/70">Basket{count > 0 ? ` · ${count}` : ""}</button>
         <button onClick={openMenu} className="py-2 text-[11px] font-black text-white/70">More</button>
       </div>
     </nav>
@@ -246,17 +250,89 @@ function CafeReferenceHome({ experience, items, feature, category, setCategory, 
   const spotlight = experience.items[2] || hero;
   const visible = items.length ? items : experience.items;
   return <main className="min-h-screen overflow-hidden px-4 pb-28 pt-3 text-[#2d1609]" style={{ background: "radial-gradient(circle at 18% 0%, #ffe8bf 0, transparent 30%), radial-gradient(circle at 90% 12%, #f0bd73 0, transparent 28%), #f5d49a" }}>
-    <div className="mx-auto max-w-[430px]"><header className="flex items-center justify-between pt-2"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d5d24]">Table {tableNumber}</p><h1 className="text-[20px] font-black tracking-tight">Bean & Table</h1></div><div className="flex gap-2"><button onClick={openCart} className="relative grid h-10 w-10 place-items-center rounded-full bg-[#fff6e6] shadow-[0_10px_25px_rgba(108,68,22,0.16)] ring-1 ring-white/70">⌔{count > 0 && <span className="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-[#d48b2a] px-1 text-[10px] font-black text-white">{count}</span>}</button><button onClick={openMenu} className="grid h-10 w-10 place-items-center rounded-full bg-[#fff6e6] shadow-[0_10px_25px_rgba(108,68,22,0.16)] ring-1 ring-white/70">☰</button></div></header>
-      <section className="mt-5 grid grid-cols-[1.04fr_0.96fr] items-center gap-3"><div><h2 className="text-[34px] font-black leading-[0.92] tracking-[-0.05em]">Coffee<br />Made Easy</h2><p className="mt-3 max-w-[150px] text-[10px] font-bold leading-4 text-[#8a6132]">Order your favourite drinks in seconds with a soft, premium cafe feel.</p><button onClick={openCart} className="mt-5 rounded-full bg-[#d79032] px-8 py-3 text-xs font-black text-white shadow-[0_13px_28px_rgba(142,86,24,0.28)]">Get Started</button></div><div className="relative h-[210px] overflow-visible rounded-[2rem] bg-[#f0be77] shadow-[0_22px_55px_rgba(118,70,18,0.18)]"><div className="absolute -bottom-5 left-1/2 h-[230px] w-[150px] -translate-x-1/2 rotate-[-7deg] rounded-[2rem] bg-cover bg-center shadow-[0_25px_50px_rgba(84,44,12,0.25)]" style={{ backgroundImage: `url(${spotlight.image})` }} /></div></section>
+    <div className="mx-auto max-w-[430px]"><header className="flex items-center justify-between pt-2"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#8d5d24]">Table {tableNumber}</p><h1 className="text-[20px] font-black tracking-tight">Bean & Table</h1></div><button onClick={openMenu} className="grid h-10 w-10 place-items-center rounded-full bg-[#fff6e6] shadow-[0_10px_25px_rgba(108,68,22,0.16)] ring-1 ring-white/70">☰</button></header>
+      <section className="mt-5 grid grid-cols-[1.04fr_0.96fr] items-center gap-3"><div><h2 className="text-[34px] font-black leading-[0.92] tracking-[-0.05em]">Coffee<br />Made Easy</h2><p className="mt-3 max-w-[150px] text-[10px] font-bold leading-4 text-[#8a6132]">Order your favourite drinks in seconds with a soft, premium cafe feel.</p><button onClick={() => { setCategory("All"); showAll(); }} className="mt-5 rounded-full bg-[#d79032] px-8 py-3 text-xs font-black text-white shadow-[0_13px_28px_rgba(142,86,24,0.28)]">Browse Menu</button></div><div className="relative h-[210px] overflow-visible rounded-[2rem] bg-[#f0be77] shadow-[0_22px_55px_rgba(118,70,18,0.18)]"><div className="absolute -bottom-5 left-1/2 h-[230px] w-[150px] -translate-x-1/2 rotate-[-7deg] rounded-[2rem] bg-cover bg-center shadow-[0_25px_50px_rgba(84,44,12,0.25)]" style={{ backgroundImage: `url(${spotlight.image})` }} /></div></section>
       <label className="mt-5 flex h-11 items-center gap-3 rounded-full bg-[#fff8ec] px-4 shadow-[0_12px_30px_rgba(105,65,25,0.12)] ring-1 ring-white/70"><span className="text-[#a36b29]">⌕</span><input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-xs font-black text-[#2d1609] outline-none placeholder:text-[#aa7b45]" placeholder="Search coffee" /></label>
       <button onClick={(event) => add(event, hero)} className="mt-4 grid w-full grid-cols-[1fr_112px] overflow-hidden rounded-[1.7rem] bg-[#d99a44] p-4 text-left shadow-[0_18px_42px_rgba(110,65,17,0.2)]"><div><p className="text-[11px] font-black uppercase tracking-[0.22em] text-[#6d3c12]">50% OFF</p><h3 className="mt-1 text-xl font-black leading-none text-white">Coffee Discount</h3><p className="mt-1 text-[10px] font-bold text-white/75">Today only · warm cafe demo</p><span className="mt-4 inline-flex rounded-full bg-[#fff4df] px-4 py-2 text-[11px] font-black text-[#7a4312]">Order Now</span></div><div className="relative"><div className="absolute -right-4 -top-5 h-[135px] w-[120px] rounded-[1.5rem] bg-cover bg-center shadow-[0_15px_30px_rgba(78,42,12,0.23)]" style={{ backgroundImage: `url(${hero.image})` }} /></div></button>
       <nav className="no-scrollbar mt-4 flex gap-2 overflow-x-auto"><button onClick={() => { setCategory("All"); showAll(); }} className="shrink-0 rounded-full px-4 py-2 text-[11px] font-black shadow-sm" style={{ background: category === "All" ? "#2d1609" : "#fff2d9", color: category === "All" ? "white" : "#7a4b1b" }}>All Coffee</button>{categories.map((entry) => <button key={entry} onClick={() => { setCategory(entry); showAll(); }} className="shrink-0 rounded-full px-4 py-2 text-[11px] font-black shadow-sm" style={{ background: category === entry ? "#2d1609" : "#fff2d9", color: category === entry ? "white" : "#7a4b1b" }}>{entry}</button>)}</nav>
-      <section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#9b682d]">Coffee menu</p><h3 className="text-2xl font-black tracking-[-0.04em]">Popular now</h3></div><button onClick={openCart} className="rounded-full bg-[#fff3dc] px-3 py-2 text-[11px] font-black text-[#70420f] shadow-sm">{count ? money(total) : "Basket"}</button></div><div className="grid grid-cols-2 gap-3">{visible.slice(0, 8).map((item) => <CafeCard key={item.id} item={item} qty={cart[item.id] || 0} add={add} remove={remove} />)}</div></section></div>
-    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid grid-cols-4 items-center rounded-[1.6rem] bg-[#fff8ec]/95 p-2 shadow-[0_18px_45px_rgba(90,54,18,0.24)] ring-1 ring-white/80 backdrop-blur-xl"><button className="rounded-2xl bg-[#2d1609] py-2 text-[11px] font-black text-white">Home</button><button onClick={() => setCategory("All")} className="py-2 text-[11px] font-black text-[#8d5d24]">Menu</button><button onClick={openCart} className="py-2 text-[11px] font-black text-[#8d5d24]">Basket</button><button onClick={openMenu} className="py-2 text-[11px] font-black text-[#8d5d24]">More</button></div></nav>
+      <section className="mt-5"><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.22em] text-[#9b682d]">Coffee menu</p><h3 className="text-2xl font-black tracking-[-0.04em]">Popular now</h3></div>{count > 0 && <span className="rounded-full bg-[#fff3dc] px-3 py-2 text-[11px] font-black text-[#70420f] shadow-sm">{count} · {money(total)}</span>}</div><div className="grid grid-cols-2 gap-3">{visible.slice(0, 8).map((item) => <CafeCard key={item.id} item={item} qty={cart[item.id] || 0} add={add} remove={remove} />)}</div></section></div>
+    <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid grid-cols-3 items-center rounded-[1.6rem] bg-[#fff8ec]/95 p-2 shadow-[0_18px_45px_rgba(90,54,18,0.24)] ring-1 ring-white/80 backdrop-blur-xl"><button onClick={() => { setCategory("All"); showAll(); }} className="rounded-2xl bg-[#2d1609] py-2 text-[11px] font-black text-white">Home</button><button onClick={openCart} className="py-2 text-[11px] font-black text-[#8d5d24]">Basket{count > 0 ? ` · ${count}` : ""}</button><button onClick={openMenu} className="py-2 text-[11px] font-black text-[#8d5d24]">More</button></div></nav>
   </main>;
 }
 
 function CafeCard({ item, qty, add, remove }: { item: MenuItem; qty: number; add: (event: MouseEvent, item: MenuItem) => void; remove: (event: MouseEvent, id: number) => void }) { return <article className="relative overflow-hidden rounded-[1.45rem] bg-[#fff4dd] p-2.5 shadow-[0_12px_28px_rgba(107,63,17,0.12)] ring-1 ring-white/80"><div className="h-28 rounded-[1.15rem] bg-[#edc079] bg-cover bg-center shadow-inner" style={{ backgroundImage: `url(${item.image})` }} /><div className="mt-2"><p className="line-clamp-1 text-[12px] font-black leading-tight text-[#2d1609]">{item.name}</p><p className="mt-0.5 line-clamp-1 text-[9px] font-bold text-[#9b6a34]">{item.description}</p><div className="mt-2 flex items-center justify-between gap-2"><span className="text-[12px] font-black text-[#2d1609]">{money(item.price)}</span>{qty ? <div className="flex items-center rounded-full bg-[#f4d8aa] p-0.5"><button onClick={(event) => remove(event, item.id)} className="grid h-6 w-6 place-items-center rounded-full bg-white text-xs font-black text-[#2d1609]">-</button><span className="min-w-6 text-center text-[10px] font-black">{qty}</span><button onClick={(event) => add(event, item)} className="grid h-6 w-6 place-items-center rounded-full bg-[#2d1609] text-xs font-black text-white">+</button></div> : <button onClick={(event) => add(event, item)} className="grid h-7 w-7 place-items-center rounded-full bg-[#d28b2f] text-sm font-black text-white shadow-md">+</button>}</div></div></article>; }
+
+function DrinksHome({ experience, items, category, setCategory, query, setQuery, showAll, tableNumber, cart, count, total, openMenu, openCart, add, remove }: { experience: MenuExperience; items: MenuItem[]; category: string; setCategory: (category: string) => void; query: string; setQuery: (query: string) => void; showAll: () => void; tableNumber: number; cart: Record<number, number>; count: number; total: number; openMenu: () => void; openCart: () => void; add: (event: MouseEvent, item: MenuItem) => void; remove: (event: MouseEvent, id: number) => void }) {
+  const theme = experience.theme;
+  const categories = experience.categories.filter((entry) => entry !== "All");
+  const visible = items.length ? items : experience.items;
+  const hero = visible.find((item) => item.popular) || visible[0] || experience.items[0];
+  const title = category === "All" ? "All drinks" : category;
+
+  function chooseDrinkType(entry: string) {
+    setCategory(entry);
+    showAll();
+  }
+
+  return <main className="min-h-screen px-4 pb-32 pt-4" style={{ background: "radial-gradient(circle at 20% 0%, #5b3a27 0, transparent 34%), radial-gradient(circle at 92% 12%, #34211b 0, transparent 32%), #171312", color: theme.ink }}>
+    <div className="mx-auto max-w-[440px]">
+      <header className="flex items-center justify-between">
+        <div>
+          <p className="text-[10px] font-black uppercase tracking-[0.24em]" style={{ color: theme.muted }}>Table {tableNumber} · Bar demo</p>
+          <h1 className="text-[34px] font-black leading-none tracking-[-0.06em]">Drinks</h1>
+        </div>
+        <button onClick={openMenu} className="grid h-11 w-11 place-items-center rounded-full shadow-sm ring-1 ring-white/10" style={{ background: theme.panel }}>☰</button>
+      </header>
+
+      <section className="mt-5 overflow-hidden rounded-[2rem] p-4 shadow-[0_24px_58px_rgba(0,0,0,0.32)] ring-1 ring-white/10" style={{ background: theme.panel }}>
+        <div className="grid grid-cols-[1fr_118px] gap-3">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em]" style={{ color: theme.muted }}>Tonight's pick</p>
+            <h2 className="mt-1 text-2xl font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2>
+            <p className="mt-2 text-xs font-bold leading-4" style={{ color: theme.muted }}>{hero.description}</p>
+            <button onClick={(event) => add(event, hero)} className="mt-4 rounded-full px-5 py-2.5 text-xs font-black text-black shadow-lg" style={{ background: theme.accent }}>Add Drink</button>
+          </div>
+          <div className="h-[145px] rounded-[1.5rem] bg-cover bg-center shadow-[0_18px_38px_rgba(0,0,0,0.24)]" style={{ backgroundImage: `url(${hero.image})` }} />
+        </div>
+      </section>
+
+      <label className="mt-4 flex h-12 items-center gap-3 rounded-full px-4 shadow-sm ring-1 ring-white/10" style={{ background: theme.panel }}>
+        <span style={{ color: theme.muted }}>⌕</span>
+        <input value={query} onChange={(event) => setQuery(event.target.value)} className="w-full bg-transparent text-sm font-bold outline-none placeholder:text-white/35" style={{ color: theme.ink }} placeholder={experience.searchPlaceholder} />
+      </label>
+
+      <section className="mt-5">
+        <div className="mb-3 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.22em]" style={{ color: theme.muted }}>Scroll alcohol types</p>
+            <h2 className="text-xl font-black tracking-[-0.04em]">Drinks</h2>
+          </div>
+          <button onClick={() => chooseDrinkType("All")} className="rounded-full px-3 py-2 text-[11px] font-black ring-1 ring-white/10" style={{ background: category === "All" ? theme.accent : theme.panel, color: category === "All" ? "#111" : theme.ink }}>All</button>
+        </div>
+        <nav className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-2">
+          {categories.map((entry) => {
+            const active = category === entry;
+            return <button key={entry} onClick={() => chooseDrinkType(entry)} className="shrink-0 text-center">
+              <span className="grid h-[76px] w-[76px] place-items-center rounded-full text-2xl shadow-[0_14px_34px_rgba(0,0,0,0.26)] ring-1 ring-white/10" style={{ background: active ? theme.accent : theme.panel, color: active ? "#111" : theme.ink }}>{experience.categoryIcons[entry] || "•"}</span>
+              <span className="mt-2 block w-[76px] truncate text-[10px] font-black" style={{ color: active ? theme.accent : theme.muted }}>{entry}</span>
+            </button>;
+          })}
+        </nav>
+      </section>
+
+      <section className="mt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <h3 className="text-lg font-black tracking-[-0.04em]">{title}</h3>
+          {count > 0 && <span className="rounded-full px-3 py-1.5 text-[11px] font-black" style={{ background: theme.panel, color: theme.muted }}>{count} · {money(total)}</span>}
+        </div>
+        <div className="grid gap-3">
+          {visible.length ? visible.slice(0, 10).map((item, index) => <FoodRow key={item.id} item={item} qty={cart[item.id] || 0} theme={theme} index={index} open={() => undefined} plus={(event) => add(event, item)} minus={(event) => remove(event, item.id)} />) : <p className="rounded-[1.5rem] p-5 text-center text-sm font-bold" style={{ background: theme.panel, color: theme.muted }}>{experience.emptyText}</p>}
+        </div>
+      </section>
+    </div>
+    <Bottom count={count} total={total} tableNumber={tableNumber} open={openCart} theme={theme} />
+  </main>;
+}
 
 function SimpleListHome({ experience, items, category, setCategory, query, setQuery, tableNumber, cart, count, total, openMenu, openCart, add, remove }: { experience: MenuExperience; items: MenuItem[]; category: string; setCategory: (category: string) => void; query: string; setQuery: (query: string) => void; tableNumber: number; cart: Record<number, number>; count: number; total: number; openMenu: () => void; openCart: () => void; add: (event: MouseEvent, item: MenuItem) => void; remove: (event: MouseEvent, id: number) => void }) {
   const theme = experience.theme;
