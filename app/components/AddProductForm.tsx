@@ -1,12 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { money, productCategories } from "../lib/menu";
+import { money, type MenuExperienceId } from "../lib/menu";
 import { blankNewMenuProduct, type NewMenuProduct } from "../lib/menuCatalog";
 import { cleanAllergenList } from "../lib/menuSettings";
 
 type Props = {
   onCreate: (product: NewMenuProduct, available: boolean) => number;
+  categories: readonly string[];
+  experienceMode: MenuExperienceId;
 };
 
 function cleanPriceInput(value: string) {
@@ -30,8 +32,9 @@ function formattedPriceInput(value: string) {
   return priceFromInput(value).toFixed(2);
 }
 
-export default function AddProductForm({ onCreate }: Props) {
-  const [product, setProduct] = useState<NewMenuProduct>(() => blankNewMenuProduct());
+export default function AddProductForm({ onCreate, categories, experienceMode }: Props) {
+  const defaultCategory = categories[0] || "Main";
+  const [product, setProduct] = useState<NewMenuProduct>(() => blankNewMenuProduct(experienceMode, defaultCategory));
   const [priceDraft, setPriceDraft] = useState("");
   const [allergenDraft, setAllergenDraft] = useState("");
   const [available, setAvailable] = useState(true);
@@ -40,11 +43,11 @@ export default function AddProductForm({ onCreate }: Props) {
   const canCreate = product.name.trim().length > 1 && product.description.trim().length > 1 && customerPrice >= 0;
 
   function update(changes: Partial<NewMenuProduct>) {
-    setProduct((current) => ({ ...current, ...changes }));
+    setProduct((current) => ({ ...current, ...changes, experienceMode }));
   }
 
   function resetDraftForm() {
-    setProduct(blankNewMenuProduct());
+    setProduct(blankNewMenuProduct(experienceMode, defaultCategory));
     setPriceDraft("");
     setAllergenDraft("");
     setAvailable(true);
@@ -68,7 +71,7 @@ export default function AddProductForm({ onCreate }: Props) {
 
   function createProduct() {
     if (!canCreate) return;
-    onCreate({ ...product, price: customerPrice, allergens: cleanAllergenList(allergenDraft) }, available);
+    onCreate({ ...product, experienceMode, price: customerPrice, allergens: cleanAllergenList(allergenDraft) }, available);
     resetDraftForm();
     setOpen(false);
   }
@@ -78,8 +81,8 @@ export default function AddProductForm({ onCreate }: Props) {
       <button onClick={toggleOpen} className="flex w-full items-center justify-between gap-3 text-left">
         <div>
           <p className="text-[11px] font-black uppercase tracking-[0.18em] text-orange-600">Add product</p>
-          <h3 className="mt-1 text-lg font-black text-slate-950">Create a new menu item</h3>
-          <p className="mt-1 text-xs font-bold leading-5 text-slate-500">New products sync to the customer menu, kitchen and dashboard.</p>
+          <h3 className="mt-1 text-lg font-black text-slate-950">Create a new {experienceMode} menu item</h3>
+          <p className="mt-1 text-xs font-bold leading-5 text-slate-500">New products sync to this model’s customer menu, kitchen and dashboard.</p>
         </div>
         <span className="shrink-0 rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-700 ring-1 ring-slate-200">{open ? "Close" : "Add"}</span>
       </button>
@@ -89,12 +92,12 @@ export default function AddProductForm({ onCreate }: Props) {
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block">
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Product name</span>
-              <input value={product.name} onChange={(event) => update({ name: event.target.value })} className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" placeholder="e.g. Halloumi Burger" />
+              <input value={product.name} onChange={(event) => update({ name: event.target.value })} className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200" placeholder={experienceMode === "drinks" ? "e.g. House Lager" : experienceMode === "cafe" ? "e.g. Iced Oat Latte" : "e.g. Halloumi Burger"} />
             </label>
             <label className="block">
               <span className="text-[10px] font-black uppercase tracking-[0.14em] text-slate-500">Category</span>
               <select value={product.category} onChange={(event) => update({ category: event.target.value })} className="mt-2 w-full rounded-xl bg-white p-3 text-xs font-bold outline-none ring-1 ring-slate-200">
-                {productCategories.map((category) => <option key={category} value={category}>{category}</option>)}
+                {categories.map((category) => <option key={category} value={category}>{category}</option>)}
               </select>
             </label>
           </div>
