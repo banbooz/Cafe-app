@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { onSnapshot, setDoc } from "firebase/firestore";
 import { cafeConfig, getCafeStorageKey } from "./cafeConfig";
 import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
-import { menuItems, productCategories, type MenuItem } from "./menu";
+import { allMenuItems, menuItems, productCategories, type MenuItem } from "./menu";
 import { applyMenuSettings, type MenuSettingsMap } from "./menuSettings";
 
 const STAFF_ITEMS_KEY = getCafeStorageKey("cafeStaffMenuItems");
@@ -113,7 +113,7 @@ function saveCatalogue(state: CatalogueState) {
 }
 
 function nextStaffId(staffItems: MenuItem[]) {
-  return Math.max(STAFF_ID_START - 1, ...menuItems.map((item) => item.id), ...staffItems.map((item) => item.id)) + 1;
+  return Math.max(STAFF_ID_START - 1, ...allMenuItems.map((item) => item.id), ...staffItems.map((item) => item.id)) + 1;
 }
 
 export function blankNewMenuProduct(): NewMenuProduct {
