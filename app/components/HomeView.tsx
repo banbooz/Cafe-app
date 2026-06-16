@@ -37,12 +37,12 @@ const cafeUi = {
   deep: "#8a541e",
 };
 
-const restaurantTabs: { label: string; value: string; heading: string; icon: string }[] = [
-  { label: "All", value: "All", heading: "All", icon: "▦" },
-  { label: "Main", value: "Main", heading: "Main", icon: "🍽️" },
-  { label: "Sides", value: "Starter", heading: "Sides", icon: "🍟" },
-  { label: "Desserts", value: "Pudding", heading: "Desserts", icon: "🍰" },
-  { label: "Drinks", value: "Drinks", heading: "Drinks", icon: "🥤" },
+const restaurantTabs: { label: string; value: string; heading: string; image: string }[] = [
+  { label: "All", value: "All", heading: "All", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=300&q=80" },
+  { label: "Main", value: "Main", heading: "Main", image: "https://images.unsplash.com/photo-1546069901-ba9599a7e63c?auto=format&fit=crop&w=300&q=80" },
+  { label: "Sides", value: "Starter", heading: "Sides", image: "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&w=300&q=80" },
+  { label: "Desserts", value: "Pudding", heading: "Desserts", image: "https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=300&q=80" },
+  { label: "Drinks", value: "Drinks", heading: "Drinks", image: "https://images.unsplash.com/photo-1544145945-f90425340c7e?auto=format&fit=crop&w=300&q=80" },
 ];
 
 function selectedRestaurantHeading(category: string) {
@@ -113,7 +113,7 @@ export default function HomeView(props: Props) {
     const orderAgain = visible.slice(0, 4);
     const activeHeading = selectedRestaurantHeading(props.category);
 
-    return <main className="min-h-screen bg-[#f8efe5] pb-28 text-[#241713]">
+    return <main className="min-h-screen bg-[#e8e1d7] pb-28 text-[#241713]">
       <div className="mx-auto w-full max-w-[480px] px-2 pt-3">
         <header className="rounded-[1.75rem] bg-[#3b1718] px-4 py-4 text-white shadow-lg shadow-[#3b1718]/20 ring-1 ring-[#e8c8b0]/20">
           <div className="flex items-center gap-3">
@@ -131,12 +131,12 @@ export default function HomeView(props: Props) {
         </header>
 
         <section className="mt-4">
-          <div className="mb-2 px-1"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#9d6243]">Browse</p><h2 className="font-serif text-xl font-black tracking-tight text-[#241713]">Restaurant categories</h2></div>
+          <div className="mb-2 px-1"><p className="text-[10px] font-black uppercase tracking-[0.2em] text-[#7c5b4b]">Browse</p><h2 className="font-serif text-xl font-black tracking-tight text-[#241713]">Restaurant categories</h2></div>
           <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-2">
             {restaurantTabs.map((tab) => {
               const selected = props.category === tab.value;
               return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[84px] shrink-0 text-center" aria-pressed={selected}>
-                <RestaurantCategoryIcon icon={tab.icon} label={tab.label} selected={selected} />
+                <RestaurantCategoryPhoto image={tab.image} label={tab.label} selected={selected} />
                 <span className={selected ? "mt-2 block truncate text-[12px] font-black text-[#9d3326]" : "mt-2 block truncate text-[12px] font-black text-[#6e4b3f]"}>{tab.label}</span>
               </button>;
             })}
@@ -226,10 +226,8 @@ export default function HomeView(props: Props) {
   </main>;
 }
 
-function RestaurantCategoryIcon({ icon, label, selected }: { icon: string; label: string; selected: boolean }) {
-  return <span className={selected ? "mx-auto grid h-[76px] w-[76px] place-items-center rounded-[1.35rem] bg-[#fff8ec] text-[32px] shadow-lg ring-4 ring-[#c95a2c]" : "mx-auto grid h-[76px] w-[76px] place-items-center rounded-[1.35rem] bg-white text-[32px] shadow-sm ring-1 ring-[#ead8c8]"} aria-label={label}>
-    <span className="drop-shadow-sm">{icon}</span>
-  </span>;
+function RestaurantCategoryPhoto({ image, label, selected }: { image: string; label: string; selected: boolean }) {
+  return <span className={selected ? "mx-auto block h-[76px] w-[76px] overflow-hidden rounded-[1.35rem] bg-cover bg-center shadow-lg ring-4 ring-[#c95a2c]" : "mx-auto block h-[76px] w-[76px] overflow-hidden rounded-[1.35rem] bg-cover bg-center shadow-sm ring-1 ring-[#d6c4b4]"} style={{ backgroundImage: `linear-gradient(180deg, rgba(36,23,19,0.02), rgba(36,23,19,0.22)), url(${image})` }} aria-label={label} />;
 }
 
 function CategoryPhotoIcon({ image, label, selected, accent }: { image: string; label: string; selected: boolean; accent: string }) {
