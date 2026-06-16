@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, type FormEvent, type MouseEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type MouseEvent } from "react";
 import { experienceOptions, menuExperiences, money, type MenuExperience, type MenuExperienceId, type MenuItem } from "../lib/menu";
 import DietaryBadges from "./DietaryBadges";
 
@@ -27,29 +27,56 @@ type Props = {
   changeTable: (tableNumber: number) => void;
 };
 
-type RestaurantCategoryIcon = "all" | "main" | "sides" | "desserts" | "drinks";
-
-const restaurantTabs: { label: string; value: string; heading: string; icon: RestaurantCategoryIcon }[] = [
-  { label: "All", value: "All", heading: "All", icon: "all" },
-  { label: "Main", value: "Main", heading: "Main", icon: "main" },
-  { label: "Sides", value: "Starter", heading: "Sides", icon: "sides" },
-  { label: "Desserts", value: "Pudding", heading: "Desserts", icon: "desserts" },
-  { label: "Drinks", value: "Drinks", heading: "Drinks", icon: "drinks" },
+const restaurantTabs: { label: string; value: string; heading: string }[] = [
+  { label: "All", value: "All", heading: "All" },
+  { label: "Main", value: "Main", heading: "Main" },
+  { label: "Sides", value: "Starter", heading: "Sides" },
+  { label: "Desserts", value: "Pudding", heading: "Desserts" },
+  { label: "Drinks", value: "Drinks", heading: "Drinks" },
 ];
 
 function selectedRestaurantHeading(category: string) {
   return restaurantTabs.find((tab) => tab.value === category)?.heading || "All";
 }
 
+function categoryImage(category: string, items: MenuItem[], fallback?: MenuItem) {
+  const source = items.length ? items : fallback ? [fallback] : [];
+  const item = category === "All"
+    ? source.find((entry) => entry.popular) || source[0]
+    : source.find((entry) => entry.category === category) || source.find((entry) => entry.popular) || source[0];
+
+  return item?.image || fallback?.image || "";
+}
+
+function rotateFromIndex(items: MenuItem[], start: number, count: number) {
+  if (!items.length) return [];
+  return Array.from({ length: Math.min(count, items.length) }, (_, index) => items[(start + index) % items.length]);
+}
+
 export default function HomeView(props: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
   const menuRef = useRef<HTMLElement | null>(null);
   const searchRef = useRef<HTMLInputElement | null>(null);
   const experience = menuExperiences[props.experienceMode];
   const isRestaurant = props.experienceMode === "restaurant";
   const theme = experience.theme;
   const visible = props.filtered.length ? props.filtered : props.allItems;
-  const hero = visible.find((item) => item.popular) || visible[0] || props.allItems[0] || experience.items[0];
+  const featuredItems = visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible;
+  const hero = featuredItems[featuredIndex % Math.max(featuredItems.length, 1)] || visible[0] || props.allItems[0] || experience.items[0];
+
+  useEffect(() => {
+    setFeaturedIndex(0);
+  }, [props.experienceMode, props.category, props.query, props.popularOnly, visible.length]);
+
+  useEffect(() => {
+    if (featuredItems.length <= 1) return;
+    const timer = window.setInterval(() => {
+      setFeaturedIndex((index) => (index + 1) % featuredItems.length);
+    }, 4500);
+
+    return () => window.clearInterval(timer);
+  }, [featuredItems.length]);
 
   function chooseCategory(category: string) {
     props.setCategory(category);
@@ -69,7 +96,7 @@ export default function HomeView(props: Props) {
   }
 
   if (isRestaurant) {
-    const trusted = (visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible).slice(0, 2);
+    const trusted = rotateFromIndex(featuredItems.length ? featuredItems : visible, featuredIndex, 2);
     const recommended = visible.slice(0, 6);
     const orderAgain = visible.slice(0, 4);
     const activeHeading = selectedRestaurantHeading(props.category);
@@ -93,10 +120,9 @@ export default function HomeView(props: Props) {
           <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-2">
             {restaurantTabs.map((tab) => {
               const selected = props.category === tab.value;
+              const image = categoryImage(tab.value, props.allItems, hero);
               return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[84px] shrink-0 text-center" aria-pressed={selected}>
-                <span className={selected ? "mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-white text-[#0f5132] shadow-lg ring-4 ring-[#0f8a4b]" : "mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-white text-[#0f5132] shadow-sm ring-2 ring-white"}>
-                  <RestaurantCategoryLogo icon={tab.icon} />
-                </span>
+                <CategoryPhotoIcon image={image} label={tab.label} selected={selected} accent="#0f8a4b" />
                 <span className={selected ? "mt-2 block truncate text-[12px] font-black text-[#0f5132]" : "mt-2 block truncate text-[12px] font-black text-[#5d7565]"}>{tab.label}</span>
               </button>;
             })}
@@ -106,7 +132,7 @@ export default function HomeView(props: Props) {
         <section className="-mx-1 mt-4 rounded-[1.8rem] bg-[#0f5132] p-3 text-white shadow-lg shadow-green-900/10">
           <div className="mb-3 px-1"><p className="text-[10px] font-black uppercase tracking-[0.18em] text-white/55">Fresh picks</p><h2 className="text-xl font-black">Your trusted picks</h2></div>
           <div className="grid grid-cols-2 gap-3">
-            {trusted.map((item) => <TrustedCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
+            {trusted.map((item) => <TrustedCard key={`${item.id}-${featuredIndex}`} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
           </div>
         </section>
 
@@ -134,21 +160,17 @@ export default function HomeView(props: Props) {
     <div className="mx-auto max-w-[440px]">
       <header className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Table {props.tableNumber}</p><h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.05em]">{experience.label}</h1></div><button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-11 w-11 place-items-center rounded-full text-xl font-black shadow-sm ring-1 ring-white/10" style={{ background: theme.panel }}>☰</button></header>
       <label className="mt-4 flex h-12 items-center gap-3 rounded-full px-4 ring-1 ring-black/10" style={{ background: theme.panel }}><input value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-50" placeholder="Search menu or allergens" /></label>
-      <button onClick={(event) => addItem(event, hero)} className="mt-4 grid h-[150px] w-full grid-cols-[1fr_118px] overflow-hidden rounded-[1.8rem] p-4 text-left shadow-[0_22px_50px_rgba(0,0,0,0.22)]" style={{ background: theme.accent, color: "#111" }}><div><p className="text-[9px] font-black uppercase tracking-[0.14em] opacity-60">Featured</p><h2 className="mt-1 line-clamp-2 text-[23px] font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2><span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Add to basket</span></div><div className="h-[118px] rounded-[1.5rem] bg-white bg-cover bg-center shadow-[0_18px_30px_rgba(0,0,0,0.18)]" style={{ backgroundImage: `url(${hero.image})` }} /></button>
-      <section className="mt-4 rounded-[1.8rem] p-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Scrollable sections</p><h2 className="text-xl font-black">{experience.label}</h2></div><button onClick={() => chooseCategory("All")} className="rounded-full px-3 py-2 text-[11px] font-black" style={{ background: props.category === "All" ? theme.accent : theme.soft, color: props.category === "All" ? "#111" : theme.ink }}>All</button></div><nav className="no-scrollbar flex gap-3 overflow-x-auto pb-2">{experience.categories.filter((entry) => entry !== "All").map((entry) => <button key={entry} onClick={() => chooseCategory(entry)} className="shrink-0 text-center"><span className="grid h-[76px] w-[76px] place-items-center rounded-full text-2xl shadow-[0_14px_34px_rgba(0,0,0,0.18)] ring-1 ring-black/10" style={{ background: props.category === entry ? theme.accent : theme.soft, color: props.category === entry ? "#111" : theme.ink }}>{experience.categoryIcons[entry] || "•"}</span><span className="mt-2 block w-[76px] truncate text-[10px] font-black opacity-70">{entry}</span></button>)}</nav></section>
-      <section ref={menuRef} className="mt-5 scroll-mt-5 rounded-[1.8rem] p-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Main menu</p><h2 className="text-xl font-black">{props.category === "All" ? "Everything" : props.category}</h2></div>{props.count > 0 && <span className="shrink-0 rounded-full px-3 py-2 text-[11px] font-black" style={{ background: theme.soft }}>{props.count} items</span>}</div><div className={props.experienceMode === "cafe" ? "grid grid-cols-2 gap-3" : "grid gap-3"}>{visible.slice(0, 10).map((item) => props.experienceMode === "cafe" ? <CafeCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} /> : <SimpleRow key={item.id} item={item} qty={props.cart[item.id] || 0} theme={theme} add={props.add} remove={props.remove} />)}</div></section>
+      <button onClick={(event) => addItem(event, hero)} className="mt-4 grid h-[150px] w-full grid-cols-[1fr_118px] overflow-hidden rounded-[1.8rem] p-4 text-left shadow-[0_18px_34px_rgba(0,0,0,0.14)]" style={{ background: theme.accent, color: "#111" }}><div><p className="text-[9px] font-black uppercase tracking-[0.14em] opacity-60">Featured</p><h2 className="mt-1 line-clamp-2 text-[23px] font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2><span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Add to basket</span></div><div className="h-[118px] rounded-[1.5rem] bg-white bg-cover bg-center shadow-sm ring-1 ring-black/10" style={{ backgroundImage: `url(${hero.image})` }} /></button>
+      <section className="mt-4 rounded-[1.8rem] p-3 ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Sections</p><h2 className="text-xl font-black">Browse menu</h2></div><button onClick={() => chooseCategory("All")} className="rounded-full px-3 py-2 text-[11px] font-black" style={{ background: props.category === "All" ? theme.accent : theme.soft, color: props.category === "All" ? "#111" : theme.ink }}>All</button></div><nav className="no-scrollbar flex gap-3 overflow-x-auto pb-2">{experience.categories.filter((entry) => entry !== "All").map((entry) => { const selected = props.category === entry; const image = categoryImage(entry, props.allItems, hero); return <button key={entry} onClick={() => chooseCategory(entry)} className="shrink-0 text-center" aria-pressed={selected}><CategoryPhotoIcon image={image} label={entry} selected={selected} accent={theme.accent} /><span className="mt-2 block w-[76px] truncate text-[10px] font-black opacity-70">{entry}</span></button>; })}</nav></section>
+      <section ref={menuRef} className="mt-5 scroll-mt-5 rounded-[1.8rem] p-3 ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Main menu</p><h2 className="text-xl font-black">{props.category === "All" ? "Menu" : props.category}</h2></div>{props.count > 0 && <span className="shrink-0 rounded-full px-3 py-2 text-[11px] font-black" style={{ background: theme.soft }}>{props.count} items</span>}</div><div className={props.experienceMode === "cafe" ? "grid grid-cols-2 gap-3" : "grid gap-3"}>{visible.slice(0, 10).map((item) => props.experienceMode === "cafe" ? <CafeCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} /> : <SimpleRow key={item.id} item={item} qty={props.cart[item.id] || 0} theme={theme} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}</div></section>
     </div>
     <BottomBar count={props.count} total={props.total} openCart={props.openCart} openMenu={() => setMenuOpen(true)} accent={theme.accent} />
     {menuOpen && <MenuSheet count={props.count} total={props.total} tableNumber={props.tableNumber} changeTable={props.changeTable} close={() => setMenuOpen(false)} goHome={() => { chooseCategory("All"); setMenuOpen(false); }} openCart={props.openCart} experience={experience} mode={props.experienceMode} switchMode={switchMode} />}
   </main>;
 }
 
-function RestaurantCategoryLogo({ icon }: { icon: RestaurantCategoryIcon }) {
-  if (icon === "all") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M13 13h8v8h-8zM27 13h8v8h-8zM13 27h8v8h-8zM27 27h8v8h-8z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /></svg>;
-  if (icon === "sides") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M15 18h18l-2 19H17z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M18 12h12M19 18l-2-7M24 18v-8M29 18l2-7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
-  if (icon === "main") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><circle cx="24" cy="25" r="10" stroke="currentColor" strokeWidth="3" /><circle cx="24" cy="25" r="5" stroke="currentColor" strokeWidth="2" /><path d="M9 13v24M13 13v8M17 13v24M35 13v24M35 13c5 5 5 11 0 16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
-  if (icon === "desserts") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M14 24h20l-2 13H16z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M17 24c0-6 4-10 7-10s7 4 7 10M19 14c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
-  return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M19 10h10v7l4 5v16a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3V22l4-5z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M19 10h10M16 27h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
+function CategoryPhotoIcon({ image, label, selected, accent }: { image: string; label: string; selected: boolean; accent: string }) {
+  return <span className="mx-auto block h-[76px] w-[76px] overflow-hidden rounded-full bg-cover bg-center ring-2 ring-white" style={{ backgroundImage: `url(${image})`, boxShadow: selected ? `0 0 0 4px ${accent}` : "none" }} aria-label={label} />;
 }
 
 function TrustedCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
@@ -163,12 +185,12 @@ function OrderAgainCard({ item, qty, add, remove, open }: { item: MenuItem; qty:
   return <article className="w-[172px] shrink-0 overflow-hidden rounded-[1.2rem] bg-white shadow-sm ring-1 ring-green-900/5"><button onClick={open} className="block h-[105px] w-full bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="p-2.5"><h3 className="line-clamp-1 text-sm font-black">{item.name}</h3><div className="mt-2 flex items-center justify-between"><span className="text-sm font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
 }
 
-function CafeCard({ item, qty, add, remove }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void }) {
-  return <article className="relative overflow-hidden rounded-[1.45rem] bg-white/70 p-2.5 shadow-sm ring-1 ring-black/5"><div className="h-28 rounded-[1.15rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} /><p className="mt-2 line-clamp-1 text-[12px] font-black">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
+function CafeCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
+  return <article className="relative overflow-hidden rounded-[1.45rem] bg-white/70 p-2.5 shadow-sm ring-1 ring-black/5"><button onClick={open} className="block h-28 w-full rounded-[1.15rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><p className="mt-2 line-clamp-1 text-[12px] font-black">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
 }
 
-function SimpleRow({ item, qty, theme, add, remove }: { item: MenuItem; qty: number; theme: MenuExperience["theme"]; add: (id: number) => void; remove: (id: number) => void }) {
-  return <article className="flex items-start gap-3 rounded-[1.25rem] p-3 ring-1 ring-black/5" style={{ background: theme.soft }}><div className="h-[72px] w-[72px] shrink-0 rounded-[1rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} /><div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-[0.16em]" style={{ color: theme.muted }}>{item.category}</p><h3 className="line-clamp-1 text-base font-black">{item.name}</h3><div className="mt-1 flex items-start gap-1.5"><DietaryBadges item={item} /><p className="line-clamp-1 text-xs font-semibold" style={{ color: theme.muted }}>{item.description}</p></div><div className="mt-2 flex items-center justify-between"><span className="text-sm font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
+function SimpleRow({ item, qty, theme, add, remove, open }: { item: MenuItem; qty: number; theme: MenuExperience["theme"]; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
+  return <article className="flex items-start gap-3 rounded-[1.25rem] p-3 ring-1 ring-black/5" style={{ background: theme.soft }}><button onClick={open} className="h-[72px] w-[72px] shrink-0 rounded-[1rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><div className="min-w-0 flex-1"><p className="text-[9px] font-black uppercase tracking-[0.16em]" style={{ color: theme.muted }}>{item.category}</p><h3 className="line-clamp-1 text-base font-black">{item.name}</h3><div className="mt-1 flex items-start gap-1.5"><DietaryBadges item={item} /><p className="line-clamp-1 text-xs font-semibold" style={{ color: theme.muted }}>{item.description}</p></div><div className="mt-2 flex items-center justify-between"><span className="text-sm font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></div></article>;
 }
 
 function Qty({ qty, add, remove, disabled = false }: { qty: number; add: () => void; remove: () => void; disabled?: boolean }) {
@@ -190,6 +212,35 @@ function MenuSheet({ count, total, tableNumber, changeTable, close, goHome, open
   const parsedDraft = Number(draftTable);
   const validDraft = Number.isInteger(parsedDraft) && parsedDraft >= 1 && parsedDraft <= 999;
   const theme = experience.theme;
-  function saveTable(event: FormEvent<HTMLFormElement>) { event.preventDefault(); if (!validDraft) return; changeTable(parsedDraft); setTableOpen(false); }
-  return <div className="sheet-backdrop-enter fixed inset-0 z-[95] flex items-start justify-center bg-[#111517]/35 p-4 pt-20 backdrop-blur-sm"><div className="sheet-panel-enter w-full max-w-[480px] rounded-[2rem] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.28)] ring-1 ring-white/80" style={{ background: theme.background, color: theme.ink }}><div className="flex items-center justify-between"><div><p className="text-[11px] font-black uppercase tracking-[0.22em]" style={{ color: theme.muted }}>Menu</p><h2 className="text-2xl font-black tracking-tight">{experience.name}</h2></div><button onClick={close} className="rounded-full px-4 py-3 text-xs font-black shadow-sm ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}>Close</button></div><section className="mt-5 rounded-[1.5rem] p-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}><p className="px-1 text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: theme.muted }}>Switch design</p><div className="mt-3 grid gap-2">{experienceOptions.map((option) => { const active = option.id === mode; return <button key={option.id} onClick={() => switchMode(option.id)} className="flex min-h-16 items-center justify-between rounded-[1.25rem] px-4 text-left ring-1 ring-black/5" style={{ background: active ? theme.deep : theme.soft, color: active ? "white" : theme.ink }}><span><span className="block text-sm font-black">{option.label}{active ? " selected" : ""}</span><span className="block text-xs font-bold opacity-70">Open this customer layout</span></span><span className="text-xl">Next</span></button>; })}</div></section><div className="mt-3 grid gap-3"><button onClick={goHome} className="flex min-h-16 items-center justify-between rounded-[1.5rem] px-4 text-left shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}><span><span className="block text-sm font-black">Home</span><span className="block text-xs font-bold opacity-70">Back to the main menu</span></span><span className="text-xl">Go</span></button><div className="rounded-[1.5rem] px-4 py-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}><button onClick={() => setTableOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span><span className="block text-sm font-black">Change Table</span><span className="block text-xs font-bold opacity-70">Current table {tableNumber}</span></span><span className="text-xl">Edit</span></button>{tableOpen && <form onSubmit={saveTable} className="mt-3 flex items-center gap-2"><input value={draftTable} onChange={(event) => setDraftTable(event.target.value)} inputMode="numeric" pattern="[0-9]*" aria-label="Table number" className="min-h-10 w-full rounded-2xl px-3 text-sm font-black outline-none ring-1 ring-black/5" style={{ background: theme.soft, color: theme.ink }} /><button type="submit" disabled={!validDraft} className="min-h-10 rounded-2xl px-4 text-xs font-black disabled:bg-slate-200 disabled:text-slate-400" style={validDraft ? { background: theme.deep, color: "white" } : undefined}>Save</button></form>}</div><button onClick={openCart} className="flex min-h-16 items-center justify-between rounded-[1.5rem] px-4 text-left text-white shadow-[0_18px_42px_rgba(29,37,40,0.22)]" style={{ background: theme.deep }}><span><span className="block text-sm font-black">Basket</span><span className="block text-xs font-bold text-white/65">{count ? `${count} items ${money(total)}` : "No items yet"}</span></span><span className="text-xl">Open</span></button></div></div></div>;
+
+  function saveTable(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!validDraft) return;
+    changeTable(parsedDraft);
+    setTableOpen(false);
+  }
+
+  return <div className="sheet-backdrop-enter fixed inset-0 z-[95] flex items-start justify-center bg-[#111517]/35 p-4 pt-20 backdrop-blur-sm">
+    <div className="sheet-panel-enter w-full max-w-[480px] rounded-[2rem] p-4 shadow-[0_26px_70px_rgba(29,37,40,0.28)] ring-1 ring-white/80" style={{ background: theme.background, color: theme.ink }}>
+      <div className="flex items-center justify-between">
+        <div><p className="text-[11px] font-black uppercase tracking-[0.22em]" style={{ color: theme.muted }}>Menu</p><h2 className="text-2xl font-black tracking-tight">{experience.name}</h2></div>
+        <button onClick={close} className="rounded-full px-4 py-3 text-xs font-black shadow-sm ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}>Close</button>
+      </div>
+      <section className="mt-5 rounded-[1.5rem] p-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}>
+        <p className="px-1 text-[11px] font-black uppercase tracking-[0.18em]" style={{ color: theme.muted }}>Switch design</p>
+        <div className="mt-3 grid gap-2">{experienceOptions.map((option) => {
+          const active = option.id === mode;
+          return <button key={option.id} onClick={() => switchMode(option.id)} className="flex min-h-16 items-center justify-between rounded-[1.25rem] px-4 text-left ring-1 ring-black/5" style={{ background: active ? theme.deep : theme.soft, color: active ? "white" : theme.ink }}><span><span className="block text-sm font-black">{option.label}{active ? " selected" : ""}</span><span className="block text-xs font-bold opacity-70">Open this customer layout</span></span><span className="text-xl">Next</span></button>;
+        })}</div>
+      </section>
+      <div className="mt-3 grid gap-3">
+        <button onClick={goHome} className="flex min-h-16 items-center justify-between rounded-[1.5rem] px-4 text-left shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}><span><span className="block text-sm font-black">Home</span><span className="block text-xs font-bold opacity-70">Back to the main menu</span></span><span className="text-xl">Go</span></button>
+        <div className="rounded-[1.5rem] px-4 py-3 shadow-sm ring-1 ring-black/5" style={{ background: theme.panel }}>
+          <button onClick={() => setTableOpen((open) => !open)} className="flex w-full items-center justify-between text-left"><span><span className="block text-sm font-black">Change Table</span><span className="block text-xs font-bold opacity-70">Current table {tableNumber}</span></span><span className="text-xl">Edit</span></button>
+          {tableOpen && <form onSubmit={saveTable} className="mt-3 flex items-center gap-2"><input value={draftTable} onChange={(event) => setDraftTable(event.target.value)} inputMode="numeric" pattern="[0-9]*" aria-label="Table number" className="min-h-10 w-full rounded-2xl px-3 text-sm font-black outline-none ring-1 ring-black/5" style={{ background: theme.soft, color: theme.ink }} /><button type="submit" disabled={!validDraft} className="min-h-10 rounded-2xl px-4 text-xs font-black disabled:bg-slate-200 disabled:text-slate-400" style={validDraft ? { background: theme.deep, color: "white" } : undefined}>Save</button></form>}
+        </div>
+        <button onClick={openCart} className="flex min-h-16 items-center justify-between rounded-[1.5rem] px-4 text-left text-white shadow-[0_18px_42px_rgba(29,37,40,0.22)]" style={{ background: theme.deep }}><span><span className="block text-sm font-black">Basket</span><span className="block text-xs font-bold text-white/65">{count ? `${count} items ${money(total)}` : "No items yet"}</span></span><span className="text-xl">Open</span></button>
+      </div>
+    </div>
+  </div>;
 }
