@@ -27,13 +27,19 @@ type Props = {
   changeTable: (tableNumber: number) => void;
 };
 
-const restaurantTabs = [
-  { label: "All", value: "All" },
-  { label: "Main", value: "Main" },
-  { label: "Sides", value: "Starter" },
-  { label: "Desserts", value: "Pudding" },
-  { label: "Drinks", value: "Drinks" },
+type RestaurantCategoryIcon = "all" | "main" | "sides" | "desserts" | "drinks";
+
+const restaurantTabs: { label: string; value: string; heading: string; icon: RestaurantCategoryIcon }[] = [
+  { label: "All", value: "All", heading: "All", icon: "all" },
+  { label: "Main", value: "Main", heading: "Main", icon: "main" },
+  { label: "Sides", value: "Starter", heading: "Sides", icon: "sides" },
+  { label: "Desserts", value: "Pudding", heading: "Desserts", icon: "desserts" },
+  { label: "Drinks", value: "Drinks", heading: "Drinks", icon: "drinks" },
 ];
+
+function selectedRestaurantHeading(category: string) {
+  return restaurantTabs.find((tab) => tab.value === category)?.heading || "All";
+}
 
 export default function HomeView(props: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,6 +72,7 @@ export default function HomeView(props: Props) {
     const trusted = (visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible).slice(0, 2);
     const recommended = visible.slice(0, 6);
     const orderAgain = visible.slice(0, 4);
+    const activeHeading = selectedRestaurantHeading(props.category);
 
     return <main className="min-h-screen bg-[#eaf6ec] pb-28 text-[#102117]">
       <div className="mx-auto w-full max-w-[480px] px-2 pt-3">
@@ -86,9 +93,10 @@ export default function HomeView(props: Props) {
           <div className="no-scrollbar -mx-1 flex gap-3 overflow-x-auto px-1 pb-3 pt-2">
             {restaurantTabs.map((tab) => {
               const selected = props.category === tab.value;
-              const image = tab.value === "All" ? hero.image : props.allItems.find((item) => item.category === tab.value)?.image || hero.image;
-              return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[84px] shrink-0 text-center">
-                <span className={selected ? "mx-auto block h-[74px] w-[74px] rounded-full bg-cover bg-center shadow-lg ring-4 ring-[#0f8a4b]" : "mx-auto block h-[74px] w-[74px] rounded-full bg-cover bg-center shadow-sm ring-2 ring-white"} style={{ backgroundImage: `url(${image})` }} />
+              return <button key={tab.label} onClick={() => chooseCategory(tab.value)} className="w-[84px] shrink-0 text-center" aria-pressed={selected}>
+                <span className={selected ? "mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-white text-[#0f5132] shadow-lg ring-4 ring-[#0f8a4b]" : "mx-auto grid h-[74px] w-[74px] place-items-center rounded-full bg-white text-[#0f5132] shadow-sm ring-2 ring-white"}>
+                  <RestaurantCategoryLogo icon={tab.icon} />
+                </span>
                 <span className={selected ? "mt-2 block truncate text-[12px] font-black text-[#0f5132]" : "mt-2 block truncate text-[12px] font-black text-[#5d7565]"}>{tab.label}</span>
               </button>;
             })}
@@ -103,7 +111,7 @@ export default function HomeView(props: Props) {
         </section>
 
         <section ref={menuRef} className="mt-5 scroll-mt-5">
-          <div className="mb-3 px-1"><h2 className="text-xl font-black">Menu</h2></div>
+          <div className="mb-3 px-1"><h2 className="text-xl font-black">{activeHeading}</h2></div>
           <div className="grid gap-3">
             {recommended.map((item) => <RecommendedCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}
           </div>
@@ -133,6 +141,14 @@ export default function HomeView(props: Props) {
     <BottomBar count={props.count} total={props.total} openCart={props.openCart} openMenu={() => setMenuOpen(true)} accent={theme.accent} />
     {menuOpen && <MenuSheet count={props.count} total={props.total} tableNumber={props.tableNumber} changeTable={props.changeTable} close={() => setMenuOpen(false)} goHome={() => { chooseCategory("All"); setMenuOpen(false); }} openCart={props.openCart} experience={experience} mode={props.experienceMode} switchMode={switchMode} />}
   </main>;
+}
+
+function RestaurantCategoryLogo({ icon }: { icon: RestaurantCategoryIcon }) {
+  if (icon === "all") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M13 13h8v8h-8zM27 13h8v8h-8zM13 27h8v8h-8zM27 27h8v8h-8z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /></svg>;
+  if (icon === "sides") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M15 18h18l-2 19H17z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M18 12h12M19 18l-2-7M24 18v-8M29 18l2-7" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
+  if (icon === "main") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><circle cx="24" cy="25" r="10" stroke="currentColor" strokeWidth="3" /><circle cx="24" cy="25" r="5" stroke="currentColor" strokeWidth="2" /><path d="M9 13v24M13 13v8M17 13v24M35 13v24M35 13c5 5 5 11 0 16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
+  if (icon === "desserts") return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M14 24h20l-2 13H16z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M17 24c0-6 4-10 7-10s7 4 7 10M19 14c0-3 2-5 5-5s5 2 5 5" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
+  return <svg viewBox="0 0 48 48" className="h-9 w-9" fill="none" aria-hidden="true"><path d="M19 10h10v7l4 5v16a3 3 0 0 1-3 3H18a3 3 0 0 1-3-3V22l4-5z" stroke="currentColor" strokeWidth="3" strokeLinejoin="round" /><path d="M19 10h10M16 27h16" stroke="currentColor" strokeWidth="3" strokeLinecap="round" /></svg>;
 }
 
 function TrustedCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
