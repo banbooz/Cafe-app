@@ -174,7 +174,6 @@ export default function HomeView(props: Props) {
     <div className="mx-auto max-w-[440px]">
       <header className={isCafe ? "flex items-center justify-between rounded-[1.6rem] px-1 py-1" : "flex items-center justify-between"}>
         <div className="flex min-w-0 items-center gap-3">
-          {isCafe && <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e7bd7a] text-sm font-black text-white ring-2 ring-white">BT</div>}
           <div>
             <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Table {props.tableNumber}</p>
             <h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.05em]">{experience.label}</h1>
@@ -247,7 +246,7 @@ function OrderAgainCard({ item, qty, add, remove, open }: { item: MenuItem; qty:
 }
 
 function CafeCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
-  return <article className="relative overflow-hidden rounded-[1.55rem] bg-[#fffaf0] p-2.5 shadow-[0_10px_28px_rgba(138,84,30,0.12)] ring-1 ring-[#efd5ab]"><button onClick={open} className="block h-28 w-full rounded-[1.2rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><button onClick={open} className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/95 text-[11px] font-black text-[#8a541e] shadow-sm">♡</button><p className="mt-2 line-clamp-1 text-[12px] font-black text-[#3a2616]">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black text-[#8a541e]">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
+  return <article className="relative overflow-hidden rounded-[1.55rem] bg-[#fffaf0] p-2.5 shadow-[0_10px_28px_rgba(138,84,30,0.12)] ring-1 ring-[#efd5ab]"><button onClick={open} className="block h-28 w-full rounded-[1.2rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><p className="mt-2 line-clamp-1 text-[12px] font-black text-[#3a2616]">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black text-[#8a541e]">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
 }
 
 function SimpleRow({ item, qty, theme, add, remove, open }: { item: MenuItem; qty: number; theme: MenuExperience["theme"]; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
@@ -269,7 +268,7 @@ function RestaurantBottomBar({ count, focusSearch, openCart, openMenu }: { count
 }
 
 function CafeBottomBar({ count, total, openCart, openMenu }: { count: number; total: number; openCart: () => void; openMenu: () => void }) {
-  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-4 items-center rounded-[1.7rem] bg-[#fff8eb]/95 text-[#8a541e] shadow-[0_16px_36px_rgba(138,84,30,0.18)] ring-1 ring-[#efd5ab] backdrop-blur-xl"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black">⌂<span className="sr-only">Home</span></button><button onClick={openCart} className="h-full text-xs font-black">{count ? `${count} ${money(total)}` : "Cart"}</button><button type="button" className="h-full text-xs font-black">♡</button><button onClick={openMenu} className="h-full text-xs font-black">☰</button></div></nav>;
+  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-3 items-center rounded-[1.7rem] bg-[#fff8eb]/95 text-[#8a541e] shadow-[0_16px_36px_rgba(138,84,30,0.18)] ring-1 ring-[#efd5ab] backdrop-blur-xl"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black">Home</button><button onClick={openCart} className="h-full text-xs font-black">{count ? `${count} ${money(total)}` : "Cart"}</button><button onClick={openMenu} className="h-full text-xs font-black">Menu</button></div></nav>;
 }
 
 function BottomBar({ count, total, openCart, openMenu, accent }: { count: number; total: number; openCart: () => void; openMenu: () => void; accent: string }) {
