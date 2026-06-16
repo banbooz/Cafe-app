@@ -27,6 +27,16 @@ type Props = {
   changeTable: (tableNumber: number) => void;
 };
 
+const cafeUi = {
+  background: "#fff1dc",
+  panel: "#fff8eb",
+  soft: "#f7deb3",
+  ink: "#3a2616",
+  muted: "#a7815d",
+  accent: "#d69a45",
+  deep: "#8a541e",
+};
+
 const restaurantTabs: { label: string; value: string; heading: string }[] = [
   { label: "All", value: "All", heading: "All" },
   { label: "Main", value: "Main", heading: "Main" },
@@ -60,7 +70,9 @@ export default function HomeView(props: Props) {
   const searchRef = useRef<HTMLInputElement | null>(null);
   const experience = menuExperiences[props.experienceMode];
   const isRestaurant = props.experienceMode === "restaurant";
+  const isCafe = props.experienceMode === "cafe";
   const theme = experience.theme;
+  const activeTheme = isCafe ? cafeUi : theme;
   const visible = props.filtered.length ? props.filtered : props.allItems;
   const featuredItems = visible.some((item) => item.popular) ? visible.filter((item) => item.popular) : visible;
   const hero = featuredItems[featuredIndex % Math.max(featuredItems.length, 1)] || visible[0] || props.allItems[0] || experience.items[0];
@@ -156,15 +168,58 @@ export default function HomeView(props: Props) {
     </main>;
   }
 
-  return <main className="min-h-screen px-3 pb-32 pt-4" style={{ background: props.experienceMode === "cafe" ? "#f5d49a" : "#171312", color: theme.ink }}>
+  return <main className="min-h-screen px-3 pb-32 pt-4" style={{ background: isCafe ? cafeUi.background : "#171312", color: activeTheme.ink }}>
     <div className="mx-auto max-w-[440px]">
-      <header className="flex items-center justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Table {props.tableNumber}</p><h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.05em]">{experience.label}</h1></div><button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-11 w-11 place-items-center rounded-full text-xl font-black shadow-sm ring-1 ring-white/10" style={{ background: theme.panel }}>☰</button></header>
-      <label className="mt-4 flex h-12 items-center gap-3 rounded-full px-4 ring-1 ring-black/10" style={{ background: theme.panel }}><input value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-50" placeholder="Search menu or allergens" /></label>
-      <button onClick={(event) => addItem(event, hero)} className="mt-4 grid h-[150px] w-full grid-cols-[1fr_118px] overflow-hidden rounded-[1.8rem] p-4 text-left shadow-[0_18px_34px_rgba(0,0,0,0.14)]" style={{ background: theme.accent, color: "#111" }}><div><p className="text-[9px] font-black uppercase tracking-[0.14em] opacity-60">Featured</p><h2 className="mt-1 line-clamp-2 text-[23px] font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2><span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Add to basket</span></div><div className="h-[118px] rounded-[1.5rem] bg-white bg-cover bg-center shadow-sm ring-1 ring-black/10" style={{ backgroundImage: `url(${hero.image})` }} /></button>
-      <section className="mt-4 rounded-[1.8rem] p-3 ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Sections</p><h2 className="text-xl font-black">Browse menu</h2></div><button onClick={() => chooseCategory("All")} className="rounded-full px-3 py-2 text-[11px] font-black" style={{ background: props.category === "All" ? theme.accent : theme.soft, color: props.category === "All" ? "#111" : theme.ink }}>All</button></div><nav className="no-scrollbar flex gap-3 overflow-x-auto pb-2">{experience.categories.filter((entry) => entry !== "All").map((entry) => { const selected = props.category === entry; const image = categoryImage(entry, props.allItems, hero); return <button key={entry} onClick={() => chooseCategory(entry)} className="shrink-0 text-center" aria-pressed={selected}><CategoryPhotoIcon image={image} label={entry} selected={selected} accent={theme.accent} /><span className="mt-2 block w-[76px] truncate text-[10px] font-black opacity-70">{entry}</span></button>; })}</nav></section>
-      <section ref={menuRef} className="mt-5 scroll-mt-5 rounded-[1.8rem] p-3 ring-1 ring-black/5" style={{ background: theme.panel, color: theme.ink }}><div className="mb-3 flex items-center justify-between gap-3"><div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Main menu</p><h2 className="text-xl font-black">{props.category === "All" ? "Menu" : props.category}</h2></div>{props.count > 0 && <span className="shrink-0 rounded-full px-3 py-2 text-[11px] font-black" style={{ background: theme.soft }}>{props.count} items</span>}</div><div className={props.experienceMode === "cafe" ? "grid grid-cols-2 gap-3" : "grid gap-3"}>{visible.slice(0, 10).map((item) => props.experienceMode === "cafe" ? <CafeCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} /> : <SimpleRow key={item.id} item={item} qty={props.cart[item.id] || 0} theme={theme} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}</div></section>
+      <header className={isCafe ? "flex items-center justify-between rounded-[1.6rem] px-1 py-1" : "flex items-center justify-between"}>
+        <div className="flex min-w-0 items-center gap-3">
+          {isCafe && <div className="grid h-11 w-11 shrink-0 place-items-center overflow-hidden rounded-full bg-[#e7bd7a] text-sm font-black text-white ring-2 ring-white">BT</div>}
+          <div>
+            <p className="text-[10px] font-black uppercase tracking-[0.2em] opacity-60">Table {props.tableNumber}</p>
+            <h1 className="mt-1 text-[28px] font-black leading-none tracking-[-0.05em]">{experience.label}</h1>
+          </div>
+        </div>
+        <button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-11 w-11 place-items-center rounded-full text-xl font-black shadow-sm ring-1 ring-black/5" style={{ background: activeTheme.panel, color: activeTheme.ink }}>☰</button>
+      </header>
+
+      <label className={isCafe ? "mt-4 flex h-12 items-center gap-3 rounded-full px-4 shadow-sm ring-1 ring-[#ead0a7]" : "mt-4 flex h-12 items-center gap-3 rounded-full px-4 ring-1 ring-black/10"} style={{ background: activeTheme.panel }}>
+        <span className="text-sm opacity-60">⌕</span>
+        <input value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-50" placeholder="Search menu or allergens" />
+        {isCafe && <button type="button" onClick={() => setMenuOpen(true)} className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-black text-[#8a541e] shadow-sm">↔</button>}
+      </label>
+
+      {isCafe ? <button onClick={(event) => addItem(event, hero)} className="mt-4 block h-[158px] w-full overflow-hidden rounded-[1.9rem] bg-cover bg-center p-4 text-left shadow-[0_18px_36px_rgba(138,84,30,0.18)] ring-1 ring-white/80" style={{ backgroundImage: `linear-gradient(90deg, rgba(123,74,26,0.78) 0%, rgba(184,118,47,0.45) 46%, rgba(255,241,220,0.06) 100%), url(${hero.image})`, color: "white" }}>
+        <p className="text-[9px] font-black uppercase tracking-[0.14em] text-white/80">Today only</p>
+        <h2 className="mt-1 max-w-[170px] text-[28px] font-black leading-[0.92] tracking-[-0.06em]">Featured pick</h2>
+        <p className="mt-1 max-w-[190px] truncate text-xs font-black text-white/80">{hero.name}</p>
+        <span className="mt-4 inline-flex rounded-full bg-[#fff1dc] px-4 py-2 text-[10px] font-black text-[#8a541e] shadow-sm">Add to basket</span>
+      </button> : <button onClick={(event) => addItem(event, hero)} className="mt-4 grid h-[150px] w-full grid-cols-[1fr_118px] overflow-hidden rounded-[1.8rem] p-4 text-left shadow-[0_18px_34px_rgba(0,0,0,0.14)]" style={{ background: activeTheme.accent, color: "#111" }}><div><p className="text-[9px] font-black uppercase tracking-[0.14em] opacity-60">Featured</p><h2 className="mt-1 line-clamp-2 text-[23px] font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2><span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Add to basket</span></div><div className="h-[118px] rounded-[1.5rem] bg-white bg-cover bg-center shadow-sm ring-1 ring-black/10" style={{ backgroundImage: `url(${hero.image})` }} /></button>}
+
+      <section className={isCafe ? "mt-4 rounded-[1.8rem] bg-transparent p-0" : "mt-4 rounded-[1.8rem] p-3 ring-1 ring-black/5"} style={isCafe ? { color: activeTheme.ink } : { background: activeTheme.panel, color: activeTheme.ink }}>
+        <div className="mb-3 flex items-end justify-between">
+          <div>{!isCafe && <p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Sections</p>}<h2 className="text-xl font-black">{isCafe ? "Menu" : "Browse menu"}</h2></div>
+          <button onClick={() => chooseCategory("All")} className="rounded-full px-4 py-2 text-[11px] font-black shadow-sm" style={{ background: props.category === "All" ? activeTheme.accent : activeTheme.panel, color: props.category === "All" ? "#111" : activeTheme.ink }}>All</button>
+        </div>
+        <nav className="no-scrollbar flex gap-3 overflow-x-auto pb-2">
+          {experience.categories.filter((entry) => entry !== "All").map((entry) => {
+            const selected = props.category === entry;
+            const image = categoryImage(entry, props.allItems, hero);
+            return <button key={entry} onClick={() => chooseCategory(entry)} className="shrink-0 text-center" aria-pressed={selected}>
+              <CategoryPhotoIcon image={image} label={entry} selected={selected} accent={activeTheme.accent} />
+              <span className="mt-2 block w-[76px] truncate text-[10px] font-black opacity-70">{entry}</span>
+            </button>;
+          })}
+        </nav>
+      </section>
+
+      <section ref={menuRef} className="mt-5 scroll-mt-5 rounded-[1.8rem] p-3 ring-1 ring-black/5" style={{ background: activeTheme.panel, color: activeTheme.ink }}>
+        <div className="mb-3 flex items-center justify-between gap-3">
+          <div><p className="text-[10px] font-black uppercase tracking-[0.18em] opacity-60">Main menu</p><h2 className="text-xl font-black">{props.category === "All" ? "Menu" : props.category}</h2></div>
+          {props.count > 0 && <span className="shrink-0 rounded-full px-3 py-2 text-[11px] font-black" style={{ background: activeTheme.soft }}>{props.count} items</span>}
+        </div>
+        <div className={isCafe ? "grid grid-cols-2 gap-3" : "grid gap-3"}>{visible.slice(0, 10).map((item) => isCafe ? <CafeCard key={item.id} item={item} qty={props.cart[item.id] || 0} add={props.add} remove={props.remove} open={() => props.openItem(item)} /> : <SimpleRow key={item.id} item={item} qty={props.cart[item.id] || 0} theme={activeTheme} add={props.add} remove={props.remove} open={() => props.openItem(item)} />)}</div>
+      </section>
     </div>
-    <BottomBar count={props.count} total={props.total} openCart={props.openCart} openMenu={() => setMenuOpen(true)} accent={theme.accent} />
+    {isCafe ? <CafeBottomBar count={props.count} total={props.total} openCart={props.openCart} openMenu={() => setMenuOpen(true)} /> : <BottomBar count={props.count} total={props.total} openCart={props.openCart} openMenu={() => setMenuOpen(true)} accent={activeTheme.accent} />}
     {menuOpen && <MenuSheet count={props.count} total={props.total} tableNumber={props.tableNumber} changeTable={props.changeTable} close={() => setMenuOpen(false)} goHome={() => { chooseCategory("All"); setMenuOpen(false); }} openCart={props.openCart} experience={experience} mode={props.experienceMode} switchMode={switchMode} />}
   </main>;
 }
@@ -186,7 +241,7 @@ function OrderAgainCard({ item, qty, add, remove, open }: { item: MenuItem; qty:
 }
 
 function CafeCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
-  return <article className="relative overflow-hidden rounded-[1.45rem] bg-white/70 p-2.5 shadow-sm ring-1 ring-black/5"><button onClick={open} className="block h-28 w-full rounded-[1.15rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><p className="mt-2 line-clamp-1 text-[12px] font-black">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
+  return <article className="relative overflow-hidden rounded-[1.55rem] bg-[#fffaf0] p-2.5 shadow-[0_10px_28px_rgba(138,84,30,0.12)] ring-1 ring-[#efd5ab]"><button onClick={open} className="block h-28 w-full rounded-[1.2rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><button onClick={open} className="absolute right-3 top-3 grid h-7 w-7 place-items-center rounded-full bg-white/95 text-[11px] font-black text-[#8a541e] shadow-sm">♡</button><p className="mt-2 line-clamp-1 text-[12px] font-black text-[#3a2616]">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black text-[#8a541e]">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
 }
 
 function SimpleRow({ item, qty, theme, add, remove, open }: { item: MenuItem; qty: number; theme: MenuExperience["theme"]; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
@@ -200,6 +255,10 @@ function Qty({ qty, add, remove, disabled = false }: { qty: number; add: () => v
 
 function RestaurantBottomBar({ count, focusSearch, openCart, openMenu }: { count: number; focusSearch: () => void; openCart: () => void; openMenu: () => void }) {
   return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-2 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-4 items-center rounded-[1.6rem] bg-white text-[#678574] shadow-[0_18px_45px_rgba(15,23,42,0.16)] ring-1 ring-green-900/10"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black text-[#167044]">Home</button><button onClick={focusSearch} className="h-full text-xs font-black">Search</button><button onClick={openCart} className="mx-auto grid h-12 min-w-12 place-items-center rounded-full bg-[#0f5132] px-3 text-xs font-black text-white shadow-lg">{count || "Cart"}</button><button onClick={openMenu} className="h-full text-xs font-black">Switch</button></div></nav>;
+}
+
+function CafeBottomBar({ count, total, openCart, openMenu }: { count: number; total: number; openCart: () => void; openMenu: () => void }) {
+  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-4 items-center rounded-[1.7rem] bg-[#fff8eb]/95 text-[#8a541e] shadow-[0_16px_36px_rgba(138,84,30,0.18)] ring-1 ring-[#efd5ab] backdrop-blur-xl"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black">⌂<span className="sr-only">Home</span></button><button onClick={openCart} className="h-full text-xs font-black">{count ? `${count} ${money(total)}` : "Cart"}</button><button type="button" className="h-full text-xs font-black">♡</button><button onClick={openMenu} className="h-full text-xs font-black">☰</button></div></nav>;
 }
 
 function BottomBar({ count, total, openCart, openMenu, accent }: { count: number; total: number; openCart: () => void; openMenu: () => void; accent: string }) {
