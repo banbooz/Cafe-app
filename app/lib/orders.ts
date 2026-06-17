@@ -7,6 +7,7 @@ import { ensureFirebaseSignedIn, getFirebaseStateDoc } from "./firebase";
 export type OrderStatus = "new" | "preparing" | "ready" | "served";
 export type PaymentStatus = "demo" | "pending" | "paid" | "failed";
 export type OrderType = "restaurant" | "cafe" | "drinks";
+export type WaiterCallType = "ready" | "help";
 
 export type KitchenOrderItem = {
   id?: number;
@@ -29,6 +30,14 @@ export type KitchenOrderPayment = {
   amountPaid?: number;
 };
 
+export type WaiterCall = {
+  type: WaiterCallType;
+  active: boolean;
+  message: string;
+  createdAt: number;
+  clearedAt?: number;
+};
+
 export type KitchenOrder = {
   id: number;
   cafeId: string;
@@ -43,6 +52,7 @@ export type KitchenOrder = {
   total: number;
   items: KitchenOrderItem[];
   payment?: KitchenOrderPayment;
+  waiterCall?: WaiterCall;
 };
 
 const BASE_KITCHEN_ORDERS_STORAGE_KEY = "cafeKitchenOrders";
@@ -69,12 +79,27 @@ function cleanOrderType(value: unknown): OrderType {
   return value === "cafe" || value === "drinks" || value === "restaurant" ? value : "restaurant";
 }
 
+function cleanWaiterCall(value: unknown): WaiterCall | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const call = value as Partial<WaiterCall>;
+  const type: WaiterCallType = call.type === "help" ? "help" : "ready";
+  const createdAt = Number(call.createdAt);
+
+  return {
+    type,
+    active: Boolean(call.active),
+    message: typeof call.message === "string" && call.message.trim() ? call.message : type === "help" ? "Kitchen needs waiter help" : "Order ready for waiter",
+    createdAt: Number.isFinite(createdAt) && createdAt > 0 ? createdAt : Date.now(),
+    clearedAt: typeof call.clearedAt === "number" ? call.clearedAt : undefined,
+  };
+}
+
 function normaliseOrders(value: unknown): KitchenOrder[] {
   if (!Array.isArray(value)) return [];
 
   return value
     .filter((order): order is KitchenOrder => Boolean(order && typeof order === "object" && "id" in order))
-    .map((order) => ({ ...order, cafeId: order.cafeId || cafeConfig.id, orderType: cleanOrderType(order.orderType) }))
+    .map((order) => ({ ...order, cafeId: order.cafeId || cafeConfig.id, orderType: cleanOrderType(order.orderType), waiterCall: cleanWaiterCall(order.waiterCall) }))
     .filter((order) => order.cafeId === cafeConfig.id);
 }
 
