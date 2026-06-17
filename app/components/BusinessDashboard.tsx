@@ -16,7 +16,7 @@ type Props = { experienceMode?: MenuExperienceId };
 
 const pageThemes: Record<MenuExperienceId, { shell: string; header: string; accent: string; dark: string }> = {
   restaurant: { shell: "bg-[#ebe6dd]", header: "bg-[#2f2420]", accent: "text-[#8f4f35]", dark: "bg-[#2f2420]" },
-  cafe: { shell: "bg-[#f5d49a]", header: "bg-[#4d2f1e]", accent: "text-[#b66a2c]", dark: "bg-[#4d2f1e]" },
+  cafe: { shell: "bg-[#f6ead8]", header: "bg-[#c9843b]", accent: "text-[#c9843b]", dark: "bg-[#6d4a2e]" },
   drinks: { shell: "bg-[#171312]", header: "bg-[#0f0b0a]", accent: "text-[#d7a048]", dark: "bg-[#0f0b0a]" },
 };
 
@@ -127,11 +127,11 @@ export default function BusinessDashboard({ experienceMode = "restaurant" }: Pro
   return <main className={`min-h-screen ${pageTheme.shell} px-4 py-5 text-slate-900 sm:px-6 lg:px-8`}>
     <section className="mx-auto max-w-6xl">
       <header className={`rounded-[2rem] ${pageTheme.header} p-5 text-white shadow-xl shadow-slate-900/10 sm:p-7`}>
-        <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-300">Business dashboard - {cafeConfig.id}</p>
+        <p className="text-xs font-black uppercase tracking-[0.22em] text-orange-100">Business dashboard - {cafeConfig.id}</p>
         <div className="mt-2 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">{experience.label} business</h1>
-            <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/70">Track live {orderTypeText[experienceMode].toLowerCase()} orders, sales, menu performance and item availability for this model only.</p>
+            <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/75">Track live {orderTypeText[experienceMode].toLowerCase()} orders, sales, menu performance and item availability for this model only.</p>
           </div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("business", mode)} className={mode === experienceMode ? "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 text-xs font-black text-slate-950" : "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-4 text-xs font-black text-white"}>{menuExperiences[mode].label}</a>)}
