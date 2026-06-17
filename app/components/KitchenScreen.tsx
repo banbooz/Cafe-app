@@ -5,7 +5,7 @@ import AvailabilityControls from "./AvailabilityControls";
 import DietaryBadges from "./DietaryBadges";
 import { cafeConfig } from "../lib/cafeConfig";
 import { menuExperiences, staffRoute, type MenuExperienceId } from "../lib/menu";
-import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
+import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus, type WaiterCallType } from "../lib/orders";
 
 const statusText: Record<OrderStatus, string> = { new: "New", preparing: "Preparing", ready: "Ready", served: "Served" };
 const statusStyles: Record<OrderStatus, string> = {
@@ -22,18 +22,21 @@ const pageThemes: Record<MenuExperienceId, { shell: string; panel: string; heade
 
 type Props = { experienceMode?: MenuExperienceId };
 
-function nextStatus(status: OrderStatus): OrderStatus {
+function nextKitchenStatus(status: OrderStatus): OrderStatus {
   if (status === "new") return "preparing";
   if (status === "preparing") return "ready";
-  if (status === "ready") return "served";
-  return "served";
+  return status;
 }
 
 function actionText(status: OrderStatus) {
   if (status === "new") return "Start preparing";
-  if (status === "preparing") return "Mark ready";
-  if (status === "ready") return "Mark served";
-  return "Completed";
+  if (status === "preparing") return "Mark ready + call waiter";
+  if (status === "ready") return "Ready for waiter";
+  return "Completed by waiter";
+}
+
+function waiterCallMessage(type: WaiterCallType) {
+  return type === "help" ? "Kitchen needs waiter help" : "Order ready for waiter collection";
 }
 
 function orderMatchesModel(order: KitchenOrder, experienceMode: MenuExperienceId) {
@@ -67,7 +70,26 @@ export default function KitchenScreen({ experienceMode = "restaurant" }: Props) 
 
   function updateOrder(id: number) {
     setOrders((current) => {
-      const next = current.map((order) => order.id === id ? { ...order, cafeId: cafeConfig.id, status: nextStatus(order.status) } : order);
+      const next = current.map((order) => {
+        if (order.id !== id) return order;
+        const nextStatus = nextKitchenStatus(order.status);
+        if (order.status === "ready" || order.status === "served") return order;
+
+        return {
+          ...order,
+          cafeId: cafeConfig.id,
+          status: nextStatus,
+          waiterCall: nextStatus === "ready" ? { type: "ready", active: true, message: waiterCallMessage("ready"), createdAt: Date.now() } : order.waiterCall,
+        };
+      });
+      writeKitchenOrders(next);
+      return next;
+    });
+  }
+
+  function callWaiter(id: number, type: WaiterCallType) {
+    setOrders((current) => {
+      const next = current.map((order) => order.id === id ? { ...order, cafeId: cafeConfig.id, waiterCall: { type, active: true, message: waiterCallMessage(type), createdAt: Date.now() } } : order);
       writeKitchenOrders(next);
       return next;
     });
@@ -77,7 +99,7 @@ export default function KitchenScreen({ experienceMode = "restaurant" }: Props) 
     <div className={`mx-auto min-h-screen w-full max-w-5xl ${pageTheme.panel} shadow-2xl shadow-stone-950/10`}>
       <header className={`sticky top-0 z-20 border-b border-stone-200/60 ${pageTheme.header} px-4 py-4 backdrop-blur sm:px-6`}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div><p className="text-xs font-black uppercase tracking-[0.18em] opacity-60">{cafeConfig.name} · {cafeConfig.id}</p><h1 className="text-2xl font-black sm:text-3xl">{experience.label} kitchen</h1><p className="mt-2 text-sm font-bold opacity-70">Only showing {orderTypeText[experienceMode]} orders.</p></div>
+          <div><p className="text-xs font-black uppercase tracking-[0.18em] opacity-60">{cafeConfig.name} · {cafeConfig.id}</p><h1 className="text-2xl font-black sm:text-3xl">{experience.label} kitchen</h1><p className="mt-2 text-sm font-bold opacity-70">Kitchen sets orders to Ready. Waiter marks Served.</p></div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("kitchen", mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${pageTheme.button}` : "rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5"}>{menuExperiences[mode].label}</a>)}
             <a href={staffRoute("business", experienceMode)} className="rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5">Business view</a>
@@ -88,7 +110,7 @@ export default function KitchenScreen({ experienceMode = "restaurant" }: Props) 
       <section className="grid grid-cols-2 gap-3 px-4 py-4 sm:grid-cols-4 sm:px-6">{[["active", "Active", counts.active], ["new", "New", counts.new], ["preparing", "Preparing", counts.preparing], ["ready", "Ready", counts.ready]].map(([key, label, count]) => <button key={key} onClick={() => setFilter(key as OrderStatus | "active")} className={`rounded-3xl p-4 text-left shadow-sm ring-1 transition active:scale-[0.98] ${filter === key ? `${pageTheme.button} ring-current` : "bg-white text-[#20160f] ring-stone-200"}`}><p className="text-3xl font-black">{count}</p><p className="mt-1 text-sm font-black">{label}</p></button>)}</section>
       <section className="px-4 pb-5 sm:px-6"><AvailabilityControls section="Kitchen" experienceMode={experienceMode} /></section>
       <section className="grid gap-4 px-4 pb-8 sm:grid-cols-2 sm:px-6 lg:grid-cols-3">
-        {visibleOrders.map((order) => <article key={order.id} className="rounded-[1.5rem] bg-white p-4 text-[#20160f] shadow-sm ring-1 ring-stone-200"><div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-4"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-stone-500">Order #{order.id}</p><h2 className="mt-1 text-3xl font-black">Table {order.table}</h2><p className="mt-1 text-sm font-bold text-stone-500">{order.time}</p>{order.payment?.status === "paid" ? <p className="mt-2 text-xs font-black text-emerald-700">Paid by Stripe</p> : null}</div><span className={`inline-flex rounded-full px-3 py-2 text-xs font-black ring-1 ${statusStyles[order.status]}`}>{statusText[order.status]}</span></div>{order.notes && <p className="mt-4 rounded-xl bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-900 ring-1 ring-yellow-100">Chef notes: {order.notes}</p>}<div className="space-y-3 py-4">{order.items.map((item) => <div key={`${order.id}-${item.name}`} className="rounded-2xl bg-stone-50 p-3 text-left ring-1 ring-stone-100"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex items-center gap-2"><p className="truncate text-base font-black">{item.name}</p><DietaryBadges item={item} /></div>{item.description && <p className="mt-1 line-clamp-2 text-xs font-bold text-stone-500">{item.description}</p>}</div><p className="rounded-full bg-white px-3 py-1 text-sm font-black shadow-sm">×{item.quantity}</p></div>{item.allergens?.length ? <p className="mt-2 text-xs font-bold text-stone-500">Allergens: {item.allergens.join(", ")}</p> : null}</div>)}</div><button onClick={() => updateOrder(order.id)} disabled={order.status === "served"} className="w-full rounded-2xl bg-[#20160f] px-4 py-4 text-sm font-black text-white shadow-lg shadow-stone-950/20 disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none">{actionText(order.status)}</button></article>)}
+        {visibleOrders.map((order) => <article key={order.id} className="rounded-[1.5rem] bg-white p-4 text-[#20160f] shadow-sm ring-1 ring-stone-200"><div className="flex items-start justify-between gap-3 border-b border-stone-100 pb-4"><div><p className="text-xs font-black uppercase tracking-[0.14em] text-stone-500">Order #{order.id}</p><h2 className="mt-1 text-3xl font-black">Table {order.table}</h2><p className="mt-1 text-sm font-bold text-stone-500">{order.time}</p>{order.payment?.status === "paid" ? <p className="mt-2 text-xs font-black text-emerald-700">Paid by Stripe</p> : null}</div><span className={`inline-flex rounded-full px-3 py-2 text-xs font-black ring-1 ${statusStyles[order.status]}`}>{statusText[order.status]}</span></div>{order.notes && <p className="mt-4 rounded-xl bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-900 ring-1 ring-yellow-100">Chef notes: {order.notes}</p>}{order.waiterCall?.active ? <p className="mt-4 rounded-xl bg-sky-50 px-3 py-2 text-sm font-bold text-sky-900 ring-1 ring-sky-100">Waiter called: {order.waiterCall.message}</p> : null}<div className="space-y-3 py-4">{order.items.map((item) => <div key={`${order.id}-${item.name}`} className="rounded-2xl bg-stone-50 p-3 text-left ring-1 ring-stone-100"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><div className="flex items-center gap-2"><p className="truncate text-base font-black">{item.name}</p><DietaryBadges item={item} /></div>{item.description && <p className="mt-1 line-clamp-2 text-xs font-bold text-stone-500">{item.description}</p>}</div><p className="rounded-full bg-white px-3 py-1 text-sm font-black shadow-sm">×{item.quantity}</p></div>{item.allergens?.length ? <p className="mt-2 text-xs font-bold text-stone-500">Allergens: {item.allergens.join(", ")}</p> : null}</div>)}</div>{order.status === "ready" ? <div className="space-y-2"><div className="rounded-2xl bg-green-50 px-4 py-4 text-center text-sm font-black text-green-900 ring-1 ring-green-100">Ready — waiter will mark served</div><button onClick={() => callWaiter(order.id, "ready")} className="w-full rounded-2xl bg-sky-700 px-4 py-3 text-sm font-black text-white shadow-sm">Call waiter to collect</button><button onClick={() => callWaiter(order.id, "help")} className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-200">Call waiter for help</button></div> : <div className="space-y-2"><button onClick={() => updateOrder(order.id)} disabled={order.status === "served"} className="w-full rounded-2xl bg-[#20160f] px-4 py-4 text-sm font-black text-white shadow-lg shadow-stone-950/20 disabled:bg-stone-200 disabled:text-stone-500 disabled:shadow-none">{actionText(order.status)}</button>{order.status !== "served" ? <button onClick={() => callWaiter(order.id, "help")} className="w-full rounded-2xl bg-white px-4 py-3 text-sm font-black text-slate-700 ring-1 ring-slate-200">Call waiter for help</button> : null}</div>}</article>)}
         {visibleOrders.length === 0 && <div className="col-span-full rounded-[1.5rem] bg-white p-8 text-center text-[#20160f] shadow-sm ring-1 ring-stone-200"><h2 className="text-2xl font-black">No {experience.label.toLowerCase()} orders</h2><p className="mt-2 text-sm font-semibold text-stone-500">Orders for this model will appear here.</p></div>}
       </section>
     </div>
