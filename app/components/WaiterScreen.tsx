@@ -3,11 +3,11 @@
 import { useEffect, useMemo, useState } from "react";
 import DietaryBadges from "./DietaryBadges";
 import { cafeConfig } from "../lib/cafeConfig";
-import { menuExperiences, money, staffRoute, type MenuExperienceId } from "../lib/menu";
+import { menuExperiences, staffRoute, type MenuExperienceId } from "../lib/menu";
 import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 type Props = { experienceMode?: MenuExperienceId };
-type WaiterSection = "ready" | "progress" | "served";
+type WaiterSection = "ready" | "progress";
 
 type WaiterTheme = {
   shell: string;
@@ -52,7 +52,7 @@ const waiterThemes: Record<MenuExperienceId, WaiterTheme> = {
     button: "bg-[#8a541e] text-white",
     mutedButton: "bg-[#fff8eb] text-[#3a2616] ring-1 ring-[#efd5ab]",
     text: "text-[#3a2616]",
-    accentText: "text-[#d69a45]",
+    accentText: "text-[#f3c77b]",
     card: "bg-[#fff8eb] text-[#3a2616] ring-[#efd5ab]",
   },
   drinks: {
@@ -105,10 +105,8 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
   const scopedOrders = useMemo(() => orders.filter((order) => orderMatchesModel(order, experienceMode)), [experienceMode, orders]);
   const readyOrders = useMemo(() => scopedOrders.filter((order) => order.status === "ready").sort((a, b) => a.table - b.table || orderTimeValue(a) - orderTimeValue(b)), [scopedOrders]);
   const inProgressOrders = useMemo(() => scopedOrders.filter((order) => order.status === "new" || order.status === "preparing").sort((a, b) => orderTimeValue(b) - orderTimeValue(a)), [scopedOrders]);
-  const servedOrders = useMemo(() => scopedOrders.filter((order) => order.status === "served").sort((a, b) => orderTimeValue(b) - orderTimeValue(a)).slice(0, 8), [scopedOrders]);
-  const visibleOrders = section === "ready" ? readyOrders : section === "progress" ? inProgressOrders : servedOrders;
+  const visibleOrders = section === "ready" ? readyOrders : inProgressOrders;
   const readyItems = readyOrders.reduce((total, order) => total + order.items.reduce((sum, item) => sum + item.quantity, 0), 0);
-  const readyTables = new Set(readyOrders.map((order) => order.table)).size;
 
   function markServed(orderId: number) {
     setOrders((current) => {
@@ -125,49 +123,33 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
           <div>
             <p className={`text-xs font-black uppercase tracking-[0.22em] ${theme.accentText}`}>{cafeConfig.name} · waiter</p>
             <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{experience.label} waiter</h1>
-            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 opacity-75">Live service board for {orderTypeText[experienceMode].toLowerCase()} orders. Ready orders appear when the kitchen marks them ready.</p>
+            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 opacity-75">Ready orders appear here when the matching kitchen marks them ready.</p>
           </div>
-          <nav className="grid gap-2 sm:grid-cols-3 lg:min-w-[440px]">
+          <nav className="grid gap-2 sm:grid-cols-2 lg:min-w-[380px]">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={waiterRoute(mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${theme.button}` : "rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15"}>{menuExperiences[mode].label} Waiter</a>)}
-            <a href={staffRoute("kitchen", experienceMode)} className="rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15">Kitchen</a>
-            <a href={staffRoute("business", experienceMode)} className="rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15">Business</a>
-            <a href="/" className={`rounded-2xl px-4 py-3 text-center text-xs font-black ${theme.button}`}>Customer</a>
+            <a href={staffRoute("kitchen", experienceMode)} className="rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15">Open matching Kitchen</a>
           </nav>
         </div>
       </header>
 
-      <section className="grid gap-3 px-4 py-4 sm:grid-cols-3 sm:px-6">
-        <SummaryCard label="Ready tables" value={String(readyTables)} detail="Need serving" theme={theme} />
-        <SummaryCard label="Ready items" value={String(readyItems)} detail="Across ready orders" theme={theme} />
-        <SummaryCard label="In progress" value={String(inProgressOrders.length)} detail="Kitchen is working" theme={theme} />
-      </section>
-
-      <section className="grid gap-2 px-4 pb-4 sm:grid-cols-3 sm:px-6">
-        <FilterButton active={section === "ready"} label="Ready to Serve" count={readyOrders.length} theme={theme} onClick={() => setSection("ready")} />
-        <FilterButton active={section === "progress"} label="In Progress" count={inProgressOrders.length} theme={theme} onClick={() => setSection("progress")} />
-        <FilterButton active={section === "served"} label="Recently Served" count={servedOrders.length} theme={theme} onClick={() => setSection("served")} />
+      <section className="grid gap-2 px-4 py-4 sm:grid-cols-2 sm:px-6">
+        <FilterButton active={section === "ready"} label="Ready to Serve" count={readyOrders.length} detail={`${readyItems} items ready`} theme={theme} onClick={() => setSection("ready")} />
+        <FilterButton active={section === "progress"} label="In Progress" count={inProgressOrders.length} detail="Kitchen is working" theme={theme} onClick={() => setSection("progress")} />
       </section>
 
       <section className="grid gap-4 px-4 pb-8 sm:px-6 lg:grid-cols-3">
         {visibleOrders.map((order) => <OrderCard key={order.id} order={order} theme={theme} canServe={order.status === "ready"} markServed={() => markServed(order.id)} />)}
-        {visibleOrders.length === 0 ? <div className={`col-span-full rounded-[1.5rem] p-8 text-center shadow-sm ring-1 ${theme.card}`}><h2 className="text-2xl font-black">No {section === "ready" ? "ready orders" : section === "progress" ? "orders in progress" : "served orders"}</h2><p className="mt-2 text-sm font-semibold opacity-65">{section === "ready" ? "Kitchen-ready orders will appear here for waiters to serve." : section === "progress" ? "Orders being prepared will appear here." : "Recently served orders will appear here."}</p></div> : null}
+        {visibleOrders.length === 0 ? <div className={`col-span-full rounded-[1.5rem] p-8 text-center shadow-sm ring-1 ${theme.card}`}><h2 className="text-2xl font-black">No {section === "ready" ? "ready orders" : "orders in progress"}</h2><p className="mt-2 text-sm font-semibold opacity-65">{section === "ready" ? "Kitchen-ready orders will appear here for waiters to serve." : "Orders being prepared will appear here."}</p></div> : null}
       </section>
     </div>
   </main>;
 }
 
-function SummaryCard({ label, value, detail, theme }: { label: string; value: string; detail: string; theme: WaiterTheme }) {
-  return <article className={`rounded-[1.5rem] p-4 shadow-sm ring-1 ${theme.card}`}>
-    <p className="text-xs font-black uppercase tracking-[0.16em] opacity-55">{label}</p>
-    <h2 className="mt-2 text-4xl font-black">{value}</h2>
-    <p className="mt-1 text-sm font-bold opacity-65">{detail}</p>
-  </article>;
-}
-
-function FilterButton({ active, label, count, theme, onClick }: { active: boolean; label: string; count: number; theme: WaiterTheme; onClick: () => void }) {
+function FilterButton({ active, label, count, detail, theme, onClick }: { active: boolean; label: string; count: number; detail: string; theme: WaiterTheme; onClick: () => void }) {
   return <button onClick={onClick} className={active ? `rounded-[1.35rem] px-4 py-4 text-left shadow-lg ${theme.button}` : `rounded-[1.35rem] px-4 py-4 text-left shadow-sm ${theme.mutedButton}`}>
     <span className="block text-2xl font-black">{count}</span>
     <span className="mt-1 block text-sm font-black">{label}</span>
+    <span className="mt-1 block text-xs font-bold opacity-65">{detail}</span>
   </button>;
 }
 
@@ -203,6 +185,6 @@ function OrderCard({ order, theme, canServe, markServed }: { order: KitchenOrder
       </div>)}
     </div>
 
-    {canServe ? <button onClick={markServed} className={`w-full rounded-2xl px-4 py-4 text-sm font-black shadow-lg ${theme.button}`}>Mark Served</button> : <div className="rounded-2xl bg-black/5 px-4 py-4 text-center text-sm font-black opacity-60">{order.status === "served" ? "Served" : "Waiting for kitchen ready"}</div>}
+    {canServe ? <button onClick={markServed} className={`w-full rounded-2xl px-4 py-4 text-sm font-black shadow-lg ${theme.button}`}>Mark Served</button> : <div className="rounded-2xl bg-black/5 px-4 py-4 text-center text-sm font-black opacity-60">Waiting for kitchen ready</div>}
   </article>;
 }
