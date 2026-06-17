@@ -127,7 +127,7 @@ export const menuExperiences: Record<MenuExperienceId, MenuExperience> = {
     emptyText: "No cafe items found. Try coffee, pastries or breakfast.",
     categories: cafeCategories,
     categoryIcons: { All: "⌂", Coffee: "☕", Tea: "◌", Pastries: "◇", Breakfast: "☀", "Cold Drinks": "❄" },
-    theme: { background: "#f6efe7", panel: "#fffaf3", soft: "#eee0d0", ink: "#2c1c12", muted: "#80624b", accent: "#b66a2c", deep: "#4d2f1e" },
+    theme: { background: "#f6ead8", panel: "#fffaf3", soft: "#f1dfc4", ink: "#2f2a24", muted: "#8a7460", accent: "#c9843b", deep: "#6d4a2e" },
     items: cafeItems
   },
   drinks: {
