@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import DietaryBadges from "./DietaryBadges";
 import { cafeConfig } from "../lib/cafeConfig";
 import { menuExperiences, staffRoute, type MenuExperienceId } from "../lib/menu";
-import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
+import { readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 type Props = { experienceMode?: MenuExperienceId };
 type WaiterSection = "ready" | "progress" | "calls";
