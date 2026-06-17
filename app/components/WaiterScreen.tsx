@@ -7,7 +7,7 @@ import { menuExperiences, staffRoute, type MenuExperienceId } from "../lib/menu"
 import { orderTypeText, readKitchenOrders, subscribeToKitchenOrders, writeKitchenOrders, type KitchenOrder, type OrderStatus } from "../lib/orders";
 
 type Props = { experienceMode?: MenuExperienceId };
-type WaiterSection = "ready" | "progress";
+type WaiterSection = "ready" | "progress" | "calls";
 
 type WaiterTheme = {
   shell: string;
@@ -76,8 +76,10 @@ function orderMatchesModel(order: KitchenOrder, experienceMode: MenuExperienceId
 }
 
 function orderTimeValue(order: KitchenOrder) {
+  const callAt = Number(order.waiterCall?.createdAt);
   const direct = Number(order.id);
   const paidAt = Number(order.payment?.paidAt);
+  if (Number.isFinite(callAt) && callAt > 0) return callAt;
   if (Number.isFinite(direct) && direct > 946684800000) return direct;
   if (Number.isFinite(paidAt) && paidAt > 946684800000) return paidAt;
   return 0;
@@ -85,6 +87,12 @@ function orderTimeValue(order: KitchenOrder) {
 
 function tableLabel(table: number) {
   return `Table ${table}`;
+}
+
+function emptyText(section: WaiterSection) {
+  if (section === "calls") return { title: "No waiter calls", text: "Kitchen help and collection calls will appear here." };
+  if (section === "ready") return { title: "No ready orders", text: "Kitchen-ready orders will appear here for waiters to serve." };
+  return { title: "No orders in progress", text: "Orders being prepared will appear here." };
 }
 
 export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
@@ -105,12 +113,22 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
   const scopedOrders = useMemo(() => orders.filter((order) => orderMatchesModel(order, experienceMode)), [experienceMode, orders]);
   const readyOrders = useMemo(() => scopedOrders.filter((order) => order.status === "ready").sort((a, b) => a.table - b.table || orderTimeValue(a) - orderTimeValue(b)), [scopedOrders]);
   const inProgressOrders = useMemo(() => scopedOrders.filter((order) => order.status === "new" || order.status === "preparing").sort((a, b) => orderTimeValue(b) - orderTimeValue(a)), [scopedOrders]);
-  const visibleOrders = section === "ready" ? readyOrders : inProgressOrders;
+  const waiterCalls = useMemo(() => scopedOrders.filter((order) => order.status !== "served" && order.waiterCall?.active).sort((a, b) => orderTimeValue(b) - orderTimeValue(a)), [scopedOrders]);
+  const visibleOrders = section === "ready" ? readyOrders : section === "progress" ? inProgressOrders : waiterCalls;
   const readyItems = readyOrders.reduce((total, order) => total + order.items.reduce((sum, item) => sum + item.quantity, 0), 0);
+  const empty = emptyText(section);
 
   function markServed(orderId: number) {
     setOrders((current) => {
-      const next = current.map((order) => order.id === orderId ? { ...order, cafeId: cafeConfig.id, status: "served" as OrderStatus } : order);
+      const next = current.map((order) => order.id === orderId ? { ...order, cafeId: cafeConfig.id, status: "served" as OrderStatus, waiterCall: order.waiterCall ? { ...order.waiterCall, active: false, clearedAt: Date.now() } : undefined } : order);
+      writeKitchenOrders(next);
+      return next;
+    });
+  }
+
+  function clearWaiterCall(orderId: number) {
+    setOrders((current) => {
+      const next = current.map((order) => order.id === orderId && order.waiterCall ? { ...order, cafeId: cafeConfig.id, waiterCall: { ...order.waiterCall, active: false, clearedAt: Date.now() } } : order);
       writeKitchenOrders(next);
       return next;
     });
@@ -123,7 +141,7 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
           <div>
             <p className={`text-xs font-black uppercase tracking-[0.22em] ${theme.accentText}`}>{cafeConfig.name} · waiter</p>
             <h1 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{experience.label} waiter</h1>
-            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 opacity-75">Ready orders appear here when the matching kitchen marks them ready.</p>
+            <p className="mt-2 max-w-2xl text-sm font-bold leading-6 opacity-75">Ready orders and kitchen calls appear here. Only the waiter marks orders served.</p>
           </div>
           <nav className="grid gap-2 sm:grid-cols-2 lg:min-w-[380px]">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={waiterRoute(mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${theme.button}` : "rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15"}>{menuExperiences[mode].label} Waiter</a>)}
@@ -132,14 +150,15 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
         </div>
       </header>
 
-      <section className="grid gap-2 px-4 py-4 sm:grid-cols-2 sm:px-6">
+      <section className="grid gap-2 px-4 py-4 sm:grid-cols-3 sm:px-6">
         <FilterButton active={section === "ready"} label="Ready to Serve" count={readyOrders.length} detail={`${readyItems} items ready`} theme={theme} onClick={() => setSection("ready")} />
+        <FilterButton active={section === "calls"} label="Waiter Calls" count={waiterCalls.length} detail="Kitchen needs waiter" theme={theme} onClick={() => setSection("calls")} />
         <FilterButton active={section === "progress"} label="In Progress" count={inProgressOrders.length} detail="Kitchen is working" theme={theme} onClick={() => setSection("progress")} />
       </section>
 
       <section className="grid gap-4 px-4 pb-8 sm:px-6 lg:grid-cols-3">
-        {visibleOrders.map((order) => <OrderCard key={order.id} order={order} theme={theme} canServe={order.status === "ready"} markServed={() => markServed(order.id)} />)}
-        {visibleOrders.length === 0 ? <div className={`col-span-full rounded-[1.5rem] p-8 text-center shadow-sm ring-1 ${theme.card}`}><h2 className="text-2xl font-black">No {section === "ready" ? "ready orders" : "orders in progress"}</h2><p className="mt-2 text-sm font-semibold opacity-65">{section === "ready" ? "Kitchen-ready orders will appear here for waiters to serve." : "Orders being prepared will appear here."}</p></div> : null}
+        {visibleOrders.map((order) => <OrderCard key={order.id} order={order} theme={theme} canServe={order.status === "ready"} markServed={() => markServed(order.id)} clearCall={() => clearWaiterCall(order.id)} />)}
+        {visibleOrders.length === 0 ? <div className={`col-span-full rounded-[1.5rem] p-8 text-center shadow-sm ring-1 ${theme.card}`}><h2 className="text-2xl font-black">{empty.title}</h2><p className="mt-2 text-sm font-semibold opacity-65">{empty.text}</p></div> : null}
       </section>
     </div>
   </main>;
@@ -153,7 +172,7 @@ function FilterButton({ active, label, count, detail, theme, onClick }: { active
   </button>;
 }
 
-function OrderCard({ order, theme, canServe, markServed }: { order: KitchenOrder; theme: WaiterTheme; canServe: boolean; markServed: () => void }) {
+function OrderCard({ order, theme, canServe, markServed, clearCall }: { order: KitchenOrder; theme: WaiterTheme; canServe: boolean; markServed: () => void; clearCall: () => void }) {
   const paymentText = order.payment?.status === "paid" ? "Paid by Stripe" : order.payment?.status === "pending" ? "Payment pending" : "Demo payment";
 
   return <article className={`rounded-[1.6rem] p-4 shadow-sm ring-1 ${theme.card}`}>
@@ -167,6 +186,7 @@ function OrderCard({ order, theme, canServe, markServed }: { order: KitchenOrder
       <span className={`inline-flex rounded-full px-3 py-2 text-xs font-black ring-1 ${statusStyles[order.status]}`}>{statusText[order.status]}</span>
     </div>
 
+    {order.waiterCall?.active ? <div className="mt-4 rounded-xl bg-sky-50 px-3 py-3 text-sm font-bold text-sky-900 ring-1 ring-sky-100"><p>{order.waiterCall.message}</p><button onClick={clearCall} className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-black text-sky-800 ring-1 ring-sky-100">Clear call</button></div> : null}
     {order.notes ? <p className="mt-4 rounded-xl bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-900 ring-1 ring-yellow-100">Notes: {order.notes}</p> : null}
 
     <div className="space-y-3 py-4">
