@@ -15,7 +15,7 @@ const statusStyles: Record<OrderStatus, string> = {
   served: "bg-stone-100 text-stone-500 ring-stone-200",
 };
 const pageThemes: Record<MenuExperienceId, { shell: string; panel: string; header: string; button: string; text: string }> = {
-  restaurant: { shell: "bg-[#f6f1ea]", panel: "bg-[#fbfaf7]", header: "bg-[#fbfaf7]/95", button: "bg-[#20160f] text-white", text: "text-[#20160f]" },
+  restaurant: { shell: "bg-[#ebe6dd]", panel: "bg-[#fbfaf7]", header: "bg-[#fbfaf7]/95", button: "bg-[#2f2420] text-white", text: "text-[#241c18]" },
   cafe: { shell: "bg-[#f5d49a]", panel: "bg-[#fff8ec]", header: "bg-[#fff8ec]/95", button: "bg-[#4d2f1e] text-white", text: "text-[#2c1c12]" },
   drinks: { shell: "bg-[#171312]", panel: "bg-[#241c1a]", header: "bg-[#241c1a]/95", button: "bg-[#d7a048] text-[#111]", text: "text-[#fff8f0]" },
 };
@@ -38,6 +38,10 @@ function actionText(status: OrderStatus) {
 
 function orderMatchesModel(order: KitchenOrder, experienceMode: MenuExperienceId) {
   return (order.orderType || "restaurant") === experienceMode;
+}
+
+function waiterRoute(experienceMode: MenuExperienceId) {
+  return experienceMode === "restaurant" ? "/waiter" : `/waiter/${experienceMode}`;
 }
 
 export default function KitchenScreen({ experienceMode = "restaurant" }: Props) {
@@ -77,7 +81,7 @@ export default function KitchenScreen({ experienceMode = "restaurant" }: Props) 
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("kitchen", mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${pageTheme.button}` : "rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5"}>{menuExperiences[mode].label}</a>)}
             <a href={staffRoute("business", experienceMode)} className="rounded-2xl bg-white/70 px-4 py-3 text-center text-xs font-black text-stone-800 ring-1 ring-black/5">Business view</a>
-            <a href="/" className={`rounded-2xl px-4 py-3 text-center text-xs font-black shadow-lg shadow-stone-950/20 ${pageTheme.button}`}>Customer view</a>
+            <a href={waiterRoute(experienceMode)} className={`rounded-2xl px-4 py-3 text-center text-xs font-black shadow-lg shadow-stone-950/20 ${pageTheme.button}`}>Waiter view</a>
           </div>
         </div>
       </header>
