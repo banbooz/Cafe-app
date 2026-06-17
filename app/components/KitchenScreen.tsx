@@ -16,7 +16,7 @@ const statusStyles: Record<OrderStatus, string> = {
 };
 const pageThemes: Record<MenuExperienceId, { shell: string; panel: string; header: string; button: string; text: string }> = {
   restaurant: { shell: "bg-[#ebe6dd]", panel: "bg-[#fbfaf7]", header: "bg-[#fbfaf7]/95", button: "bg-[#2f2420] text-white", text: "text-[#241c18]" },
-  cafe: { shell: "bg-[#f5d49a]", panel: "bg-[#fff8ec]", header: "bg-[#fff8ec]/95", button: "bg-[#4d2f1e] text-white", text: "text-[#2c1c12]" },
+  cafe: { shell: "bg-[#f6ead8]", panel: "bg-[#fffaf3]", header: "bg-[#fffaf3]/95", button: "bg-[#c9843b] text-white", text: "text-[#2f2a24]" },
   drinks: { shell: "bg-[#171312]", panel: "bg-[#241c1a]", header: "bg-[#241c1a]/95", button: "bg-[#d7a048] text-[#111]", text: "text-[#fff8f0]" },
 };
 
