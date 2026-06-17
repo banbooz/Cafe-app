@@ -28,13 +28,13 @@ type Props = {
 };
 
 const cafeUi = {
-  background: "#fff1dc",
-  panel: "#fff8eb",
-  soft: "#f7deb3",
-  ink: "#3a2616",
-  muted: "#a7815d",
-  accent: "#d69a45",
-  deep: "#8a541e",
+  background: "#f6ead8",
+  panel: "#fffaf3",
+  soft: "#f1dfc4",
+  ink: "#2f2a24",
+  muted: "#8a7460",
+  accent: "#c9843b",
+  deep: "#6d4a2e",
 };
 
 const restaurantTabs: { label: string; value: string; heading: string; image: string }[] = [
@@ -182,17 +182,17 @@ export default function HomeView(props: Props) {
         <button onClick={() => setMenuOpen(true)} aria-label="Open design menu" className="grid h-11 w-11 place-items-center rounded-full text-xl font-black shadow-sm ring-1 ring-black/5" style={{ background: activeTheme.panel, color: activeTheme.ink }}>☰</button>
       </header>
 
-      <label className={isCafe ? "mt-4 flex h-12 items-center gap-3 rounded-full px-4 shadow-sm ring-1 ring-[#ead0a7]" : "mt-4 flex h-12 items-center gap-3 rounded-full px-4 ring-1 ring-black/10"} style={{ background: activeTheme.panel }}>
+      <label className={isCafe ? "mt-4 flex h-12 items-center gap-3 rounded-full px-4 shadow-sm ring-1 ring-[#eadcc4]" : "mt-4 flex h-12 items-center gap-3 rounded-full px-4 ring-1 ring-black/10"} style={{ background: activeTheme.panel }}>
         <span className="text-sm opacity-60">⌕</span>
         <input value={props.query} onChange={(event) => props.setQuery(event.target.value)} className="w-full bg-transparent text-sm font-bold outline-none placeholder:opacity-50" placeholder="Search menu or allergens" />
-        {isCafe && <button type="button" onClick={() => setMenuOpen(true)} className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-black text-[#8a541e] shadow-sm">↔</button>}
+        {isCafe && <button type="button" onClick={() => setMenuOpen(true)} className="grid h-8 w-8 place-items-center rounded-full bg-white text-sm font-black text-[#6d4a2e] shadow-sm">↔</button>}
       </label>
 
-      {isCafe ? <button onClick={(event) => addItem(event, hero)} className="mt-4 block h-[158px] w-full overflow-hidden rounded-[1.9rem] bg-cover bg-center p-4 text-left shadow-[0_18px_36px_rgba(138,84,30,0.18)] ring-1 ring-white/80" style={{ backgroundImage: `linear-gradient(90deg, rgba(123,74,26,0.78) 0%, rgba(184,118,47,0.45) 46%, rgba(255,241,220,0.06) 100%), url(${hero.image})`, color: "white" }}>
+      {isCafe ? <button onClick={(event) => addItem(event, hero)} className="mt-4 block h-[158px] w-full overflow-hidden rounded-[1.9rem] bg-cover bg-center p-4 text-left shadow-[0_18px_36px_rgba(109,74,46,0.16)] ring-1 ring-white/80" style={{ backgroundImage: `linear-gradient(90deg, rgba(93,66,43,0.72) 0%, rgba(201,132,59,0.38) 48%, rgba(255,250,243,0.08) 100%), url(${hero.image})`, color: "white" }}>
         <p className="text-[9px] font-black uppercase tracking-[0.14em] text-white/80">Today only</p>
         <h2 className="mt-1 max-w-[170px] text-[28px] font-black leading-[0.92] tracking-[-0.06em]">Featured pick</h2>
         <p className="mt-1 max-w-[190px] truncate text-xs font-black text-white/80">{hero.name}</p>
-        <span className="mt-4 inline-flex rounded-full bg-[#fff1dc] px-4 py-2 text-[10px] font-black text-[#8a541e] shadow-sm">Add to basket</span>
+        <span className="mt-4 inline-flex rounded-full bg-[#fffaf3] px-4 py-2 text-[10px] font-black text-[#6d4a2e] shadow-sm">Add to basket</span>
       </button> : <button onClick={(event) => addItem(event, hero)} className="mt-4 grid h-[150px] w-full grid-cols-[1fr_118px] overflow-hidden rounded-[1.8rem] p-4 text-left shadow-[0_18px_34px_rgba(0,0,0,0.14)]" style={{ background: activeTheme.accent, color: "#111" }}><div><p className="text-[9px] font-black uppercase tracking-[0.14em] opacity-60">Featured</p><h2 className="mt-1 line-clamp-2 text-[23px] font-black leading-[0.95] tracking-[-0.05em]">{hero.name}</h2><span className="mt-4 inline-flex rounded-full bg-black px-4 py-2 text-[10px] font-black text-white">Add to basket</span></div><div className="h-[118px] rounded-[1.5rem] bg-white bg-cover bg-center shadow-sm ring-1 ring-black/10" style={{ backgroundImage: `url(${hero.image})` }} /></button>}
 
       <section className={isCafe ? "mt-4 rounded-[1.8rem] bg-transparent p-0" : "mt-4 rounded-[1.8rem] p-3 ring-1 ring-black/5"} style={isCafe ? { color: activeTheme.ink } : { background: activeTheme.panel, color: activeTheme.ink }}>
@@ -246,7 +246,7 @@ function OrderAgainCard({ item, qty, add, remove, open }: { item: MenuItem; qty:
 }
 
 function CafeCard({ item, qty, add, remove, open }: { item: MenuItem; qty: number; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
-  return <article className="relative overflow-hidden rounded-[1.55rem] bg-[#fffaf0] p-2.5 shadow-[0_10px_28px_rgba(138,84,30,0.12)] ring-1 ring-[#efd5ab]"><button onClick={open} className="block h-28 w-full rounded-[1.2rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><p className="mt-2 line-clamp-1 text-[12px] font-black text-[#3a2616]">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black text-[#8a541e]">{money(item.price)}</span><Qty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
+  return <article className="relative overflow-hidden rounded-[1.55rem] bg-[#fffaf3] p-2.5 shadow-[0_10px_28px_rgba(201,132,59,0.14)] ring-1 ring-[#eadcc4]"><button onClick={open} className="block h-28 w-full rounded-[1.2rem] bg-cover bg-center" style={{ backgroundImage: `url(${item.image})` }} aria-label={`Open ${item.name}`} /><p className="mt-2 line-clamp-1 text-[12px] font-black text-[#2f2a24]">{item.name}</p><DietaryBadges item={item} className="mt-1" /><div className="mt-2 flex items-center justify-between"><span className="text-xs font-black text-[#6d4a2e]">{money(item.price)}</span><CafeQty qty={qty} add={() => add(item.id)} remove={() => remove(item.id)} disabled={item.available === false} /></div></article>;
 }
 
 function SimpleRow({ item, qty, theme, add, remove, open }: { item: MenuItem; qty: number; theme: MenuExperience["theme"]; add: (id: number) => void; remove: (id: number) => void; open: () => void }) {
@@ -256,6 +256,11 @@ function SimpleRow({ item, qty, theme, add, remove, open }: { item: MenuItem; qt
 function RestaurantQty({ qty, add, remove, disabled = false }: { qty: number; add: () => void; remove: () => void; disabled?: boolean }) {
   if (!qty) return <button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="rounded-full bg-[#8f4f35] px-3 py-2 text-[11px] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">Add</button>;
   return <div className="flex items-center rounded-full bg-[#eaded2] p-0.5"><button onClick={(event) => { event.stopPropagation(); remove(); }} className="grid h-8 w-8 place-items-center rounded-full bg-white font-black text-[#8f4f35] shadow-sm">-</button><span className="min-w-8 text-center text-xs font-black text-[#5b352d]">{qty}</span><button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="grid h-8 w-8 place-items-center rounded-full bg-[#8f4f35] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">+</button></div>;
+}
+
+function CafeQty({ qty, add, remove, disabled = false }: { qty: number; add: () => void; remove: () => void; disabled?: boolean }) {
+  if (!qty) return <button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="rounded-full bg-[#c9843b] px-3 py-2 text-[11px] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">Add</button>;
+  return <div className="flex items-center rounded-full bg-[#f1dfc4] p-0.5"><button onClick={(event) => { event.stopPropagation(); remove(); }} className="grid h-8 w-8 place-items-center rounded-full bg-white font-black text-[#6d4a2e] shadow-sm">-</button><span className="min-w-8 text-center text-xs font-black text-[#6d4a2e]">{qty}</span><button onClick={(event) => { event.stopPropagation(); add(); }} disabled={disabled} className="grid h-8 w-8 place-items-center rounded-full bg-[#c9843b] font-black text-white shadow-sm disabled:bg-slate-200 disabled:text-slate-400">+</button></div>;
 }
 
 function Qty({ qty, add, remove, disabled = false }: { qty: number; add: () => void; remove: () => void; disabled?: boolean }) {
@@ -268,7 +273,7 @@ function RestaurantBottomBar({ count, focusSearch, openCart, openMenu }: { count
 }
 
 function CafeBottomBar({ count, total, openCart, openMenu }: { count: number; total: number; openCart: () => void; openMenu: () => void }) {
-  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-3 items-center rounded-[1.7rem] bg-[#fff8eb]/95 text-[#8a541e] shadow-[0_16px_36px_rgba(138,84,30,0.18)] ring-1 ring-[#efd5ab] backdrop-blur-xl"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black">Home</button><button onClick={openCart} className="h-full text-xs font-black">{count ? `${count} ${money(total)}` : "Cart"}</button><button onClick={openMenu} className="h-full text-xs font-black">Menu</button></div></nav>;
+  return <nav className="fixed bottom-0 left-1/2 z-50 w-full max-w-[430px] -translate-x-1/2 px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))]"><div className="grid h-16 grid-cols-3 items-center rounded-[1.7rem] bg-[#fffaf3]/95 text-[#6d4a2e] shadow-[0_16px_36px_rgba(201,132,59,0.16)] ring-1 ring-[#eadcc4] backdrop-blur-xl"><button onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })} className="h-full text-xs font-black">Home</button><button onClick={openCart} className="h-full text-xs font-black">{count ? `${count} ${money(total)}` : "Cart"}</button><button onClick={openMenu} className="h-full text-xs font-black">Menu</button></div></nav>;
 }
 
 function BottomBar({ count, total, openCart, openMenu, accent }: { count: number; total: number; openCart: () => void; openMenu: () => void; accent: string }) {
