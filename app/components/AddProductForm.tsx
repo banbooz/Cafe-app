@@ -13,6 +13,7 @@ type Props = {
 
 const staffPrimaryButton = "bg-slate-900 text-white";
 const staffSecondaryButton = "bg-white text-slate-600 ring-1 ring-slate-200";
+const staffDisabledButton = "bg-slate-300 text-slate-500";
 
 function cleanPriceInput(value: string) {
   const decimalCleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
@@ -162,7 +163,7 @@ export default function AddProductForm({ onCreate, categories, experienceMode }:
           </div>
 
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-            <button onClick={createProduct} disabled={!canCreate} className={`min-h-14 rounded-2xl px-5 text-sm font-black disabled:bg-slate-300 disabled:text-slate-500 ${staffPrimaryButton}`}>Create product</button>
+            <button onClick={createProduct} disabled={!canCreate} className={`min-h-14 rounded-2xl px-5 text-sm font-black ${canCreate ? staffPrimaryButton : staffDisabledButton}`}>Create product</button>
             <button onClick={() => { resetDraftForm(); setOpen(false); }} className={`min-h-14 rounded-2xl px-5 text-sm font-black ${staffSecondaryButton}`}>Cancel</button>
           </div>
         </div>
