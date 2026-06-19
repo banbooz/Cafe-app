@@ -34,12 +34,15 @@ const statusStyles: Record<OrderStatus, string> = {
   served: "bg-stone-100 text-stone-500 ring-stone-200",
 };
 
+const staffPrimaryButton = "bg-slate-950 text-white";
+const staffHeaderButton = "bg-white/10 text-white ring-1 ring-white/15";
+
 const waiterThemes: Record<MenuExperienceId, WaiterTheme> = {
   restaurant: {
     shell: "bg-[#ebe6dd]",
     panel: "bg-[#fbfaf7]",
     header: "bg-[#2f2420] text-white",
-    button: "bg-[#8f4f35] text-white",
+    button: staffPrimaryButton,
     mutedButton: "bg-[#fbfaf7] text-[#241c18] ring-1 ring-[#d8ccc0]",
     text: "text-[#241c18]",
     accentText: "text-[#c3915b]",
@@ -49,7 +52,7 @@ const waiterThemes: Record<MenuExperienceId, WaiterTheme> = {
     shell: "bg-[#f6ead8]",
     panel: "bg-[#fffaf3]",
     header: "bg-[#c9843b] text-white",
-    button: "bg-[#c9843b] text-white",
+    button: staffPrimaryButton,
     mutedButton: "bg-[#fffaf3] text-[#2f2a24] ring-1 ring-[#eadcc4]",
     text: "text-[#2f2a24]",
     accentText: "text-[#fff1d8]",
@@ -59,7 +62,7 @@ const waiterThemes: Record<MenuExperienceId, WaiterTheme> = {
     shell: "bg-[#171312]",
     panel: "bg-[#241c1a]",
     header: "bg-[#0f0b0a] text-[#fff8f0]",
-    button: "bg-[#d7a048] text-[#111]",
+    button: staffPrimaryButton,
     mutedButton: "bg-[#241c1a] text-[#fff8f0] ring-1 ring-white/10",
     text: "text-[#fff8f0]",
     accentText: "text-[#d7a048]",
@@ -144,8 +147,8 @@ export default function WaiterScreen({ experienceMode = "restaurant" }: Props) {
             <p className="mt-2 max-w-2xl text-sm font-bold leading-6 opacity-75">Ready orders and kitchen calls appear here. Only the waiter marks orders served.</p>
           </div>
           <nav className="grid gap-2 sm:grid-cols-2 lg:min-w-[380px]">
-            {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={waiterRoute(mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${theme.button}` : "rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15"}>{menuExperiences[mode].label} Waiter</a>)}
-            <a href={staffRoute("kitchen", experienceMode)} className="rounded-2xl bg-white/10 px-4 py-3 text-center text-xs font-black text-white ring-1 ring-white/15">Open matching Kitchen</a>
+            {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={waiterRoute(mode)} className={mode === experienceMode ? `rounded-2xl px-4 py-3 text-center text-xs font-black ${theme.button}` : `rounded-2xl px-4 py-3 text-center text-xs font-black ${staffHeaderButton}`}>{menuExperiences[mode].label} Waiter</a>)}
+            <a href={staffRoute("kitchen", experienceMode)} className={`rounded-2xl px-4 py-3 text-center text-xs font-black ${staffHeaderButton}`}>Open matching Kitchen</a>
           </nav>
         </div>
       </header>
@@ -186,7 +189,7 @@ function OrderCard({ order, theme, canServe, markServed, clearCall }: { order: K
       <span className={`inline-flex rounded-full px-3 py-2 text-xs font-black ring-1 ${statusStyles[order.status]}`}>{statusText[order.status]}</span>
     </div>
 
-    {order.waiterCall?.active ? <div className="mt-4 rounded-xl bg-sky-50 px-3 py-3 text-sm font-bold text-sky-900 ring-1 ring-sky-100"><p>{order.waiterCall.message}</p><button onClick={clearCall} className="mt-2 rounded-xl bg-white px-3 py-2 text-xs font-black text-sky-800 ring-1 ring-sky-100">Clear call</button></div> : null}
+    {order.waiterCall?.active ? <div className="mt-4 rounded-xl bg-sky-50 px-3 py-3 text-sm font-bold text-sky-900 ring-1 ring-sky-100"><p>{order.waiterCall.message}</p><button onClick={clearCall} className={`mt-2 rounded-xl px-3 py-2 text-xs font-black ${staffPrimaryButton}`}>Clear call</button></div> : null}
     {order.notes ? <p className="mt-4 rounded-xl bg-yellow-50 px-3 py-2 text-sm font-bold text-yellow-900 ring-1 ring-yellow-100">Notes: {order.notes}</p> : null}
 
     <div className="space-y-3 py-4">
