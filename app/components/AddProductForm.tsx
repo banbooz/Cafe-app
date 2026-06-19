@@ -11,6 +11,9 @@ type Props = {
   experienceMode: MenuExperienceId;
 };
 
+const staffPrimaryButton = "bg-slate-900 text-white";
+const staffSecondaryButton = "bg-white text-slate-600 ring-1 ring-slate-200";
+
 function cleanPriceInput(value: string) {
   const decimalCleaned = value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
   const [wholeRaw, decimalRaw] = decimalCleaned.split(".");
@@ -84,7 +87,7 @@ export default function AddProductForm({ onCreate, categories, experienceMode }:
           <h3 className="mt-1 text-lg font-black text-slate-950">Create a new {experienceMode} menu item</h3>
           <p className="mt-1 text-xs font-bold leading-5 text-slate-500">New products sync to this model’s customer menu, kitchen and dashboard.</p>
         </div>
-        <span className="shrink-0 rounded-2xl bg-white px-4 py-3 text-xs font-black text-slate-700 ring-1 ring-slate-200">{open ? "Close" : "Add"}</span>
+        <span className={`shrink-0 rounded-2xl px-4 py-3 text-xs font-black ${staffSecondaryButton}`}>{open ? "Close" : "Add"}</span>
       </button>
 
       {open && (
@@ -152,15 +155,15 @@ export default function AddProductForm({ onCreate, categories, experienceMode }:
           </label>
 
           <div className="flex flex-wrap gap-2">
-            <button onClick={() => setAvailable((current) => !current)} className={available ? "min-h-11 rounded-full bg-emerald-700 px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-red-700 px-4 py-2 text-xs font-black text-white"}>{available ? "Available" : "Not available"}</button>
-            <button onClick={() => update({ popular: !product.popular })} className={product.popular ? "min-h-11 rounded-full bg-slate-900 px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-white px-4 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>Popular</button>
-            <button onClick={() => update({ vegetarian: !product.vegetarian })} className={product.vegetarian ? "min-h-11 rounded-full bg-[#16803a] px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-white px-4 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>V</button>
-            <button onClick={() => update({ vegan: !product.vegan })} className={product.vegan ? "min-h-11 rounded-full bg-[#16803a] px-4 py-2 text-xs font-black text-white" : "min-h-11 rounded-full bg-white px-4 py-2 text-xs font-black text-slate-600 ring-1 ring-slate-200"}>VG</button>
+            <button onClick={() => setAvailable((current) => !current)} className={available ? `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffPrimaryButton}` : `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffSecondaryButton}`}>{available ? "Available" : "Not available"}</button>
+            <button onClick={() => update({ popular: !product.popular })} className={product.popular ? `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffPrimaryButton}` : `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffSecondaryButton}`}>Popular</button>
+            <button onClick={() => update({ vegetarian: !product.vegetarian })} className={product.vegetarian ? `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffPrimaryButton}` : `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffSecondaryButton}`}>V</button>
+            <button onClick={() => update({ vegan: !product.vegan })} className={product.vegan ? `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffPrimaryButton}` : `min-h-11 rounded-full px-4 py-2 text-xs font-black ${staffSecondaryButton}`}>VG</button>
           </div>
 
           <div className="grid gap-2 sm:grid-cols-[1fr_auto]">
-            <button onClick={createProduct} disabled={!canCreate} className="min-h-14 rounded-2xl bg-slate-900 px-5 text-sm font-black text-white disabled:bg-slate-300 disabled:text-slate-500">Create product</button>
-            <button onClick={() => { resetDraftForm(); setOpen(false); }} className="min-h-14 rounded-2xl bg-white px-5 text-sm font-black text-slate-700 ring-1 ring-slate-200">Cancel</button>
+            <button onClick={createProduct} disabled={!canCreate} className={`min-h-14 rounded-2xl px-5 text-sm font-black disabled:bg-slate-300 disabled:text-slate-500 ${staffPrimaryButton}`}>Create product</button>
+            <button onClick={() => { resetDraftForm(); setOpen(false); }} className={`min-h-14 rounded-2xl px-5 text-sm font-black ${staffSecondaryButton}`}>Cancel</button>
           </div>
         </div>
       )}
