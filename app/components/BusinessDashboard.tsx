@@ -14,11 +14,16 @@ type SoldItem = KitchenOrderItem & { category?: string; unitPrice?: number; pric
 type ProductSale = { key: string; name: string; category: string; quantity: number; revenue: number };
 type Props = { experienceMode?: MenuExperienceId };
 
-const pageThemes: Record<MenuExperienceId, { shell: string; header: string; accent: string; dark: string }> = {
-  restaurant: { shell: "bg-[#ebe6dd]", header: "bg-[#2f2420]", accent: "text-[#8f4f35]", dark: "bg-[#2f2420]" },
-  cafe: { shell: "bg-[#f6ead8]", header: "bg-[#c9843b]", accent: "text-[#c9843b]", dark: "bg-[#6d4a2e]" },
-  drinks: { shell: "bg-[#171312]", header: "bg-[#0f0b0a]", accent: "text-[#d7a048]", dark: "bg-[#0f0b0a]" },
+const pageThemes: Record<MenuExperienceId, { shell: string; header: string; accent: string }> = {
+  restaurant: { shell: "bg-[#ebe6dd]", header: "bg-[#2f2420]", accent: "text-[#8f4f35]" },
+  cafe: { shell: "bg-[#f6ead8]", header: "bg-[#c9843b]", accent: "text-[#c9843b]" },
+  drinks: { shell: "bg-[#171312]", header: "bg-[#0f0b0a]", accent: "text-[#d7a048]" },
 };
+
+const staffHeaderButton = "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-4 text-xs font-black text-white ring-1 ring-white/20";
+const staffHeaderButtonActive = "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 text-xs font-black text-slate-950";
+const staffSegmentButton = "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600";
+const staffSegmentButtonActive = "min-h-11 rounded-2xl bg-slate-950 px-4 text-sm font-black text-white";
 
 function waiterRoute(experienceMode: MenuExperienceId) {
   return experienceMode === "restaurant" ? "/waiter" : `/waiter/${experienceMode}`;
@@ -134,9 +139,9 @@ export default function BusinessDashboard({ experienceMode = "restaurant" }: Pro
             <p className="mt-3 max-w-2xl text-sm font-semibold leading-6 text-white/75">Track live {orderTypeText[experienceMode].toLowerCase()} orders, sales, menu performance and item availability for this model only.</p>
           </div>
           <div className="flex flex-wrap gap-2">
-            {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("business", mode)} className={mode === experienceMode ? "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 text-xs font-black text-slate-950" : "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-4 text-xs font-black text-white"}>{menuExperiences[mode].label}</a>)}
-            <a href={staffRoute("kitchen", experienceMode)} className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-5 text-sm font-black text-white">Open kitchen view</a>
-            <a href={waiterRoute(experienceMode)} className="inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-5 text-sm font-black text-slate-950">Open waiter view</a>
+            {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("business", mode)} className={mode === experienceMode ? staffHeaderButtonActive : staffHeaderButton}>{menuExperiences[mode].label}</a>)}
+            <a href={staffRoute("kitchen", experienceMode)} className={`${staffHeaderButton} px-5 text-sm`}>Open kitchen view</a>
+            <a href={waiterRoute(experienceMode)} className={`${staffHeaderButton} px-5 text-sm`}>Open waiter view</a>
           </div>
         </div>
       </header>
@@ -161,8 +166,8 @@ export default function BusinessDashboard({ experienceMode = "restaurant" }: Pro
             <span className="w-fit rounded-full bg-slate-100 px-3 py-2 text-xs font-black text-slate-600">Live</span>
           </div>
           <div className="mt-5 grid gap-2 rounded-3xl bg-slate-100 p-2 sm:grid-cols-2">
-            <button type="button" onClick={() => setTab("top")} className={tab === "top" ? `min-h-11 rounded-2xl ${pageTheme.dark} px-4 text-sm font-black text-white` : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Most Sold Products</button>
-            <button type="button" onClick={() => setTab("daily")} className={tab === "daily" ? `min-h-11 rounded-2xl ${pageTheme.dark} px-4 text-sm font-black text-white` : "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600"}>Daily Sales by Item</button>
+            <button type="button" onClick={() => setTab("top")} className={tab === "top" ? staffSegmentButtonActive : staffSegmentButton}>Most Sold Products</button>
+            <button type="button" onClick={() => setTab("daily")} className={tab === "daily" ? staffSegmentButtonActive : staffSegmentButton}>Daily Sales by Item</button>
           </div>
           {shownProducts.length ? <div className="mt-5 space-y-3">{shownProducts.map((product, index) => <ProductCard key={product.key} product={product} rank={tab === "top" ? index + 1 : undefined} maxQuantity={maxQuantity} />)}</div> : <EmptyState title={tab === "top" ? "No sold products" : "No items sold today"} text={tab === "top" ? `Most sold products for ${experience.label} will appear here after orders are placed.` : `Daily item sales for ${experience.label} will appear here when products sell today.`} />}
         </section>
