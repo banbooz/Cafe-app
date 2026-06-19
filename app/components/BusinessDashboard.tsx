@@ -22,6 +22,7 @@ const pageThemes: Record<MenuExperienceId, { shell: string; header: string; acce
 
 const staffHeaderButton = "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-4 text-xs font-black text-white ring-1 ring-white/20";
 const staffHeaderButtonActive = "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white px-4 text-xs font-black text-slate-950";
+const staffHeaderButtonWide = "inline-flex min-h-12 items-center justify-center rounded-2xl bg-white/10 px-5 text-sm font-black text-white ring-1 ring-white/20";
 const staffSegmentButton = "min-h-11 rounded-2xl px-4 text-sm font-black text-slate-600";
 const staffSegmentButtonActive = "min-h-11 rounded-2xl bg-slate-950 px-4 text-sm font-black text-white";
 
@@ -140,8 +141,8 @@ export default function BusinessDashboard({ experienceMode = "restaurant" }: Pro
           </div>
           <div className="flex flex-wrap gap-2">
             {(["restaurant", "cafe", "drinks"] as MenuExperienceId[]).map((mode) => <a key={mode} href={staffRoute("business", mode)} className={mode === experienceMode ? staffHeaderButtonActive : staffHeaderButton}>{menuExperiences[mode].label}</a>)}
-            <a href={staffRoute("kitchen", experienceMode)} className={`${staffHeaderButton} px-5 text-sm`}>Open kitchen view</a>
-            <a href={waiterRoute(experienceMode)} className={`${staffHeaderButton} px-5 text-sm`}>Open waiter view</a>
+            <a href={staffRoute("kitchen", experienceMode)} className={staffHeaderButtonWide}>Open kitchen view</a>
+            <a href={waiterRoute(experienceMode)} className={staffHeaderButtonWide}>Open waiter view</a>
           </div>
         </div>
       </header>
