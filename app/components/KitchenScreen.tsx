@@ -21,6 +21,7 @@ const pageThemes: Record<MenuExperienceId, { shell: string; panel: string; heade
 
 const staffPrimaryButton = "bg-slate-950 text-white";
 const staffGhostButton = "bg-white/80 text-slate-800 ring-1 ring-slate-200";
+const staffDisabledButton = "bg-stone-200 text-stone-500";
 
 type Props = { experienceMode?: MenuExperienceId };
 type KitchenFilter = OrderStatus | "active";
@@ -156,7 +157,7 @@ export default function KitchenScreen({ experienceMode = "restaurant" }: Props) 
             <button onClick={() => callWaiter(order.id, "ready")} className={`w-full px-4 py-3 text-sm font-black ${staffPrimaryButton}`}>Call waiter to collect</button>
             <button onClick={() => callWaiter(order.id, "help")} className={`w-full px-4 py-3 text-sm font-black ${staffPrimaryButton}`}>Call waiter for help</button>
           </div> : <div className="space-y-2">
-            <button onClick={() => updateOrder(order.id)} disabled={order.status === "served"} className={`w-full px-4 py-3 text-sm font-black disabled:bg-stone-200 disabled:text-stone-500 ${staffPrimaryButton}`}>{actionText(order.status)}</button>
+            <button onClick={() => updateOrder(order.id)} disabled={order.status === "served"} className={`w-full px-4 py-3 text-sm font-black ${order.status === "served" ? staffDisabledButton : staffPrimaryButton}`}>{actionText(order.status)}</button>
             {order.status !== "served" ? <button onClick={() => callWaiter(order.id, "help")} className={`w-full px-4 py-3 text-sm font-black ${staffPrimaryButton}`}>Call waiter for help</button> : null}
           </div>}
         </article>)}
