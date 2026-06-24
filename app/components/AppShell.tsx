@@ -1,7 +1,7 @@
 export function Phone({ children }: { children: React.ReactNode }) {
   return (
-    <main className="min-h-[100svh] bg-[#f2f2ef]">
-      <div className="mx-auto min-h-[100svh] w-full max-w-[480px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">
+    <main className="min-h-[100dvh] bg-[#f2f2ef]">
+      <div className="mx-auto min-h-[100dvh] w-full max-w-[480px] overflow-x-hidden bg-[#f7f7f5] text-[#1d2528] shadow-[0_24px_80px_rgba(29,37,40,0.14)] sm:my-6 sm:rounded-[2.25rem]">
         {children}
       </div>
     </main>
@@ -21,9 +21,9 @@ export function Top({ title, back, right, onRight }: { title: string; back: () =
 }
 
 export function Footer({ children }: { children: React.ReactNode }) {
-  return <section className="fixed bottom-0 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-4 pb-[calc(0.8rem+env(safe-area-inset-bottom))] pt-3 sm:bottom-5">{children}</section>;
+  return <section className="fixed bottom-3 left-1/2 z-50 w-full max-w-[480px] -translate-x-1/2 px-4 pt-3 sm:bottom-5">{children}</section>;
 }
 
 export function Center({ children }: { children: React.ReactNode }) {
-  return <main className="flex min-h-[100svh] flex-col justify-center bg-[#f7f7f5] px-6 text-center text-[#1d2528]">{children}</main>;
+  return <main className="flex min-h-[100dvh] flex-col justify-center bg-[#f7f7f5] px-6 text-center text-[#1d2528]">{children}</main>;
 }
