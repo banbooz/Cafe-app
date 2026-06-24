@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { cafeConfig } from "../../lib/cafeConfig";
 import type { KitchenOrder } from "../../lib/orders";
 import { attachStripeSessionToPendingOrder, isProductionPaymentStoreConfigured, savePendingStripeOrder } from "../../lib/paymentOrders";
+import { checkRateLimit } from "../../lib/rateLimit";
 import { isStripeServerConfigured, stripeConfig } from "../../lib/stripeConfig";
 import { validateAndBuildOrder, type OrderRequestBody } from "../../lib/serverOrderValidation";
 
@@ -17,6 +18,13 @@ function moneyValue(value: number | undefined) {
 
 function orderItemSummary(order: KitchenOrder) {
   return order.items.map((item) => `${item.quantity}x ${item.name}`).join(", ").slice(0, 480);
+}
+
+function rateLimitResponse(retryAfter: number) {
+  return NextResponse.json(
+    { ok: false, error: "Too many checkout attempts. Try again shortly." },
+    { status: 429, headers: { "Retry-After": String(retryAfter) } }
+  );
 }
 
 function appendOrderMetadata(form: URLSearchParams, prefix: "metadata" | "payment_intent_data[metadata]", order: KitchenOrder) {
@@ -56,6 +64,9 @@ function appendLineItems(form: URLSearchParams, order: KitchenOrder) {
 }
 
 export async function POST(request: Request) {
+  const limit = checkRateLimit(request, { keyPrefix: "checkout:create", maxRequests: 8, windowMs: 60_000 });
+  if (!limit.ok) return rateLimitResponse(limit.retryAfter);
+
   let body: OrderRequestBody = {};
 
   try {
@@ -64,7 +75,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false, error: "Invalid checkout request." }, { status: 400 });
   }
 
-  const result = validateAndBuildOrder(body);
+  const result = await validateAndBuildOrder(body);
   if (!result.ok) {
     return NextResponse.json(result, { status: 400 });
   }
