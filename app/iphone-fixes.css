@@ -1,0 +1,68 @@
+html,
+body {
+  min-height: 100dvh;
+  overflow-x: hidden;
+}
+
+button,
+input,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+  touch-action: auto;
+}
+
+.sheet-backdrop-enter {
+  min-height: 100dvh;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  touch-action: pan-y;
+}
+
+.sheet-panel-enter {
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y;
+}
+
+.sheet-panel-enter button,
+.sheet-panel-enter input,
+.sheet-panel-enter textarea {
+  touch-action: auto;
+}
+
+.mobile-fixed-dock,
+.dock-slide-up.fixed,
+nav.fixed {
+  bottom: 0.75rem !important;
+  padding-bottom: 0 !important;
+}
+
+.detail-hero-motion > div:first-child {
+  height: 18rem !important;
+}
+
+.dock-slide-up.fixed > button,
+.mobile-fixed-dock > button {
+  min-height: 3.5rem !important;
+  background: #263238 !important;
+  color: white !important;
+  box-shadow: 0 18px 44px rgb(29 37 40 / 0.25) !important;
+}
+
+.dock-slide-up.fixed .basket-count-pop {
+  min-height: 3.5rem !important;
+}
+
+@media (max-width: 480px) {
+  .page-enter {
+    padding-bottom: 9rem !important;
+  }
+}
