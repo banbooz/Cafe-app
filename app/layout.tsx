@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
+import "./iphone-fixes.css";
 import { APP_NAME, APP_VERSION } from "./lib/appMeta";
 
 export const metadata: Metadata = {
