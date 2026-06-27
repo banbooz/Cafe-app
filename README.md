@@ -1,5 +1,17 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Admin demo lock
+
+The app includes an admin page at `/admin` for controlling whether demo businesses can edit customer-facing menu settings.
+
+Set this deployment environment variable before using the page:
+
+```bash
+ADMIN_PIN=choose-a-private-pin
+```
+
+When the demo editing lock is enabled, kitchen and business pages stay viewable, but menu edits, availability changes, product changes, active/inactive controls and reset controls are hidden. Kitchen order status buttons and business analytics remain usable.
+
 ## Getting Started
 
 First, run the development server:
