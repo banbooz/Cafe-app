@@ -77,7 +77,10 @@ export function useDemoEditingLock() {
         (snapshot) => {
           if (!active) return;
           const data = snapshot.data();
-          if (data?.cafeId && data.cafeId !== cafeConfig.id) return;
+          if (data?.cafeId && data.cafeId !== cafeConfig.id) {
+            setLoading(false);
+            return;
+          }
 
           if (typeof data?.demoEditingLocked === "boolean") {
             writeLocalLock(data.demoEditingLocked);
