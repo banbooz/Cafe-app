@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 
 export async function POST(request: Request) {
-  const adminPin = process.env.ADMIN_PIN || process.env.NEXT_PUBLIC_ADMIN_PIN;
+  const adminPin = process.env.ADMIN_PIN;
 
   if (!adminPin) {
     return NextResponse.json(
